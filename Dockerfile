@@ -11,6 +11,9 @@ RUN apk update && \
         curl && \
     npm install -g pnpm
 
+# Increase memory limit for TypeScript build
+ENV NODE_OPTIONS=--max-old-space-size=4096
+
 WORKDIR /usr/src/flowise
 
 # Copy workspace configuration and lockfile
