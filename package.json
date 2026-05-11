@@ -4,11 +4,8 @@
     "private": true,
     "homepage": "https://flowiseai.com",
     "workspaces": [
-        "packages/*",
-        "flowise",
-        "ui",
-        "components",
-        "api-documentation"
+        "packages/server",
+        "packages/components"
     ],
     "scripts": {
         "build": "turbo run build",

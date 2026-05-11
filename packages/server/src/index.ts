@@ -4,7 +4,6 @@ import cors from 'cors'
 import express, { Request, Response } from 'express'
 import 'global-agent/bootstrap'
 import http from 'http'
-import path from 'path'
 import { DataSource } from 'typeorm'
 import { AbortControllerPool } from './AbortControllerPool'
 import { CachePool } from './CachePool'
@@ -28,7 +27,7 @@ import { RedisEventSubscriber } from './queue/RedisEventSubscriber'
 import { initWebhookListenerRegistry } from './services/webhook-listener'
 import flowiseApiV1Router from './routes'
 import { UsageCacheManager } from './UsageCacheManager'
-import { getEncryptionKey, getNodeModulesPackagePath } from './utils'
+import { getEncryptionKey } from './utils'
 import { API_KEY_BLACKLIST_URLS, WHITELIST_URLS } from './utils/constants'
 import logger, { expressRequestLogger } from './utils/logger'
 import { RateLimiterManager } from './utils/rateLimit'
@@ -354,15 +353,11 @@ export class App {
         // Serve UI static
         // ----------------------------------------
 
-        const packagePath = getNodeModulesPackagePath('flowise-ui')
-        const uiBuildPath = path.join(packagePath, 'build')
-        const uiHtmlPath = path.join(packagePath, 'build', 'index.html')
-
-        this.app.use('/', express.static(uiBuildPath))
-
-        // All other requests not handled will return React app
-        this.app.use((req: Request, res: Response) => {
-            res.sendFile(uiHtmlPath)
+        // ----------------------------------------
+        // API Status (Headless Mode)
+        // ----------------------------------------
+        this.app.get('/', (req: Request, res: Response) => {
+            res.status(200).json({ status: 'OK', message: 'Flowise API is running in headless mode.' })
         })
 
         // Error handling

@@ -108,7 +108,6 @@
         "express-session": "^1.18.1",
         "flowise-components": "workspace:^",
         "flowise-nim-container-manager": "^1.0.11",
-        "flowise-ui": "workspace:^",
         "geoip-lite": "^1.4.10",
         "global-agent": "^3.0.0",
         "gulp": "^4.0.2",

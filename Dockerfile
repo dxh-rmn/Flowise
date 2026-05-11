@@ -1,9 +1,3 @@
-# Build local monorepo image
-# docker build --no-cache -t  flowise .
-
-# Run image
-# docker run -d -p 3000:3000 flowise
-
 FROM node:20-alpine
 
 # Install system dependencies and build tools
@@ -14,30 +8,27 @@ RUN apk update && \
         make \
         g++ \
         build-base \
-        cairo-dev \
-        pango-dev \
-        chromium \
         curl && \
     npm install -g pnpm
 
-ENV PUPPETEER_SKIP_DOWNLOAD=true
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
-
-ENV NODE_OPTIONS=--max-old-space-size=8192
-
 WORKDIR /usr/src/flowise
 
-# Copy app source
-COPY . .
+# Copy workspace configuration and lockfile
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 
-# Install dependencies and build (excluding sdk packages not needed for Docker)
-RUN pnpm install && \
-    pnpm build:docker
+# Copy only the backend and component logic
+COPY packages/server ./packages/server
+COPY packages/components ./packages/components
 
-# Give the node user ownership of the application files
+# Install dependencies
+RUN pnpm install
+
+# Build the backend packages
+RUN pnpm build
+
+# Give the node user ownership
 RUN chown -R node:node .
 
-# Switch to non-root user (node user already exists in node:20-alpine)
 USER node
 
 EXPOSE 3000
