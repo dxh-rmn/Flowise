@@ -16,8 +16,8 @@ ENV NODE_OPTIONS=--max-old-space-size=4096
 
 WORKDIR /usr/src/flowise
 
-# Copy workspace configuration and lockfile
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+# Copy workspace configuration and root config files
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json .npmrc ./
 
 # Copy only the backend and component logic
 COPY packages/server ./packages/server
