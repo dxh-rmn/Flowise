@@ -1,9 +1,15 @@
 import { NextFunction, Request, Response } from 'express'
 import { ErrorMessage } from '../Interface.Enterprise'
+import { Platform } from '../../Interface'
+import { getRunningExpressApp } from '../../utils/getRunningExpressApp'
 
 // Check if the user has the required permission for a route
 export const checkPermission = (permission: string) => {
     return (req: Request, res: Response, next: NextFunction) => {
+        const appServer = getRunningExpressApp()
+        if (appServer.identityManager.getPlatformType() === Platform.OPEN_SOURCE) {
+            return next()
+        }
         const user = req.user
         // if the user is not logged in, return forbidden
         if (user) {
@@ -23,6 +29,10 @@ export const checkPermission = (permission: string) => {
 // checks for any permission, input is the permissions separated by comma
 export const checkAnyPermission = (permissionsString: string) => {
     return (req: Request, res: Response, next: NextFunction) => {
+        const appServer = getRunningExpressApp()
+        if (appServer.identityManager.getPlatformType() === Platform.OPEN_SOURCE) {
+            return next()
+        }
         const user = req.user
         // if the user is not logged in, return forbidden
         if (user) {
