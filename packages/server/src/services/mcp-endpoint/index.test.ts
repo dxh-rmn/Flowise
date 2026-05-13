@@ -96,7 +96,7 @@ function makeChatflow(overrides: Record<string, any> = {}) {
         id: 'flow-123',
         name: 'Test Chatflow',
         type: 'CHATFLOW',
-        workspaceId: 'ws-1',
+        userId: 'ws-1',
         mcpServerConfig: undefined as string | undefined,
         ...overrides
     }

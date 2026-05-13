@@ -37,5 +37,5 @@ export class Evaluation implements IEvaluation {
     runDate: Date
 
     @Column({ nullable: false, type: 'text' })
-    workspaceId: string
+    userId: string
 }

@@ -19,18 +19,18 @@ const createEvaluation = async (req: Request, res: Response, next: NextFunction)
                 `Error: evaluationsService.createEvaluation - organization ${orgId} not found!`
             )
         }
-        const workspaceId = req.user?.activeWorkspaceId
-        if (!workspaceId) {
+        const userId = req.user?.activeWorkspaceId
+        if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
-                `Error: evaluationsService.createEvaluation - workspace ${workspaceId} not found!`
+                `Error: evaluationsService.createEvaluation - workspace ${userId} not found!`
             )
         }
         const body = req.body
-        body.workspaceId = workspaceId
+        body.userId = userId
 
         const baseURL = `${process.env.APP_URL}`
-        const apiResponse = await evaluationsService.createEvaluation(body, baseURL, orgId, workspaceId)
+        const apiResponse = await evaluationsService.createEvaluation(body, baseURL, orgId, userId)
         return res.json(apiResponse)
     } catch (error) {
         next(error)
@@ -46,15 +46,12 @@ const runAgain = async (req: Request, res: Response, next: NextFunction) => {
         if (!orgId) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Error: evaluationsService.runAgain - organization ${orgId} not found!`)
         }
-        const workspaceId = req.user?.activeWorkspaceId
-        if (!workspaceId) {
-            throw new InternalFlowiseError(
-                StatusCodes.NOT_FOUND,
-                `Error: evaluationsService.runAgain - workspace ${workspaceId} not found!`
-            )
+        const userId = req.user?.activeWorkspaceId
+        if (!userId) {
+            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Error: evaluationsService.runAgain - workspace ${userId} not found!`)
         }
         const baseURL = `${process.env.APP_URL}`
-        const apiResponse = await evaluationsService.runAgain(req.params.id, baseURL, orgId, workspaceId)
+        const apiResponse = await evaluationsService.runAgain(req.params.id, baseURL, orgId, userId)
         return res.json(apiResponse)
     } catch (error) {
         next(error)
@@ -66,14 +63,14 @@ const getEvaluation = async (req: Request, res: Response, next: NextFunction) =>
         if (typeof req.params === 'undefined' || !req.params.id) {
             throw new InternalFlowiseError(StatusCodes.PRECONDITION_FAILED, `Error: evaluationsService.getEvaluation - id not provided!`)
         }
-        const workspaceId = req.user?.activeWorkspaceId
-        if (!workspaceId) {
+        const userId = req.user?.activeWorkspaceId
+        if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
-                `Error: evaluationsService.getEvaluation - workspace ${workspaceId} not found!`
+                `Error: evaluationsService.getEvaluation - workspace ${userId} not found!`
             )
         }
-        const apiResponse = await evaluationsService.getEvaluation(req.params.id, workspaceId)
+        const apiResponse = await evaluationsService.getEvaluation(req.params.id, userId)
         return res.json(apiResponse)
     } catch (error) {
         next(error)
@@ -85,14 +82,14 @@ const deleteEvaluation = async (req: Request, res: Response, next: NextFunction)
         if (typeof req.params === 'undefined' || !req.params.id) {
             throw new InternalFlowiseError(StatusCodes.PRECONDITION_FAILED, `Error: evaluationsService.deleteEvaluation - id not provided!`)
         }
-        const workspaceId = req.user?.activeWorkspaceId
-        if (!workspaceId) {
+        const userId = req.user?.activeWorkspaceId
+        if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
-                `Error: evaluationsService.deleteEvaluation - workspace ${workspaceId} not found!`
+                `Error: evaluationsService.deleteEvaluation - workspace ${userId} not found!`
             )
         }
-        const apiResponse = await evaluationsService.deleteEvaluation(req.params.id, workspaceId)
+        const apiResponse = await evaluationsService.deleteEvaluation(req.params.id, userId)
         return res.json(apiResponse)
     } catch (error) {
         next(error)
@@ -102,14 +99,14 @@ const deleteEvaluation = async (req: Request, res: Response, next: NextFunction)
 const getAllEvaluations = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { page, limit } = getPageAndLimitParams(req)
-        const workspaceId = req.user?.activeWorkspaceId
-        if (!workspaceId) {
+        const userId = req.user?.activeWorkspaceId
+        if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
-                `Error: evaluationsService.getAllEvaluations - workspace ${workspaceId} not found!`
+                `Error: evaluationsService.getAllEvaluations - workspace ${userId} not found!`
             )
         }
-        const apiResponse = await evaluationsService.getAllEvaluations(workspaceId, page, limit)
+        const apiResponse = await evaluationsService.getAllEvaluations(userId, page, limit)
         return res.json(apiResponse)
     } catch (error) {
         next(error)
@@ -121,14 +118,11 @@ const isOutdated = async (req: Request, res: Response, next: NextFunction) => {
         if (typeof req.params === 'undefined' || !req.params.id) {
             throw new InternalFlowiseError(StatusCodes.PRECONDITION_FAILED, `Error: evaluationsService.isOutdated - id not provided!`)
         }
-        const workspaceId = req.user?.activeWorkspaceId
-        if (!workspaceId) {
-            throw new InternalFlowiseError(
-                StatusCodes.NOT_FOUND,
-                `Error: evaluationsService.isOutdated - workspace ${workspaceId} not found!`
-            )
+        const userId = req.user?.activeWorkspaceId
+        if (!userId) {
+            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Error: evaluationsService.isOutdated - workspace ${userId} not found!`)
         }
-        const apiResponse = await evaluationsService.isOutdated(req.params.id, workspaceId)
+        const apiResponse = await evaluationsService.isOutdated(req.params.id, userId)
         return res.json(apiResponse)
     } catch (error) {
         next(error)
@@ -140,14 +134,11 @@ const getVersions = async (req: Request, res: Response, next: NextFunction) => {
         if (typeof req.params === 'undefined' || !req.params.id) {
             throw new InternalFlowiseError(StatusCodes.PRECONDITION_FAILED, `Error: evaluationsService.getVersions - id not provided!`)
         }
-        const workspaceId = req.user?.activeWorkspaceId
-        if (!workspaceId) {
-            throw new InternalFlowiseError(
-                StatusCodes.NOT_FOUND,
-                `Error: evaluationsService.getVersions - workspace ${workspaceId} not found!`
-            )
+        const userId = req.user?.activeWorkspaceId
+        if (!userId) {
+            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Error: evaluationsService.getVersions - workspace ${userId} not found!`)
         }
-        const apiResponse = await evaluationsService.getVersions(req.params.id, workspaceId)
+        const apiResponse = await evaluationsService.getVersions(req.params.id, userId)
         return res.json(apiResponse)
     } catch (error) {
         next(error)
@@ -158,14 +149,14 @@ const patchDeleteEvaluations = async (req: Request, res: Response, next: NextFun
     try {
         const ids = req.body.ids ?? []
         const isDeleteAllVersion = req.body.isDeleteAllVersion ?? false
-        const workspaceId = req.user?.activeWorkspaceId
-        if (!workspaceId) {
+        const userId = req.user?.activeWorkspaceId
+        if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
-                `Error: evaluationsService.patchDeleteEvaluations - workspace ${workspaceId} not found!`
+                `Error: evaluationsService.patchDeleteEvaluations - workspace ${userId} not found!`
             )
         }
-        const apiResponse = await evaluationsService.patchDeleteEvaluations(ids, workspaceId, isDeleteAllVersion)
+        const apiResponse = await evaluationsService.patchDeleteEvaluations(ids, userId, isDeleteAllVersion)
         return res.json(apiResponse)
     } catch (error) {
         next(error)

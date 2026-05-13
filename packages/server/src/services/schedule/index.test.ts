@@ -82,7 +82,7 @@ const makeRecord = (overrides: Record<string, unknown> = {}) => ({
     cronExpression: '* * * * *',
     timezone: 'UTC',
     enabled: true,
-    workspaceId: 'ws-1',
+    userId: 'ws-1',
     scheduleInputMode: 'text' as const,
     defaultInput: 'hello',
     nodeId: undefined,
@@ -124,7 +124,7 @@ describe('createOrUpdateSchedule', () => {
         targetId: 'flow-1',
         cronExpression: '0 9 * * 1-5',
         timezone: 'UTC',
-        workspaceId: 'ws-1',
+        userId: 'ws-1',
         scheduleInputMode: 'text' as const,
         defaultInput: 'Run daily job'
     }
@@ -138,14 +138,14 @@ describe('createOrUpdateSchedule', () => {
         const result = await scheduleService.createOrUpdateSchedule(baseInput)
 
         expect(mockRepo.findOne).toHaveBeenCalledWith({
-            where: { targetId: 'flow-1', triggerType: ScheduleTriggerType.AGENTFLOW, workspaceId: 'ws-1' }
+            where: { targetId: 'flow-1', triggerType: ScheduleTriggerType.AGENTFLOW, userId: 'ws-1' }
         })
         expect(mockRepo.create).toHaveBeenCalledWith(
             expect.objectContaining({
                 cronExpression: '0 9 * * 1-5',
                 timezone: 'UTC',
                 targetId: 'flow-1',
-                workspaceId: 'ws-1',
+                userId: 'ws-1',
                 enabled: true // valid cron → default enabled
             })
         )
@@ -457,7 +457,7 @@ describe('createTriggerLog', () => {
         targetId: 'flow-1',
         status: ScheduleTriggerStatus.RUNNING,
         scheduledAt: new Date('2025-01-01T09:00:00Z'),
-        workspaceId: 'ws-1'
+        userId: 'ws-1'
     }
 
     it('creates and saves a log entry with a generated id', async () => {
@@ -528,7 +528,7 @@ describe('getTriggerLogs', () => {
         targetId: 'flow-1',
         status: ScheduleTriggerStatus.SUCCEEDED,
         scheduledAt: new Date(),
-        workspaceId: 'ws-1',
+        userId: 'ws-1',
         elapsedTimeMs: 1234,
         ...overrides
     })
@@ -545,14 +545,14 @@ describe('getTriggerLogs', () => {
         expect(result.limit).toBe(20)
     })
 
-    it('scopes by targetId + workspaceId and orders by scheduledAt DESC', async () => {
+    it('scopes by targetId + userId and orders by scheduledAt DESC', async () => {
         ;(mockRepo.findAndCount as jest.Mock).mockResolvedValue([[], 0])
 
         await scheduleService.getTriggerLogs('flow-1', 'ws-1')
 
         expect(mockRepo.findAndCount).toHaveBeenCalledWith(
             expect.objectContaining({
-                where: expect.objectContaining({ targetId: 'flow-1', workspaceId: 'ws-1' }),
+                where: expect.objectContaining({ targetId: 'flow-1', userId: 'ws-1' }),
                 order: { scheduledAt: 'DESC' }
             })
         )
@@ -640,7 +640,7 @@ describe('deleteTriggerLogs', () => {
     const makeLog = (id: string, executionId?: string) => ({
         id,
         targetId: 'flow-1',
-        workspaceId: 'ws-1',
+        userId: 'ws-1',
         scheduleRecordId: 'rec-1',
         triggerType: ScheduleTriggerType.AGENTFLOW,
         status: ScheduleTriggerStatus.SUCCEEDED,
@@ -665,13 +665,13 @@ describe('deleteTriggerLogs', () => {
         expect(mockDeleteExecutions).not.toHaveBeenCalled()
     })
 
-    it('scopes the find query by id + targetId + workspaceId', async () => {
+    it('scopes the find query by id + targetId + userId', async () => {
         ;(mockRepo.find as jest.Mock).mockResolvedValue([])
         await scheduleService.deleteTriggerLogs('flow-1', 'ws-1', ['log-1', 'log-2'])
 
         expect(mockRepo.find).toHaveBeenCalledWith(
             expect.objectContaining({
-                where: expect.objectContaining({ targetId: 'flow-1', workspaceId: 'ws-1' })
+                where: expect.objectContaining({ targetId: 'flow-1', userId: 'ws-1' })
             })
         )
     })

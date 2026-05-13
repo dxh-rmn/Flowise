@@ -125,7 +125,7 @@ export class StripeManager {
             throw new Error('Customer ID is required')
         }
 
-        const subscriptionId = req.user?.activeOrganizationSubscriptionId
+        const subscriptionId = undefined
         if (!subscriptionId) {
             throw new Error('Subscription ID is required')
         }

@@ -57,11 +57,11 @@ export const utilGetChatMessage = async ({
 
     const appServer = getRunningExpressApp()
 
-    // Check if chatflow workspaceId is same as activeWorkspaceId
+    // Check if chatflow userId is same as activeWorkspaceId
     if (activeWorkspaceId) {
         const chatflow = await appServer.AppDataSource.getRepository(ChatFlow).findOneBy({
             id: chatflowid,
-            workspaceId: activeWorkspaceId
+            userId: activeWorkspaceId
         })
         if (!chatflow) {
             throw new Error('Unauthorized access')

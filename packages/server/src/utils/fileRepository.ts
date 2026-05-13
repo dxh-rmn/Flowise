@@ -52,7 +52,7 @@ export const updateFlowDataWithFilePaths = async (
     chatflowid: string,
     flowData: string,
     orgId: string,
-    workspaceId: string,
+    userId: string,
     subscriptionId: string,
     usageCacheManager: UsageCacheManager
 ) => {
@@ -88,7 +88,7 @@ export const updateFlowDataWithFilePaths = async (
                                     await checkStorage(orgId, subscriptionId, usageCacheManager)
                                     const { path, totalSize } = await addBase64FilesToStorage(file, chatflowid, fileNames, orgId)
                                     node.data.inputs[key] = path
-                                    await updateStorageUsage(orgId, workspaceId, totalSize, usageCacheManager)
+                                    await updateStorageUsage(orgId, userId, totalSize, usageCacheManager)
                                 }
                             }
                         } catch (e) {
@@ -98,7 +98,7 @@ export const updateFlowDataWithFilePaths = async (
                         await checkStorage(orgId, subscriptionId, usageCacheManager)
                         const { path, totalSize } = await addBase64FilesToStorage(input, chatflowid, fileNames, orgId)
                         node.data.inputs[key] = path
-                        await updateStorageUsage(orgId, workspaceId, totalSize, usageCacheManager)
+                        await updateStorageUsage(orgId, userId, totalSize, usageCacheManager)
                     }
                 }
             }

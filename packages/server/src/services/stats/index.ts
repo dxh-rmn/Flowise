@@ -28,7 +28,7 @@ const getChatflowStats = async (
 
         const chatflow = await appServer.AppDataSource.getRepository(ChatFlow).findOneBy({
             id: chatflowid,
-            workspaceId: activeWorkspaceId
+            userId: activeWorkspaceId
         })
         if (!chatflow)
             throw new InternalFlowiseError(

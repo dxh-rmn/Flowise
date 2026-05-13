@@ -26,7 +26,6 @@ import { InternalFlowiseError } from '../errors/internalFlowiseError'
 import { getErrorMessage } from '../errors/utils'
 import logger from './logger'
 import { Variable } from '../database/entities/Variable'
-import { getWorkspaceSearchOptions } from '../enterprise/utils/ControllerServiceUtils'
 import { DataSource } from 'typeorm'
 import { CachePool } from '../CachePool'
 
@@ -53,7 +52,7 @@ export const buildAgentGraph = async ({
     baseURL,
     signal,
     orgId,
-    workspaceId
+    userId
 }: {
     agentflow: IChatFlow
     flowConfig: IFlowConfig
@@ -74,7 +73,7 @@ export const buildAgentGraph = async ({
     baseURL: string
     signal?: AbortController
     orgId: string
-    workspaceId?: string
+    userId?: string
 }): Promise<any> => {
     try {
         const chatflowid = flowConfig.chatflowid
@@ -85,7 +84,7 @@ export const buildAgentGraph = async ({
 
         const options = {
             orgId,
-            workspaceId,
+            userId,
             chatId,
             sessionId,
             chatflowid,
@@ -465,7 +464,7 @@ const compileMultiAgentsGraph = async (params: MultiAgentsGraphParams) => {
     const workerNodes = reactFlowNodes.filter((node) => workerNodeIds.includes(node.data.id))
 
     /*** Get API Config ***/
-    const availableVariables = await appDataSource.getRepository(Variable).findBy(getWorkspaceSearchOptions(agentflow.workspaceId))
+    const availableVariables = await appDataSource.getRepository(Variable).findBy({})
     const { nodeOverrides, variableOverrides, apiOverrideStatus } = getAPIOverrideConfig(agentflow)
 
     let supervisorWorkers: { [key: string]: IMultiAgentNode[] } = {}
@@ -694,7 +693,7 @@ const compileSeqAgentsGraph = async (params: SeqAgentsGraphParams) => {
     let interruptToolNodeNames = []
 
     /*** Get API Config ***/
-    const availableVariables = await appDataSource.getRepository(Variable).findBy(getWorkspaceSearchOptions(agentflow.workspaceId))
+    const availableVariables = await appDataSource.getRepository(Variable).findBy({})
     const { nodeOverrides, variableOverrides, apiOverrideStatus } = getAPIOverrideConfig(agentflow)
 
     const initiateNode = async (node: IReactFlowNode) => {

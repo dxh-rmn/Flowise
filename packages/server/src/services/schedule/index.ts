@@ -43,7 +43,7 @@ export interface CreateScheduleInput {
     defaultInput?: string
     defaultForm?: string
     endDate?: Date
-    workspaceId: string
+    userId: string
 }
 
 export interface UpdateScheduleInput {
@@ -82,7 +82,7 @@ const createOrUpdateSchedule = async (input: CreateScheduleInput): Promise<Sched
             where: {
                 targetId: input.targetId,
                 triggerType: input.triggerType,
-                workspaceId: input.workspaceId
+                userId: input.userId
             }
         })
 
@@ -120,7 +120,7 @@ const createOrUpdateSchedule = async (input: CreateScheduleInput): Promise<Sched
             defaultForm: input.defaultForm,
             endDate: input.endDate,
             nextRunAt: computeNextRunAt(cronExpression, timezone) ?? undefined,
-            workspaceId: input.workspaceId
+            userId: input.userId
         })
 
         const saved = await repo.save(record)
@@ -142,12 +142,12 @@ const createOrUpdateSchedule = async (input: CreateScheduleInput): Promise<Sched
 const deleteScheduleForTarget = async (
     targetId: string,
     triggerType: ScheduleTriggerType,
-    workspaceId: string
+    userId: string
 ): Promise<ScheduleRecord | void> => {
     try {
         const appServer = getRunningExpressApp()
         const repo = appServer.AppDataSource.getRepository(ScheduleRecord)
-        const record = await repo.findOne({ where: { targetId, triggerType, workspaceId } })
+        const record = await repo.findOne({ where: { targetId, triggerType, userId } })
         if (!record) return
         await repo.delete(record.id)
         logger.debug(`[ScheduleService]: Deleted schedule for ${triggerType}:${targetId}`)
@@ -202,16 +202,16 @@ const updateScheduleAfterRun = async (
  */
 const getScheduleStatus = async (
     targetId: string,
-    workspaceId: string
+    userId: string
 ): Promise<{ record: ScheduleRecord | null; canEnable: boolean; reason?: string }> => {
     try {
         const appServer = getRunningExpressApp()
         const record = await appServer.AppDataSource.getRepository(ScheduleRecord).findOne({
-            where: { targetId, triggerType: ScheduleTriggerType.AGENTFLOW, workspaceId }
+            where: { targetId, triggerType: ScheduleTriggerType.AGENTFLOW, userId }
         })
 
         const chatflow = await appServer.AppDataSource.getRepository(ChatFlow).findOne({
-            where: { id: targetId, workspaceId }
+            where: { id: targetId, userId }
         })
         if (!chatflow?.flowData) {
             return { record, canEnable: false, reason: 'Flow not found or has no data' }
@@ -274,19 +274,19 @@ const getScheduleStatus = async (
  * When enabling, validates the schedule config first.
  * Caller is responsible for notifying ScheduleBeat after this returns.
  */
-const toggleScheduleEnabled = async (targetId: string, workspaceId: string, enabled: boolean): Promise<ScheduleRecord> => {
+const toggleScheduleEnabled = async (targetId: string, userId: string, enabled: boolean): Promise<ScheduleRecord> => {
     try {
         const appServer = getRunningExpressApp()
         const repo = appServer.AppDataSource.getRepository(ScheduleRecord)
         const record = await repo.findOne({
-            where: { targetId, triggerType: ScheduleTriggerType.AGENTFLOW, workspaceId }
+            where: { targetId, triggerType: ScheduleTriggerType.AGENTFLOW, userId }
         })
         if (!record) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, 'No schedule record found for this flow')
         }
 
         if (enabled) {
-            const status = await getScheduleStatus(targetId, workspaceId)
+            const status = await getScheduleStatus(targetId, userId)
             if (!status.canEnable) {
                 throw new InternalFlowiseError(StatusCodes.BAD_REQUEST, status.reason || 'Cannot enable schedule: invalid configuration')
             }
@@ -314,7 +314,7 @@ const createTriggerLog = async (data: {
     targetId: string
     status: ScheduleTriggerStatus
     scheduledAt: Date
-    workspaceId: string
+    userId: string
     executionId?: string
     error?: string
     elapsedTimeMs?: number
@@ -361,7 +361,7 @@ export interface GetTriggerLogsFilter {
  */
 const getTriggerLogs = async (
     targetId: string,
-    workspaceId: string,
+    userId: string,
     filter: GetTriggerLogsFilter = {}
 ): Promise<{ data: ScheduleTriggerLog[]; total: number; page: number; limit: number }> => {
     try {
@@ -371,7 +371,7 @@ const getTriggerLogs = async (
         const page = Math.max(1, Math.floor(filter.page ?? 1))
         const limit = Math.max(1, Math.min(100, Math.floor(filter.limit ?? 20)))
 
-        const where: Record<string, unknown> = { targetId, workspaceId }
+        const where: Record<string, unknown> = { targetId, userId }
         if (filter.status) {
             where.status = Array.isArray(filter.status) && filter.status.length === 1 ? filter.status[0] : filter.status
         }
@@ -401,7 +401,7 @@ const getTriggerLogs = async (
  */
 const deleteTriggerLogs = async (
     targetId: string,
-    workspaceId: string,
+    userId: string,
     logIds: string[]
 ): Promise<{ success: boolean; deletedLogs: number; deletedExecutions: number }> => {
     try {
@@ -413,7 +413,7 @@ const deleteTriggerLogs = async (
         const repo = appServer.AppDataSource.getRepository(ScheduleTriggerLog)
 
         // Load first so we can extract executionIds before delete (and respect target/workspace scope).
-        const logs = await repo.find({ where: { id: In(logIds), targetId, workspaceId } })
+        const logs = await repo.find({ where: { id: In(logIds), targetId, userId } })
         if (logs.length === 0) {
             return { success: true, deletedLogs: 0, deletedExecutions: 0 }
         }
@@ -425,7 +425,7 @@ const deleteTriggerLogs = async (
 
         let deletedExecutions = 0
         if (executionIds.length > 0) {
-            const execResult = await executionsService.deleteExecutions(executionIds, workspaceId)
+            const execResult = await executionsService.deleteExecutions(executionIds, userId)
             deletedExecutions = execResult.deletedCount ?? 0
         }
 

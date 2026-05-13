@@ -15,7 +15,7 @@ export const runAdditionalEvaluators = async (
     actualOutputArray: string[],
     errorArray: string[],
     selectedEvaluators: string[],
-    workspaceId: string
+    userId: string
 ) => {
     // Validate that inputs are arrays
     if (!Array.isArray(actualOutputArray) || !Array.isArray(selectedEvaluators)) {
@@ -33,7 +33,7 @@ export const runAdditionalEvaluators = async (
             const evaluatorId = selectedEvaluators[i]
             let evaluator = evaluatorDict[evaluatorId]
             if (!evaluator) {
-                evaluator = await evaluatorsService.getEvaluator(evaluatorId, workspaceId)
+                evaluator = await evaluatorsService.getEvaluator(evaluatorId, userId)
                 evaluatorDict[evaluatorId] = evaluator
             }
 

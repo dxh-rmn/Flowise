@@ -16,17 +16,17 @@ const TTS_GENERATE_PATH = '/api/v1/text-to-speech/generate'
  * Validates if the origin is allowed for a specific chatflow
  * @param chatflowId - The chatflow ID to validate against
  * @param origin - The origin URL to validate
- * @param workspaceId - Optional workspace ID for enterprise features
+ * @param userId - Optional workspace ID for enterprise features
  * @returns Promise<boolean> - True if domain is allowed, false otherwise
  */
-async function validateChatflowDomain(chatflowId: string, origin: string, workspaceId?: string): Promise<boolean> {
+async function validateChatflowDomain(chatflowId: string, origin: string, userId?: string): Promise<boolean> {
     try {
         if (!chatflowId || !isValidUUID(chatflowId)) {
             throw new Error('Invalid chatflowId format - must be a valid UUID')
         }
 
-        const chatflow = workspaceId
-            ? await chatflowsService.getChatflowById(chatflowId, workspaceId)
+        const chatflow = userId
+            ? await chatflowsService.getChatflowById(chatflowId, userId)
             : await chatflowsService.getChatflowById(chatflowId)
 
         if (!chatflow?.chatbotConfig) {
@@ -121,13 +121,13 @@ function isTTSGenerateRequest(url: string): boolean {
 /**
  * Get the custom error message for unauthorized origin
  * @param chatflowId - The chatflow ID
- * @param workspaceId - Optional workspace ID
+ * @param userId - Optional workspace ID
  * @returns Promise<string> - Custom error message or default
  */
-async function getUnauthorizedOriginError(chatflowId: string, workspaceId?: string): Promise<string> {
+async function getUnauthorizedOriginError(chatflowId: string, userId?: string): Promise<string> {
     try {
-        const chatflow = workspaceId
-            ? await chatflowsService.getChatflowById(chatflowId, workspaceId)
+        const chatflow = userId
+            ? await chatflowsService.getChatflowById(chatflowId, userId)
             : await chatflowsService.getChatflowById(chatflowId)
 
         if (chatflow?.chatbotConfig) {

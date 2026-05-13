@@ -7,8 +7,6 @@ import { DeleteResult, In, QueryRunner } from 'typeorm'
 import { Assistant } from '../../database/entities/Assistant'
 import { Credential } from '../../database/entities/Credential'
 import { DocumentStore } from '../../database/entities/DocumentStore'
-import { Workspace } from '../../enterprise/database/entities/workspace.entity'
-import { getWorkspaceSearchOptions } from '../../enterprise/utils/ControllerServiceUtils'
 import { InternalFlowiseError } from '../../errors/internalFlowiseError'
 import { getErrorMessage } from '../../errors/utils'
 import { AssistantType } from '../../Interface'
@@ -21,7 +19,7 @@ import { ASSISTANT_PROMPT_GENERATOR } from '../../utils/prompt'
 import { checkUsageLimit } from '../../utils/quotaUsage'
 import nodesService from '../nodes'
 
-const createAssistant = async (requestBody: any, orgId: string, workspaceId: string): Promise<Assistant> => {
+const createAssistant = async (requestBody: any, orgId: string, userId: string): Promise<Assistant> => {
     try {
         const appServer = getRunningExpressApp()
         if (!requestBody.details) {
@@ -34,7 +32,7 @@ const createAssistant = async (requestBody: any, orgId: string, workspaceId: str
             // internal identifier, not a reference to the Credential entity, so no lookup is needed.
             const newAssistant = new Assistant()
             Object.assign(newAssistant, stripProtectedFields(requestBody))
-            newAssistant.workspaceId = workspaceId
+            newAssistant.userId = userId
 
             const assistant = appServer.AppDataSource.getRepository(Assistant).create(newAssistant)
             const dbResponse = await appServer.AppDataSource.getRepository(Assistant).save(assistant)
@@ -56,7 +54,7 @@ const createAssistant = async (requestBody: any, orgId: string, workspaceId: str
         try {
             const credential = await appServer.AppDataSource.getRepository(Credential).findOneBy({
                 id: requestBody.credential,
-                workspaceId: workspaceId
+                userId: userId
             })
 
             if (!credential) {
@@ -141,7 +139,7 @@ const createAssistant = async (requestBody: any, orgId: string, workspaceId: str
         }
         const newAssistant = new Assistant()
         Object.assign(newAssistant, stripProtectedFields(requestBody))
-        newAssistant.workspaceId = workspaceId
+        newAssistant.userId = userId
 
         const assistant = appServer.AppDataSource.getRepository(Assistant).create(newAssistant)
         const dbResponse = await appServer.AppDataSource.getRepository(Assistant).save(assistant)
@@ -166,12 +164,12 @@ const createAssistant = async (requestBody: any, orgId: string, workspaceId: str
     }
 }
 
-const deleteAssistant = async (assistantId: string, isDeleteBoth: any, workspaceId: string): Promise<DeleteResult> => {
+const deleteAssistant = async (assistantId: string, isDeleteBoth: any, userId: string): Promise<DeleteResult> => {
     try {
         const appServer = getRunningExpressApp()
         const assistant = await appServer.AppDataSource.getRepository(Assistant).findOneBy({
             id: assistantId,
-            workspaceId: workspaceId
+            userId: userId
         })
         if (!assistant) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Assistant ${assistantId} not found`)
@@ -216,11 +214,8 @@ async function getAssistantsCountByOrganization(type: AssistantType, organizatio
     try {
         const appServer = getRunningExpressApp()
 
-        const workspaces = await appServer.AppDataSource.getRepository(Workspace).findBy({ organizationId })
-        const workspaceIds = workspaces.map((workspace) => workspace.id)
         const assistantsCount = await appServer.AppDataSource.getRepository(Assistant).countBy({
-            type,
-            workspaceId: In(workspaceIds)
+            type
         })
 
         return assistantsCount
@@ -232,17 +227,17 @@ async function getAssistantsCountByOrganization(type: AssistantType, organizatio
     }
 }
 
-const getAllAssistants = async (workspaceId: string, type?: AssistantType): Promise<Assistant[]> => {
+const getAllAssistants = async (userId: string, type?: AssistantType): Promise<Assistant[]> => {
     try {
         const appServer = getRunningExpressApp()
         if (type) {
             const dbResponse = await appServer.AppDataSource.getRepository(Assistant).findBy({
                 type,
-                ...getWorkspaceSearchOptions(workspaceId)
+                ...{}
             })
             return dbResponse
         }
-        const dbResponse = await appServer.AppDataSource.getRepository(Assistant).findBy(getWorkspaceSearchOptions(workspaceId))
+        const dbResponse = await appServer.AppDataSource.getRepository(Assistant).findBy({})
         return dbResponse
     } catch (error) {
         throw new InternalFlowiseError(
@@ -252,17 +247,17 @@ const getAllAssistants = async (workspaceId: string, type?: AssistantType): Prom
     }
 }
 
-const getAllAssistantsCount = async (workspaceId: string, type?: AssistantType): Promise<number> => {
+const getAllAssistantsCount = async (userId: string, type?: AssistantType): Promise<number> => {
     try {
         const appServer = getRunningExpressApp()
         if (type) {
             const dbResponse = await appServer.AppDataSource.getRepository(Assistant).countBy({
                 type,
-                ...getWorkspaceSearchOptions(workspaceId)
+                ...{}
             })
             return dbResponse
         }
-        const dbResponse = await appServer.AppDataSource.getRepository(Assistant).countBy(getWorkspaceSearchOptions(workspaceId))
+        const dbResponse = await appServer.AppDataSource.getRepository(Assistant).countBy({})
         return dbResponse
     } catch (error) {
         throw new InternalFlowiseError(
@@ -272,12 +267,12 @@ const getAllAssistantsCount = async (workspaceId: string, type?: AssistantType):
     }
 }
 
-const getAssistantById = async (assistantId: string, workspaceId: string): Promise<Assistant> => {
+const getAssistantById = async (assistantId: string, userId: string): Promise<Assistant> => {
     try {
         const appServer = getRunningExpressApp()
         const dbResponse = await appServer.AppDataSource.getRepository(Assistant).findOneBy({
             id: assistantId,
-            workspaceId: workspaceId
+            userId: userId
         })
         if (!dbResponse) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Assistant ${assistantId} not found`)
@@ -291,12 +286,12 @@ const getAssistantById = async (assistantId: string, workspaceId: string): Promi
     }
 }
 
-const updateAssistant = async (assistantId: string, requestBody: any, workspaceId: string): Promise<Assistant> => {
+const updateAssistant = async (assistantId: string, requestBody: any, userId: string): Promise<Assistant> => {
     try {
         const appServer = getRunningExpressApp()
         const assistant = await appServer.AppDataSource.getRepository(Assistant).findOneBy({
             id: assistantId,
-            workspaceId: workspaceId
+            userId: userId
         })
 
         if (!assistant) {
@@ -331,7 +326,7 @@ const updateAssistant = async (assistantId: string, requestBody: any, workspaceI
             const assistantDetails = JSON.parse(body.details)
             const credential = await appServer.AppDataSource.getRepository(Credential).findOneBy({
                 id: body.credential,
-                workspaceId: workspaceId
+                userId: userId
             })
 
             if (!credential) {
@@ -487,7 +482,7 @@ const getChatModels = async (): Promise<any> => {
 const getDocumentStores = async (activeWorkspaceId: string): Promise<any> => {
     try {
         const appServer = getRunningExpressApp()
-        const stores = await appServer.AppDataSource.getRepository(DocumentStore).findBy(getWorkspaceSearchOptions(activeWorkspaceId))
+        const stores = await appServer.AppDataSource.getRepository(DocumentStore).findBy({})
         const returnData = []
         for (const store of stores) {
             if (store.status === 'UPSERTED') {

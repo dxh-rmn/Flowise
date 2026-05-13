@@ -88,12 +88,12 @@ describe('statsService.getChatflowStats', () => {
             expect(mockMessageRepo.createQueryBuilder).not.toHaveBeenCalled()
         })
 
-        it('looks up chatflow with the correct workspaceId', async () => {
+        it('looks up chatflow with the correct userId', async () => {
             await statsService.getChatflowStats(CHATFLOW_ID, WORKSPACE_ID, undefined, undefined, undefined, undefined)
 
             expect(mockChatFlowRepo.findOneBy).toHaveBeenCalledWith({
                 id: CHATFLOW_ID,
-                workspaceId: WORKSPACE_ID
+                userId: WORKSPACE_ID
             })
         })
     })

@@ -17,7 +17,7 @@ export class AddScheduleEntities1772000000000 implements MigrationInterface {
                 \`lastRunAt\` datetime(6),
                 \`nextRunAt\` datetime(6),
                 \`endDate\` datetime(6),
-                \`workspaceId\` varchar(255) NOT NULL,
+                \`userId\` varchar(255) NOT NULL,
                 \`createdDate\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
                 \`updatedDate\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
                 PRIMARY KEY (\`id\`)
@@ -37,7 +37,7 @@ export class AddScheduleEntities1772000000000 implements MigrationInterface {
                 \`error\` text,
                 \`elapsedTimeMs\` int,
                 \`scheduledAt\` datetime(6) NOT NULL,
-                \`workspaceId\` varchar(255) NOT NULL,
+                \`userId\` varchar(255) NOT NULL,
                 \`createdDate\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
                 PRIMARY KEY (\`id\`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;

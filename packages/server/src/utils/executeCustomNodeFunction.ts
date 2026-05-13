@@ -10,13 +10,13 @@ export const executeCustomNodeFunction = async ({
     appDataSource,
     componentNodes,
     data,
-    workspaceId,
+    userId,
     orgId
 }: {
     appDataSource: DataSource
     componentNodes: IComponentNodes
     data: any
-    workspaceId?: string
+    userId?: string
     orgId?: string
 }) => {
     try {
@@ -42,7 +42,7 @@ export const executeCustomNodeFunction = async ({
                 const options: ICommonObject = {
                     appDataSource,
                     databaseEntities,
-                    workspaceId,
+                    userId,
                     orgId
                 }
 

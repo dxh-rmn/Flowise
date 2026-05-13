@@ -61,8 +61,6 @@ import express, { NextFunction, Request, Response } from 'express'
 import { secureAxiosRequest } from 'flowise-components'
 import { StatusCodes } from 'http-status-codes'
 import { Credential } from '../../database/entities/Credential'
-import { WorkspaceShared } from '../../enterprise/database/entities/EnterpriseEntities'
-import { getActiveWorkspaceIdForRequest } from '../../enterprise/utils/tenantRequestGuards'
 import { InternalFlowiseError } from '../../errors/internalFlowiseError'
 import { decryptCredentialData, encryptCredentialData } from '../../utils'
 import { getRunningExpressApp } from '../../utils/getRunningExpressApp'
@@ -75,22 +73,18 @@ const router = express.Router()
 router.post('/authorize/:credentialId', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { credentialId } = req.params
-        const workspaceId = getActiveWorkspaceIdForRequest(req)
+        const userId = req.user?.id
 
         const appServer = getRunningExpressApp()
         const credentialRepository = appServer.AppDataSource.getRepository(Credential)
 
         let credential = await credentialRepository.findOneBy({
             id: credentialId,
-            workspaceId
+            userId
         })
 
         if (!credential) {
-            const share = await appServer.AppDataSource.getRepository(WorkspaceShared).findOneBy({
-                workspaceId,
-                sharedItemId: credentialId,
-                itemType: 'credential'
-            })
+            const share = 0
             if (share) {
                 credential = await credentialRepository.findOneBy({ id: credentialId })
             }

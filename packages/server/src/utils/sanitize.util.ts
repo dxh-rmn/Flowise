@@ -1,4 +1,3 @@
-import { User } from '../enterprise/database/entities/user.entity'
 import { isIPv4, isIPv6, isValidIPAddress } from './ipValidation'
 
 export function sanitizeNullBytes(obj: any): any {
@@ -34,7 +33,7 @@ export function sanitizeNullBytes(obj: any): any {
     return obj
 }
 
-export function sanitizeUser(user: Partial<User>) {
+export function sanitizeany(user: Partial<any>) {
     delete user.credential
     delete user.tempToken
     delete user.tokenExpiry

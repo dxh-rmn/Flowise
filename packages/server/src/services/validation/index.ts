@@ -312,13 +312,13 @@ export const validateFlowData = (
     return validationResults
 }
 
-const checkFlowValidation = async (flowId: string, workspaceId?: string): Promise<IValidationResult[]> => {
+const checkFlowValidation = async (flowId: string, userId?: string): Promise<IValidationResult[]> => {
     try {
         const appServer = getRunningExpressApp()
 
         // Create query conditions with workspace filtering if provided
         const whereCondition: any = { id: flowId }
-        if (workspaceId) whereCondition.workspaceId = workspaceId
+        if (userId) whereCondition.userId = userId
 
         const flow = await appServer.AppDataSource.getRepository(ChatFlow).findOne({
             where: whereCondition

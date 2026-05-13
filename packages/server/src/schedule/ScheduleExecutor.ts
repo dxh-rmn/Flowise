@@ -12,8 +12,6 @@ import { IServerSideEventStreamer } from 'flowise-components'
 import { ScheduleRecord, ScheduleTriggerType } from '../database/entities/ScheduleRecord'
 import { ScheduleTriggerStatus } from '../database/entities/ScheduleTriggerLog'
 import { ChatFlow } from '../database/entities/ChatFlow'
-import { Workspace } from '../enterprise/database/entities/workspace.entity'
-import { Organization } from '../enterprise/database/entities/organization.entity'
 import { executeAgentFlow } from '../utils/buildAgentflow'
 import { checkPredictions, updatePredictionsUsage } from '../utils/quotaUsage'
 import scheduleService from '../services/schedule'
@@ -95,7 +93,7 @@ export async function executeScheduleJob(
             targetId: scheduleRecord.targetId,
             status: ScheduleTriggerStatus.SKIPPED,
             scheduledAt,
-            workspaceId: scheduleRecord.workspaceId
+            userId: scheduleRecord.userId
         })
         return undefined
     }
@@ -115,7 +113,7 @@ export async function executeScheduleJob(
             targetId: scheduleRecord.targetId,
             status: ScheduleTriggerStatus.SKIPPED,
             scheduledAt,
-            workspaceId: scheduleRecord.workspaceId
+            userId: scheduleRecord.userId
         })
         return undefined
     }
@@ -133,7 +131,7 @@ export async function executeScheduleJob(
             targetId: scheduleRecord.targetId,
             status: ScheduleTriggerStatus.SKIPPED,
             scheduledAt,
-            workspaceId: scheduleRecord.workspaceId
+            userId: scheduleRecord.userId
         })
         return undefined
     }
@@ -155,7 +153,7 @@ async function _executeAgentflow(ctx: ScheduleExecutionContext, record: Schedule
         targetId: record.targetId,
         status: ScheduleTriggerStatus.RUNNING,
         scheduledAt,
-        workspaceId: record.workspaceId
+        userId: record.userId
     })
 
     try {
@@ -164,16 +162,16 @@ async function _executeAgentflow(ctx: ScheduleExecutionContext, record: Schedule
         const isAgentFlow = chatflow.type === 'AGENTFLOW'
         if (!isAgentFlow) throw new Error(`ChatFlow ${record.targetId} is not of type AGENTFLOW`)
 
-        const workspaceId = chatflow.workspaceId ?? record.workspaceId
+        const userId = chatflow.userId ?? record.userId
 
-        const workspace = await appDataSource.getRepository(Workspace).findOneBy({ id: workspaceId })
-        if (!workspace) throw new Error(`Workspace ${workspaceId} not found`)
-        const org = await appDataSource.getRepository(Organization).findOneBy({ id: workspace.organizationId })
+        const workspace: any = {}
+        if (!workspace) throw new Error(`Workspace ${userId} not found`)
+        const org: any = {}
         if (!org) throw new Error(`Organization ${workspace.organizationId} not found`)
 
         const orgId = org.id
         const subscriptionId = org.subscriptionId as string
-        const productId = await identityManager.getProductIdFromSubscription(subscriptionId)
+        const productId = ''
 
         await checkPredictions(org.id, subscriptionId, usageCacheManager)
 
@@ -207,7 +205,7 @@ async function _executeAgentflow(ctx: ScheduleExecutionContext, record: Schedule
             isInternal: true,
             chatType: ChatType.SCHEDULED,
             orgId,
-            workspaceId,
+            userId,
             subscriptionId,
             productId
         })
@@ -222,7 +220,7 @@ async function _executeAgentflow(ctx: ScheduleExecutionContext, record: Schedule
             executionId
         })
 
-        await updatePredictionsUsage(orgId, subscriptionId, workspaceId, usageCacheManager)
+        await updatePredictionsUsage(orgId, subscriptionId, userId, usageCacheManager)
         await scheduleService.updateScheduleAfterRun(appDataSource, record.id, record.cronExpression, record.timezone ?? 'UTC')
         logger.debug(`[ScheduleExecutor]: Completed schedule ${record.id} (${elapsedTimeMs}ms)`)
         return result

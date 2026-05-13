@@ -7,7 +7,7 @@ export const PROTECTED_FIELDS = [
     'createdDate',
     'updatedDate',
     'runDate',
-    'workspaceId',
+    'userId',
     'organizationId',
     'webhookSecret',
     'webhookSecretConfigured'
@@ -18,7 +18,7 @@ export type ProtectedField = (typeof PROTECTED_FIELDS)[number]
 /**
  * Returns a shallow copy of `body` with all server-managed fields removed.
  * Use this before assigning a request body to a database entity to prevent
- * mass assignment of fields such as `workspaceId`, `id`, and timestamps.
+ * mass assignment of fields such as `userId`, `id`, and timestamps.
  *
  * @example
  * Object.assign(entity, stripProtectedFields(req.body))

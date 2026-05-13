@@ -17,8 +17,6 @@ import logger from './logger'
 import { getErrorMessage } from '../errors/utils'
 import { checkStorage, updateStorageUsage } from './quotaUsage'
 import { ChatFlow } from '../database/entities/ChatFlow'
-import { Workspace } from '../enterprise/database/entities/workspace.entity'
-import { Organization } from '../enterprise/database/entities/organization.entity'
 import { InternalFlowiseError } from '../errors/internalFlowiseError'
 import { StatusCodes } from 'http-status-codes'
 
@@ -48,23 +46,19 @@ export const createFileAttachment = async (req: Request) => {
     }
 
     let orgId = req.user?.activeOrganizationId || ''
-    let workspaceId = req.user?.activeWorkspaceId || ''
+    let userId = req.user?.activeWorkspaceId || ''
     let subscriptionId = req.user?.activeOrganizationSubscriptionId || ''
 
     // This is one of the WHITELIST_URLS, API can be public and there might be no req.user
-    if (!orgId || !workspaceId) {
-        const chatflowWorkspaceId = chatflow.workspaceId
-        const workspace = await appServer.AppDataSource.getRepository(Workspace).findOneBy({
-            id: chatflowWorkspaceId
-        })
+    if (!orgId || !userId) {
+        const chatflowWorkspaceId = chatflow.userId
+        const workspace: any = {}
         if (!workspace) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Workspace ${chatflowWorkspaceId} not found`)
         }
-        workspaceId = workspace.id
+        userId = workspace.id
 
-        const org = await appServer.AppDataSource.getRepository(Organization).findOneBy({
-            id: workspace.organizationId
-        })
+        const org: any = {}
         if (!org) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Organization ${workspace.organizationId} not found`)
         }
@@ -120,7 +114,7 @@ export const createFileAttachment = async (req: Request) => {
     const options = {
         retrieveAttachmentChatId: true,
         orgId,
-        workspaceId,
+        userId,
         chatflowid,
         chatId
     }
@@ -164,7 +158,7 @@ export const createFileAttachment = async (req: Request) => {
                 chatflowid,
                 chatId
             )
-            await updateStorageUsage(orgId, workspaceId, totalSize, appServer.usageCacheManager)
+            await updateStorageUsage(orgId, userId, totalSize, appServer.usageCacheManager)
 
             const fileInputFieldFromMimeType = mapMimeTypeToInputField(file.mimetype)
 
@@ -225,7 +219,7 @@ export const createFileAttachment = async (req: Request) => {
                             chatId,
                             sanitizedFilename
                         )
-                        await updateStorageUsage(orgId, workspaceId, newTotalSize, appServer.usageCacheManager)
+                        await updateStorageUsage(orgId, userId, newTotalSize, appServer.usageCacheManager)
                     } catch (cleanupError) {
                         logger.error(
                             `Failed to cleanup storage for ${file.originalname} (${sanitizedFilename}) - ${getErrorMessage(cleanupError)}`

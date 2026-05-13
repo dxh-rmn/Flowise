@@ -18,6 +18,6 @@ export interface IScheduleAgentflowJobData extends IScheduleQueueAppServer {
     cronExpression: string
     timezone: string
     defaultInput?: string
-    workspaceId: string
+    userId: string
     scheduledAt: string // ISO string
 }

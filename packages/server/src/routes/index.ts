@@ -61,17 +61,7 @@ import textToSpeechRouter from './text-to-speech'
 import mcpServerRouter from './mcp-server'
 import mcpEndpointRouter from './mcp-endpoint'
 
-import authRouter from '../enterprise/routes/auth'
-import auditRouter from '../enterprise/routes/audit'
-import userRouter from '../enterprise/routes/user.route'
-import organizationRouter from '../enterprise/routes/organization.route'
-import roleRouter from '../enterprise/routes/role.route'
-import organizationUserRoute from '../enterprise/routes/organization-user.route'
-import workspaceRouter from '../enterprise/routes/workspace.route'
-import workspaceUserRouter from '../enterprise/routes/workspace-user.route'
-import accountRouter from '../enterprise/routes/account.route'
-import loginMethodRouter from '../enterprise/routes/login-method.route'
-import { IdentityManager } from '../IdentityManager'
+import authRouter from './auth'
 
 const router = express.Router()
 
@@ -86,10 +76,10 @@ router.use('/chatflows-uploads', chatflowsUploadsRouter)
 router.use('/components-credentials', componentsCredentialsRouter)
 router.use('/components-credentials-icon', componentsCredentialsIconRouter)
 router.use('/credentials', credentialsRouter)
-router.use('/datasets', IdentityManager.checkFeatureByPlan('feat:datasets'), datasetRouter)
+router.use('/datasets', datasetRouter)
 router.use('/document-store', documentStoreRouter)
-router.use('/evaluations', IdentityManager.checkFeatureByPlan('feat:evaluations'), evaluationsRouter)
-router.use('/evaluators', IdentityManager.checkFeatureByPlan('feat:evaluators'), evaluatorsRouter)
+router.use('/evaluations', evaluationsRouter)
+router.use('/evaluators', evaluatorsRouter)
 router.use('/export-import', exportImportRouter)
 router.use('/feedback', feedbackRouter)
 router.use('/fetch-links', fetchLinksRouter)
@@ -136,16 +126,7 @@ router.use('/mcp-server', mcpServerRouter)
 router.use('/mcp', mcpEndpointRouter)
 
 router.use('/auth', authRouter)
-router.use('/audit', IdentityManager.checkFeatureByPlan('feat:login-activity'), auditRouter)
-router.use('/user', userRouter)
-router.use('/organization', organizationRouter)
-router.use('/role', IdentityManager.checkFeatureByPlan('feat:roles'), roleRouter)
-router.use('/organizationuser', organizationUserRoute)
-router.use('/workspace', workspaceRouter)
-router.use('/workspaceuser', workspaceUserRouter)
-router.use('/account', accountRouter)
-router.use('/loginmethod', loginMethodRouter)
-router.use('/logs', IdentityManager.checkFeatureByPlan('feat:logs'), logsRouter)
-router.use('/files', IdentityManager.checkFeatureByPlan('feat:files'), filesRouter)
+router.use('/logs', logsRouter)
+router.use('/files', filesRouter)
 
 export default router

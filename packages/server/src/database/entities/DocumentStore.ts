@@ -39,5 +39,5 @@ export class DocumentStore implements IDocumentStore {
     recordManagerConfig: string | null
 
     @Column({ nullable: false, type: 'text' })
-    workspaceId: string
+    userId: string
 }

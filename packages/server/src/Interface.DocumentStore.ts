@@ -28,7 +28,7 @@ export interface IDocumentStore {
     vectorStoreConfig: string | null // JSON string
     embeddingConfig: string | null // JSON string
     recordManagerConfig: string | null // JSON string
-    workspaceId?: string
+    userId?: string
 }
 
 export interface IDocumentStoreFileChunk {
@@ -49,7 +49,7 @@ export interface IDocumentStoreFileChunkPagedResponse {
     storeName: string
     description: string
     docId: string
-    workspaceId?: string
+    userId?: string
 }
 
 export interface IDocumentStoreLoader {
@@ -124,7 +124,7 @@ export interface IDocumentStoreWhereUsed {
 
 export interface IUpsertQueueAppServer {
     orgId: string
-    workspaceId: string
+    userId: string
     subscriptionId: string
     appDataSource: DataSource
     componentNodes: IComponentNodes
@@ -239,7 +239,7 @@ export class DocumentStoreDTO {
     totalChunks: number
     totalChars: number
     chunkSize: number
-    workspaceId?: string
+    userId?: string
     loaders: IDocumentStoreLoader[]
     vectorStoreConfig: any
     embeddingConfig: any
@@ -255,7 +255,7 @@ export class DocumentStoreDTO {
         documentStoreDTO.name = entity.name
         documentStoreDTO.description = entity.description
         documentStoreDTO.status = entity.status
-        documentStoreDTO.workspaceId = entity.workspaceId
+        documentStoreDTO.userId = entity.userId
         documentStoreDTO.totalChars = 0
         documentStoreDTO.totalChunks = 0
 

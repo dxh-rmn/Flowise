@@ -9,8 +9,8 @@ import logger from '../../utils/logger'
 
 const HEARTBEAT_MS = 30_000
 
-const assertChatflowIsWebhookTriggered = async (chatflowid: string, workspaceId?: string) => {
-    const chatflow = await chatflowsService.getChatflowById(chatflowid, workspaceId)
+const assertChatflowIsWebhookTriggered = async (chatflowid: string, userId?: string) => {
+    const chatflow = await chatflowsService.getChatflowById(chatflowid, userId)
     if (!chatflow) {
         throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Chatflow ${chatflowid} not found`)
     }

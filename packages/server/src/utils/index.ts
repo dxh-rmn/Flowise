@@ -501,11 +501,11 @@ type BuildFlowParams = {
     uploads?: IFileUpload[]
     baseURL?: string
     orgId?: string
-    workspaceId?: string
+    userId?: string
     subscriptionId?: string
     usageCacheManager?: any
     uploadedFilesContent?: string
-    updateStorageUsage?: (orgId: string, workspaceId: string, totalSize: number, usageCacheManager?: any) => void
+    updateStorageUsage?: (orgId: string, userId: string, totalSize: number, usageCacheManager?: any) => void
     checkStorage?: (orgId: string, subscriptionId: string, usageCacheManager: any) => Promise<any>
 }
 
@@ -539,7 +539,7 @@ export const buildFlow = async ({
     uploads,
     baseURL,
     orgId,
-    workspaceId,
+    userId,
     subscriptionId,
     usageCacheManager,
     updateStorageUsage,
@@ -610,7 +610,7 @@ export const buildFlow = async ({
                 logger.debug(`[server]: [${orgId}]: Upserting ${reactFlowNode.data.label} (${reactFlowNode.data.id})`)
                 const indexResult = await newNodeInstance.vectorStoreMethods!['upsert']!.call(newNodeInstance, reactFlowNodeData, {
                     orgId,
-                    workspaceId,
+                    userId,
                     subscriptionId,
                     chatId,
                     sessionId,
@@ -640,7 +640,7 @@ export const buildFlow = async ({
                 const finalQuestion = uploadedFilesContent ? `${uploadedFilesContent}\n\n${question}` : question
                 let outputResult = await newNodeInstance.init(reactFlowNodeData, finalQuestion, {
                     orgId,
-                    workspaceId,
+                    userId,
                     subscriptionId,
                     chatId,
                     sessionId,
@@ -836,7 +836,7 @@ export const getGlobalVariable = async (
                     id: '',
                     updatedDate: new Date(),
                     createdDate: new Date(),
-                    workspaceId: ''
+                    userId: ''
                 })
             }
         }
@@ -1756,8 +1756,8 @@ export const transformToCredentialEntity = async (body: ICredentialReqBody): Pro
     const newCredential = new Credential()
     Object.assign(newCredential, credentialBody)
 
-    if (body.workspaceId) {
-        newCredential.workspaceId = body.workspaceId
+    if (body.userId) {
+        newCredential.userId = body.userId
     }
 
     return newCredential

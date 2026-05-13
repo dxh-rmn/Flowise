@@ -34,5 +34,5 @@ export class Tool implements ITool {
     updatedDate: Date
 
     @Column({ nullable: false, type: 'text' })
-    workspaceId: string
+    userId: string
 }

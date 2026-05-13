@@ -12,8 +12,8 @@ const checkFlowValidation = async (req: Request, res: Response, next: NextFuncti
                 `Error: validationController.checkFlowValidation - id not provided!`
             )
         }
-        const workspaceId = req.user?.activeWorkspaceId
-        const apiResponse = await validationService.checkFlowValidation(flowId, workspaceId)
+        const userId = req.user?.activeWorkspaceId
+        const apiResponse = await validationService.checkFlowValidation(flowId, userId)
         return res.json(apiResponse)
     } catch (error) {
         next(error)

@@ -25,5 +25,5 @@ export class Credential implements ICredential {
     updatedDate: Date
 
     @Column({ nullable: false, type: 'text' })
-    workspaceId: string
+    userId: string
 }

@@ -10,8 +10,6 @@ import { ChatFlow, EnumChatflowType } from '../../database/entities/ChatFlow'
 import { ChatMessage } from '../../database/entities/ChatMessage'
 import { ChatMessageFeedback } from '../../database/entities/ChatMessageFeedback'
 import { UpsertHistory } from '../../database/entities/UpsertHistory'
-import { Workspace } from '../../enterprise/database/entities/workspace.entity'
-import { getWorkspaceSearchOptions } from '../../enterprise/utils/ControllerServiceUtils'
 import { InternalFlowiseError } from '../../errors/internalFlowiseError'
 import { getErrorMessage } from '../../errors/utils'
 import documentStoreService from '../../services/documentstore'
@@ -119,16 +117,16 @@ const checkIfChatflowIsValidForUploads = async (chatflowId: string): Promise<any
     }
 }
 
-const deleteChatflow = async (chatflowId: string, orgId: string, workspaceId: string): Promise<any> => {
+const deleteChatflow = async (chatflowId: string, orgId: string, userId: string): Promise<any> => {
     try {
         const appServer = getRunningExpressApp()
 
-        const chatflow = await getChatflowById(chatflowId, workspaceId)
+        const chatflow = await getChatflowById(chatflowId, userId)
 
         const dbResponse = await appServer.AppDataSource.getRepository(ChatFlow).delete({ id: chatflowId })
 
         // Update document store usage
-        await documentStoreService.updateDocumentStoreUsage(chatflowId, undefined, workspaceId)
+        await documentStoreService.updateDocumentStoreUsage(chatflowId, undefined, userId)
 
         // Delete all chat messages
         await appServer.AppDataSource.getRepository(ChatMessage).delete({ chatflowid: chatflowId })
@@ -141,7 +139,7 @@ const deleteChatflow = async (chatflowId: string, orgId: string, workspaceId: st
 
         // delete schedules related to the chatflow if it's an agentflow
         if (chatflow.type === EnumChatflowType.AGENTFLOW) {
-            const existingRecord = await scheduleService.deleteScheduleForTarget(chatflow.id, ScheduleTriggerType.AGENTFLOW, workspaceId)
+            const existingRecord = await scheduleService.deleteScheduleForTarget(chatflow.id, ScheduleTriggerType.AGENTFLOW, userId)
             if (existingRecord) {
                 await ScheduleBeat.getInstance().onScheduleChanged(existingRecord.id, 'delete')
             }
@@ -150,7 +148,7 @@ const deleteChatflow = async (chatflowId: string, orgId: string, workspaceId: st
         try {
             // Delete all uploads corresponding to this chatflow
             const { totalSize } = await removeFolderFromStorage(orgId, chatflowId)
-            await updateStorageUsage(orgId, workspaceId, totalSize, appServer.usageCacheManager)
+            await updateStorageUsage(orgId, userId, totalSize, appServer.usageCacheManager)
         } catch (e) {
             logger.error(`[server]: Error deleting file storage for chatflow ${chatflowId}`)
         }
@@ -163,7 +161,7 @@ const deleteChatflow = async (chatflowId: string, orgId: string, workspaceId: st
     }
 }
 
-const getAllChatflows = async (type?: ChatflowType, workspaceId?: string, page: number = -1, limit: number = -1) => {
+const getAllChatflows = async (type?: ChatflowType, userId?: string, page: number = -1, limit: number = -1) => {
     try {
         const appServer = getRunningExpressApp()
 
@@ -185,7 +183,7 @@ const getAllChatflows = async (type?: ChatflowType, workspaceId?: string, page: 
             // fetch all chatflows that are not agentflow
             queryBuilder.andWhere('chat_flow.type = :type', { type: 'CHATFLOW' })
         }
-        if (workspaceId) queryBuilder.andWhere('chat_flow.workspaceId = :workspaceId', { workspaceId })
+        if (userId) queryBuilder.andWhere('chat_flow.userId = :userId', { userId })
         const [data, total] = await queryBuilder.getManyAndCount()
 
         if (page > 0 && limit > 0) {
@@ -205,11 +203,8 @@ async function getAllChatflowsCountByOrganization(type: ChatflowType, organizati
     try {
         const appServer = getRunningExpressApp()
 
-        const workspaces = await appServer.AppDataSource.getRepository(Workspace).findBy({ organizationId })
-        const workspaceIds = workspaces.map((workspace) => workspace.id)
         const chatflowsCount = await appServer.AppDataSource.getRepository(ChatFlow).countBy({
-            type,
-            workspaceId: In(workspaceIds)
+            type
         })
 
         return chatflowsCount
@@ -221,17 +216,17 @@ async function getAllChatflowsCountByOrganization(type: ChatflowType, organizati
     }
 }
 
-const getAllChatflowsCount = async (type?: ChatflowType, workspaceId?: string): Promise<number> => {
+const getAllChatflowsCount = async (type?: ChatflowType, userId?: string): Promise<number> => {
     try {
         const appServer = getRunningExpressApp()
         if (type) {
             const dbResponse = await appServer.AppDataSource.getRepository(ChatFlow).countBy({
                 type,
-                ...getWorkspaceSearchOptions(workspaceId)
+                ...{}
             })
             return dbResponse
         }
-        const dbResponse = await appServer.AppDataSource.getRepository(ChatFlow).countBy(getWorkspaceSearchOptions(workspaceId))
+        const dbResponse = await appServer.AppDataSource.getRepository(ChatFlow).countBy({})
         return dbResponse
     } catch (error) {
         throw new InternalFlowiseError(
@@ -241,13 +236,13 @@ const getAllChatflowsCount = async (type?: ChatflowType, workspaceId?: string): 
     }
 }
 
-const getChatflowByApiKey = async (apiKeyId: string, workspaceId: string, keyonly?: unknown): Promise<any> => {
+const getChatflowByApiKey = async (apiKeyId: string, userId: string, keyonly?: unknown): Promise<any> => {
     try {
         // Here we only get chatflows that are bounded by the apikeyid and chatflows that are not bounded by any apikey
         const appServer = getRunningExpressApp()
         let query = appServer.AppDataSource.getRepository(ChatFlow)
             .createQueryBuilder('cf')
-            .where('cf.workspaceId = :workspaceId', { workspaceId })
+            .where('cf.userId = :userId', { userId })
             .andWhere(
                 new Brackets((qb) => {
                     qb.where('cf.apikeyid = :apikeyid', { apikeyid: apiKeyId })
@@ -270,7 +265,7 @@ const getChatflowByApiKey = async (apiKeyId: string, workspaceId: string, keyonl
     }
 }
 
-const getChatflowById = async (chatflowId: string, workspaceId?: string): Promise<any> => {
+const getChatflowById = async (chatflowId: string, userId?: string): Promise<any> => {
     try {
         if (!isValidUUID(chatflowId)) {
             throw new InternalFlowiseError(StatusCodes.BAD_REQUEST, ChatflowErrorMessage.INVALID_CHATFLOW_ID)
@@ -279,7 +274,7 @@ const getChatflowById = async (chatflowId: string, workspaceId?: string): Promis
         const dbResponse = await appServer.AppDataSource.getRepository(ChatFlow).findOne({
             where: {
                 id: chatflowId,
-                ...(workspaceId ? { workspaceId } : {})
+                ...(userId ? { userId } : {})
             }
         })
         if (!dbResponse) {
@@ -297,16 +292,16 @@ const getChatflowById = async (chatflowId: string, workspaceId?: string): Promis
     }
 }
 
-/** Resolves a chatflow only if it belongs to the given workspace; rejects when workspaceId is missing (prevents unscoped lookup). */
-const getChatflowByIdForWorkspace = async (chatflowId: string, workspaceId: string | undefined): Promise<any> => {
-    if (!workspaceId) {
+/** Resolves a chatflow only if it belongs to the given workspace; rejects when userId is missing (prevents unscoped lookup). */
+const getChatflowByIdForWorkspace = async (chatflowId: string, userId: string | undefined): Promise<any> => {
+    if (!userId) {
         throw new InternalFlowiseError(StatusCodes.BAD_REQUEST, ChatflowErrorMessage.WORKSPACE_ID_REQUIRED)
     }
-    return getChatflowById(chatflowId, workspaceId)
+    return getChatflowById(chatflowId, userId)
 }
 
-/** Ensures every id exists as a chatflow in workspaceId. One DB query; pass queryRunner when inside a transaction for consistent reads. */
-const assertChatflowIdsInWorkspace = async (chatflowIds: string[], workspaceId: string, queryRunner?: QueryRunner): Promise<void> => {
+/** Ensures every id exists as a chatflow in userId. One DB query; pass queryRunner when inside a transaction for consistent reads. */
+const assertChatflowIdsInWorkspace = async (chatflowIds: string[], userId: string, queryRunner?: QueryRunner): Promise<void> => {
     try {
         if (chatflowIds.length === 0) return
         for (const id of chatflowIds) {
@@ -317,7 +312,7 @@ const assertChatflowIdsInWorkspace = async (chatflowIds: string[], workspaceId: 
         const appServer = getRunningExpressApp()
         const manager = queryRunner?.manager ?? appServer.AppDataSource.manager
         const found = await manager.getRepository(ChatFlow).find({
-            where: { id: In(chatflowIds), workspaceId },
+            where: { id: In(chatflowIds), userId },
             select: ['id']
         })
         if (found.length !== chatflowIds.length) {
@@ -340,7 +335,7 @@ const assertChatflowIdsInWorkspace = async (chatflowIds: string[], workspaceId: 
 const saveChatflow = async (
     newChatFlow: ChatFlow,
     orgId: string,
-    workspaceId: string,
+    userId: string,
     subscriptionId: string,
     usageCacheManager: UsageCacheManager
 ): Promise<any> => {
@@ -363,11 +358,11 @@ const saveChatflow = async (
             step1Results.id,
             incomingFlowData,
             orgId,
-            workspaceId,
+            userId,
             subscriptionId,
             usageCacheManager
         )
-        await _checkAndUpdateDocumentStoreUsage(step1Results, newChatFlow.workspaceId)
+        await _checkAndUpdateDocumentStoreUsage(step1Results, newChatFlow.userId)
         dbResponse = await appServer.AppDataSource.getRepository(ChatFlow).save(step1Results)
     } else {
         const chatflow = appServer.AppDataSource.getRepository(ChatFlow).create(newChatFlow)
@@ -412,7 +407,7 @@ const saveChatflow = async (
                 scheduleInputMode,
                 defaultInput: scheduleInputMode === 'text' ? scheduleDefaultInput : '',
                 defaultForm: scheduleFormDefaults,
-                workspaceId,
+                userId,
                 endDate: scheduleEndDate
             })
             if (enabled) {
@@ -422,7 +417,7 @@ const saveChatflow = async (
         }
     }
 
-    const productId = await appServer.identityManager.getProductIdFromSubscription(subscriptionId)
+    const productId = undefined
 
     await appServer.telemetry.sendTelemetry(
         'chatflow_created',
@@ -448,7 +443,7 @@ const updateChatflow = async (
     chatflow: ChatFlow,
     updateChatFlow: ChatFlow,
     orgId: string,
-    workspaceId: string,
+    userId: string,
     subscriptionId: string
 ): Promise<any> => {
     const appServer = getRunningExpressApp()
@@ -457,7 +452,7 @@ const updateChatflow = async (
             chatflow.id,
             updateChatFlow.flowData,
             orgId,
-            workspaceId,
+            userId,
             subscriptionId,
             appServer.usageCacheManager
         )
@@ -483,8 +478,8 @@ const updateChatflow = async (
         }
     }
     const newDbChatflow = appServer.AppDataSource.getRepository(ChatFlow).merge(chatflow, updateChatFlow)
-    newDbChatflow.workspaceId = workspaceId // defense-in-depth: use trusted param, not chatflow.workspaceId (merge mutates in-place)
-    await _checkAndUpdateDocumentStoreUsage(newDbChatflow, workspaceId)
+    newDbChatflow.userId = userId // defense-in-depth: use trusted param, not chatflow.userId (merge mutates in-place)
+    await _checkAndUpdateDocumentStoreUsage(newDbChatflow, userId)
     const dbResponse = await appServer.AppDataSource.getRepository(ChatFlow).save(newDbChatflow)
 
     // Check if the flow is agentflow and if it has a schedule node, if yes then notify the beat to sync the schedule
@@ -524,7 +519,7 @@ const updateChatflow = async (
                 scheduleInputMode,
                 defaultInput: scheduleInputMode === 'text' ? scheduleDefaultInput : '',
                 defaultForm: scheduleFormDefaults,
-                workspaceId,
+                userId,
                 endDate: scheduleEndDate
             })
             if (record.enabled) {
@@ -536,7 +531,7 @@ const updateChatflow = async (
             }
         } else {
             // If the start node is not scheduleInput, then we need to delete the existing schedule if it exists
-            const existingRecord = await scheduleService.deleteScheduleForTarget(dbResponse.id, ScheduleTriggerType.AGENTFLOW, workspaceId)
+            const existingRecord = await scheduleService.deleteScheduleForTarget(dbResponse.id, ScheduleTriggerType.AGENTFLOW, userId)
             if (existingRecord) {
                 await ScheduleBeat.getInstance().onScheduleChanged(existingRecord.id, 'delete')
             }
@@ -595,21 +590,21 @@ const getSinglePublicChatbotConfig = async (chatflowId: string): Promise<any> =>
     }
 }
 
-const _checkAndUpdateDocumentStoreUsage = async (chatflow: ChatFlow, workspaceId?: string) => {
+const _checkAndUpdateDocumentStoreUsage = async (chatflow: ChatFlow, userId?: string) => {
     const parsedFlowData: IReactFlowObject = JSON.parse(chatflow.flowData)
     const nodes = parsedFlowData.nodes
     // from the nodes array find if there is a node with name == documentStore)
     const node = nodes.length > 0 && nodes.find((node) => node.data.name === 'documentStore')
     if (!node || !node.data || !node.data.inputs || node.data.inputs['selectedStore'] === undefined) {
-        await documentStoreService.updateDocumentStoreUsage(chatflow.id, undefined, workspaceId)
+        await documentStoreService.updateDocumentStoreUsage(chatflow.id, undefined, userId)
     } else {
-        await documentStoreService.updateDocumentStoreUsage(chatflow.id, node.data.inputs['selectedStore'], workspaceId)
+        await documentStoreService.updateDocumentStoreUsage(chatflow.id, node.data.inputs['selectedStore'], userId)
     }
 }
 
-const checkIfChatflowHasChanged = async (chatflowId: string, lastUpdatedDateTime: string, workspaceId: string): Promise<any> => {
+const checkIfChatflowHasChanged = async (chatflowId: string, lastUpdatedDateTime: string, userId: string): Promise<any> => {
     try {
-        const chatflow = await getChatflowByIdForWorkspace(chatflowId, workspaceId)
+        const chatflow = await getChatflowByIdForWorkspace(chatflowId, userId)
         if (!chatflow) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Chatflow ${chatflowId} not found`)
         }
@@ -625,11 +620,11 @@ const checkIfChatflowHasChanged = async (chatflowId: string, lastUpdatedDateTime
     }
 }
 
-const setWebhookSecret = async (chatflowId: string, workspaceId: string): Promise<{ webhookSecret: string }> => {
+const setWebhookSecret = async (chatflowId: string, userId: string): Promise<{ webhookSecret: string }> => {
     try {
         const appServer = getRunningExpressApp()
         const repo = appServer.AppDataSource.getRepository(ChatFlow)
-        const chatflow = await repo.findOne({ where: { id: chatflowId, workspaceId } })
+        const chatflow = await repo.findOne({ where: { id: chatflowId, userId } })
         if (!chatflow) throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Chatflow ${chatflowId} not found`)
         const plaintext = randomBytes(32).toString('hex')
         chatflow.webhookSecret = await encryptCredentialData({ secret: plaintext })
@@ -645,11 +640,11 @@ const setWebhookSecret = async (chatflowId: string, workspaceId: string): Promis
     }
 }
 
-const clearWebhookSecret = async (chatflowId: string, workspaceId: string): Promise<void> => {
+const clearWebhookSecret = async (chatflowId: string, userId: string): Promise<void> => {
     try {
         const appServer = getRunningExpressApp()
         const repo = appServer.AppDataSource.getRepository(ChatFlow)
-        const chatflow = await repo.findOne({ where: { id: chatflowId, workspaceId } })
+        const chatflow = await repo.findOne({ where: { id: chatflowId, userId } })
         if (!chatflow) throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Chatflow ${chatflowId} not found`)
         chatflow.webhookSecret = null
         chatflow.webhookSecretConfigured = false
@@ -663,14 +658,14 @@ const clearWebhookSecret = async (chatflowId: string, workspaceId: string): Prom
     }
 }
 
-const getWebhookSecret = async (chatflowId: string, workspaceId: string): Promise<string | null> => {
+const getWebhookSecret = async (chatflowId: string, userId: string): Promise<string | null> => {
     try {
         const appServer = getRunningExpressApp()
         const dbResponse = await appServer.AppDataSource.getRepository(ChatFlow)
             .createQueryBuilder('chatflow')
             .select('chatflow.webhookSecret')
             .where('chatflow.id = :id', { id: chatflowId })
-            .andWhere('chatflow.workspaceId = :workspaceId', { workspaceId })
+            .andWhere('chatflow.userId = :userId', { userId })
             .getOne()
         const stored = dbResponse?.webhookSecret
         if (!stored) return null

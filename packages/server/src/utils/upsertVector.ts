@@ -16,9 +16,6 @@ import { FLOWISE_COUNTER_STATUS, FLOWISE_METRIC_COUNTERS } from '../Interface.Me
 import { ChatFlow } from '../database/entities/ChatFlow'
 import { UpsertHistory } from '../database/entities/UpsertHistory'
 import { Variable } from '../database/entities/Variable'
-import { Organization } from '../enterprise/database/entities/organization.entity'
-import { Workspace } from '../enterprise/database/entities/workspace.entity'
-import { getWorkspaceSearchOptions } from '../enterprise/utils/ControllerServiceUtils'
 import { InternalFlowiseError } from '../errors/internalFlowiseError'
 import { getErrorMessage } from '../errors/utils'
 import {
@@ -50,7 +47,7 @@ export const executeUpsert = async ({
     isInternal,
     files,
     orgId,
-    workspaceId,
+    userId,
     subscriptionId,
     usageCacheManager
 }: IExecuteFlowParams) => {
@@ -83,7 +80,7 @@ export const executeUpsert = async ({
                 orgId,
                 chatflowid
             )
-            await updateStorageUsage(orgId, workspaceId, totalSize, usageCacheManager)
+            await updateStorageUsage(orgId, userId, totalSize, usageCacheManager)
 
             const fileInputFieldFromMimeType = mapMimeTypeToInputField(file.mimetype)
 
@@ -170,7 +167,7 @@ export const executeUpsert = async ({
     const { startingNodeIds, depthQueue } = getStartingNodes(filteredGraph, stopNodeId)
 
     /*** Get API Config ***/
-    const availableVariables = await appDataSource.getRepository(Variable).findBy(getWorkspaceSearchOptions(chatflow.workspaceId))
+    const availableVariables = await appDataSource.getRepository(Variable).findBy({})
     const { nodeOverrides, variableOverrides, apiOverrideStatus } = getAPIOverrideConfig(chatflow)
 
     const upsertedResult = await buildFlow({
@@ -197,7 +194,7 @@ export const executeUpsert = async ({
         availableVariables,
         variableOverrides,
         orgId,
-        workspaceId,
+        userId,
         subscriptionId,
         updateStorageUsage,
         checkStorage
@@ -262,27 +259,23 @@ export const upsertVector = async (req: Request, isInternal: boolean = false) =>
             }
         }
 
-        const chatflowWorkspaceId = chatflow.workspaceId
-        const workspace = await appServer.AppDataSource.getRepository(Workspace).findOneBy({
-            id: chatflowWorkspaceId
-        })
+        const chatflowWorkspaceId = chatflow.userId
+        const workspace: any = {}
         if (!workspace) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Workspace ${chatflowWorkspaceId} not found`)
         }
-        const workspaceId = workspace.id
+        const userId = workspace.id
 
-        if (workspaceId !== req.user?.activeWorkspaceId) throw new InternalFlowiseError(StatusCodes.UNAUTHORIZED, 'Unauthorized')
+        if (userId !== req.user?.activeWorkspaceId) throw new InternalFlowiseError(StatusCodes.UNAUTHORIZED, 'Unauthorized')
 
-        const org = await appServer.AppDataSource.getRepository(Organization).findOneBy({
-            id: workspace.organizationId
-        })
+        const org: any = {}
         if (!org) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Organization ${workspace.organizationId} not found`)
         }
 
         const orgId = org.id
         const subscriptionId = org.subscriptionId as string
-        const productId = await appServer.identityManager.getProductIdFromSubscription(subscriptionId)
+        const productId = ''
 
         const executeData: IExecuteFlowParams = {
             componentNodes: appServer.nodesPool.componentNodes,
@@ -299,7 +292,7 @@ export const upsertVector = async (req: Request, isInternal: boolean = false) =>
             files,
             isUpsert: true,
             orgId,
-            workspaceId,
+            userId,
             subscriptionId,
             productId
         }

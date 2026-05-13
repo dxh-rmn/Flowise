@@ -27,7 +27,7 @@ interface ScheduleAgentflowJobData {
     cronExpression: string
     timezone: string
     defaultInput?: string
-    workspaceId: string
+    userId: string
     scheduledAt: string // ISO string
 }
 
@@ -105,7 +105,7 @@ export class ScheduleQueue extends BaseQueue {
             cronExpression: record.cronExpression,
             timezone: timezone,
             defaultInput: record.defaultInput ?? undefined,
-            workspaceId: record.workspaceId,
+            userId: record.userId,
             scheduledAt: new Date().toISOString()
         }
 

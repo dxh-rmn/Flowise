@@ -51,7 +51,7 @@ const getAllUpsertHistory = async (
     }
 }
 
-const patchDeleteUpsertHistory = async (ids: string[] = [], workspaceId: string): Promise<any> => {
+const patchDeleteUpsertHistory = async (ids: string[] = [], userId: string): Promise<any> => {
     try {
         const uniqueIds = [...new Set((ids ?? []).filter((id) => typeof id === 'string' && id.length > 0))]
         if (uniqueIds.length === 0) {
@@ -81,7 +81,7 @@ const patchDeleteUpsertHistory = async (ids: string[] = [], workspaceId: string)
             }
 
             const chatflowIds = [...new Set(rows.map((r) => r.chatflowid))]
-            await chatflowsService.assertChatflowIdsInWorkspace(chatflowIds, workspaceId, queryRunner)
+            await chatflowsService.assertChatflowIdsInWorkspace(chatflowIds, userId, queryRunner)
 
             const deleteResult = await repo.delete({ id: In(uniqueIds) })
             await queryRunner.commitTransaction()

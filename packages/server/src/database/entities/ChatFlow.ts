@@ -71,5 +71,5 @@ export class ChatFlow implements IChatFlow {
     webhookSecretConfigured?: boolean
 
     @Column({ nullable: false, type: 'text' })
-    workspaceId: string
+    userId: string
 }

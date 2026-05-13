@@ -30,18 +30,18 @@ const generateTextToSpeech = async (req: Request, res: Response) => {
         let provider: string, credentialId: string, voice: string, model: string
 
         if (chatflowId) {
-            let workspaceId = req.user?.activeWorkspaceId
+            let userId = req.user?.activeWorkspaceId
             let chatflow: Awaited<ReturnType<typeof chatflowsService.getChatflowById>>
 
-            if (workspaceId) {
-                chatflow = await chatflowsService.getChatflowById(chatflowId, workspaceId)
+            if (userId) {
+                chatflow = await chatflowsService.getChatflowById(chatflowId, userId)
             } else {
-                // Fallback: get workspaceId from chatflow when req.user.activeWorkspaceId is not set (from whitelist API)
+                // Fallback: get userId from chatflow when req.user.activeWorkspaceId is not set (from whitelist API)
                 chatflow = await chatflowsService.getChatflowById(chatflowId)
-                workspaceId = chatflow.workspaceId
+                userId = chatflow.userId
             }
 
-            if (!workspaceId) {
+            if (!userId) {
                 throw new InternalFlowiseError(
                     StatusCodes.NOT_FOUND,
                     `Error: textToSpeechController.generateTextToSpeech - workspace not found!`

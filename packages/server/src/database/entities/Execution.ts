@@ -43,5 +43,5 @@ export class Execution implements IExecution {
     agentflow: ChatFlow
 
     @Column({ nullable: false, type: 'text' })
-    workspaceId: string
+    userId: string
 }

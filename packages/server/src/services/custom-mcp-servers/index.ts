@@ -134,14 +134,14 @@ const createCustomMcpServer = async (requestBody: any, orgId: string): Promise<a
     }
 }
 
-const getAllCustomMcpServers = async (workspaceId: string, page: number = -1, limit: number = -1) => {
+const getAllCustomMcpServers = async (userId: string, page: number = -1, limit: number = -1) => {
     try {
         const appServer = getRunningExpressApp()
         const queryBuilder = appServer.AppDataSource.getRepository(CustomMcpServer)
             .createQueryBuilder('custom_mcp_server')
             .orderBy('custom_mcp_server.updatedDate', 'DESC')
 
-        queryBuilder.andWhere('custom_mcp_server.workspaceId = :workspaceId', { workspaceId })
+        queryBuilder.andWhere('custom_mcp_server.userId = :userId', { userId })
         if (page > 0 && limit > 0) {
             queryBuilder.skip((page - 1) * limit)
             queryBuilder.take(limit)
@@ -164,7 +164,7 @@ const getAllCustomMcpServers = async (workspaceId: string, page: number = -1, li
     }
 }
 
-const getCustomMcpServerById = async (id: string, workspaceId: string): Promise<ICustomMcpServerResponse> => {
+const getCustomMcpServerById = async (id: string, userId: string): Promise<ICustomMcpServerResponse> => {
     try {
         const appServer = getRunningExpressApp()
         // Explicitly select `tools` — it is `select: false` on the entity so list queries stay cheap.
@@ -172,7 +172,7 @@ const getCustomMcpServerById = async (id: string, workspaceId: string): Promise<
             .createQueryBuilder('custom_mcp_server')
             .addSelect('custom_mcp_server.tools')
             .where('custom_mcp_server.id = :id', { id })
-            .andWhere('custom_mcp_server.workspaceId = :workspaceId', { workspaceId })
+            .andWhere('custom_mcp_server.userId = :userId', { userId })
             .getOne()
         if (!dbResponse) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Custom MCP server ${id} not found`)
@@ -209,12 +209,12 @@ const getCustomMcpServerById = async (id: string, workspaceId: string): Promise<
     }
 }
 
-const updateCustomMcpServer = async (id: string, requestBody: any, workspaceId: string): Promise<any> => {
+const updateCustomMcpServer = async (id: string, requestBody: any, userId: string): Promise<any> => {
     try {
         const appServer = getRunningExpressApp()
         const record = await appServer.AppDataSource.getRepository(CustomMcpServer).findOneBy({
             id,
-            workspaceId
+            userId
         })
         if (!record) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Custom MCP server ${id} not found`)
@@ -269,7 +269,7 @@ const updateCustomMcpServer = async (id: string, requestBody: any, workspaceId: 
         const updateRecord = new CustomMcpServer()
         Object.assign(updateRecord, requestBody)
         appServer.AppDataSource.getRepository(CustomMcpServer).merge(record, updateRecord)
-        record.workspaceId = workspaceId // defense-in-depth
+        record.userId = userId // defense-in-depth
         const dbResponse = await appServer.AppDataSource.getRepository(CustomMcpServer).save(record)
         return sanitizeCustomMcpServer(dbResponse)
     } catch (error) {
@@ -281,12 +281,12 @@ const updateCustomMcpServer = async (id: string, requestBody: any, workspaceId: 
     }
 }
 
-const deleteCustomMcpServer = async (id: string, workspaceId: string): Promise<any> => {
+const deleteCustomMcpServer = async (id: string, userId: string): Promise<any> => {
     try {
         const appServer = getRunningExpressApp()
         const dbResponse = await appServer.AppDataSource.getRepository(CustomMcpServer).delete({
             id,
-            workspaceId
+            userId
         })
         return dbResponse
     } catch (error) {
@@ -297,11 +297,11 @@ const deleteCustomMcpServer = async (id: string, workspaceId: string): Promise<a
     }
 }
 
-const authorizeCustomMcpServer = async (id: string, workspaceId: string): Promise<any> => {
+const authorizeCustomMcpServer = async (id: string, userId: string): Promise<any> => {
     try {
         const appServer = getRunningExpressApp()
         const repo = appServer.AppDataSource.getRepository(CustomMcpServer)
-        const record = await repo.findOneBy({ id, workspaceId })
+        const record = await repo.findOneBy({ id, userId })
         if (!record) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Custom MCP server ${id} not found`)
         }
@@ -383,14 +383,14 @@ const authorizeCustomMcpServer = async (id: string, workspaceId: string): Promis
     }
 }
 
-const getDiscoveredTools = async (id: string, workspaceId: string): Promise<Record<string, any>[]> => {
+const getDiscoveredTools = async (id: string, userId: string): Promise<Record<string, any>[]> => {
     try {
         const appServer = getRunningExpressApp()
         const record = await appServer.AppDataSource.getRepository(CustomMcpServer)
             .createQueryBuilder('custom_mcp_server')
             .addSelect('custom_mcp_server.tools')
             .where('custom_mcp_server.id = :id', { id })
-            .andWhere('custom_mcp_server.workspaceId = :workspaceId', { workspaceId })
+            .andWhere('custom_mcp_server.userId = :userId', { userId })
             .getOne()
         if (!record) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Custom MCP server ${id} not found`)

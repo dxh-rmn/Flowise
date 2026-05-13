@@ -126,7 +126,7 @@ const makeRecord = (overrides: Record<string, any> = {}) => ({
     enabled: true,
     createdDate: new Date('2025-01-01'),
     updatedDate: new Date('2025-01-01'),
-    workspaceId: 'ws-1',
+    userId: 'ws-1',
     ...overrides
 })
 
@@ -256,13 +256,13 @@ describe('customMcpServersService', () => {
             expect(result).toHaveProperty('total', 10)
         })
 
-        it('should filter by workspaceId when provided', async () => {
+        it('should filter by userId when provided', async () => {
             mockGetManyAndCount.mockResolvedValue([[], 0])
 
             await customMcpServersService.getAllCustomMcpServers('ws-1')
 
-            expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('custom_mcp_server.workspaceId = :workspaceId', {
-                workspaceId: 'ws-1'
+            expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('custom_mcp_server.userId = :userId', {
+                userId: 'ws-1'
             })
         })
 
@@ -366,7 +366,7 @@ describe('customMcpServersService', () => {
 
             const result = await customMcpServersService.updateCustomMcpServer('mcp-1', { name: 'Updated' }, 'ws-1')
 
-            expect(mockFindOneBy).toHaveBeenCalledWith({ id: 'mcp-1', workspaceId: 'ws-1' })
+            expect(mockFindOneBy).toHaveBeenCalledWith({ id: 'mcp-1', userId: 'ws-1' })
             expect(mockMerge).toHaveBeenCalled()
             expect(mockSave).toHaveBeenCalled()
             expect(result.name).toBe('Updated')
@@ -461,26 +461,26 @@ describe('customMcpServersService', () => {
             expect(mockEncrypt).toHaveBeenCalledWith(expect.objectContaining({ headers: { 'X-Key': 'brand-new-secret' } }))
         })
 
-        it('should force workspaceId on saved record (defense-in-depth)', async () => {
+        it('should force userId on saved record (defense-in-depth)', async () => {
             const existing = makeRecord()
             mockFindOneBy.mockResolvedValue(existing)
             mockSave.mockImplementation((r: any) => Promise.resolve(r))
 
             await customMcpServersService.updateCustomMcpServer('mcp-1', { name: 'Updated' }, 'ws-1')
 
-            expect(existing.workspaceId).toBe('ws-1')
+            expect(existing.userId).toBe('ws-1')
         })
     })
 
     // ── deleteCustomMcpServer ───────────────────────────────────────────
 
     describe('deleteCustomMcpServer', () => {
-        it('should delete by id and workspaceId', async () => {
+        it('should delete by id and userId', async () => {
             mockDelete.mockResolvedValue({ affected: 1 })
 
             const result = await customMcpServersService.deleteCustomMcpServer('mcp-1', 'ws-1')
 
-            expect(mockDelete).toHaveBeenCalledWith({ id: 'mcp-1', workspaceId: 'ws-1' })
+            expect(mockDelete).toHaveBeenCalledWith({ id: 'mcp-1', userId: 'ws-1' })
             expect(result).toEqual({ affected: 1 })
         })
 

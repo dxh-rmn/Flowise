@@ -25,5 +25,5 @@ export class Variable implements IVariable {
     updatedDate: Date
 
     @Column({ nullable: false, type: 'text' })
-    workspaceId: string
+    userId: string
 }

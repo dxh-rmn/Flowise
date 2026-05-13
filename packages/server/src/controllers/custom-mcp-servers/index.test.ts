@@ -104,7 +104,7 @@ describe('customMcpServersController', () => {
                 authType: 'NONE',
                 authConfig: { headers: {} },
                 id: 'should-be-stripped',
-                workspaceId: 'should-be-overridden',
+                userId: 'should-be-overridden',
                 createdDate: 'should-be-stripped'
             }
             const req = makeReq({ body })
@@ -121,21 +121,21 @@ describe('customMcpServersController', () => {
                     color: '#fff',
                     authType: 'NONE',
                     authConfig: { headers: {} },
-                    workspaceId: 'ws-1'
+                    userId: 'ws-1'
                 },
                 'org-1'
             )
             expect(res.json).toHaveBeenCalledWith({ id: 'new-1' })
         })
 
-        it('should set workspaceId from authenticated user', async () => {
+        it('should set userId from authenticated user', async () => {
             const req = makeReq({ body: { name: 'test' } })
             const res = makeRes()
             mockService.createCustomMcpServer.mockResolvedValue({ id: 'new-1' })
 
             await customMcpServersController.createCustomMcpServer(req, res, makeNext())
 
-            expect(mockService.createCustomMcpServer).toHaveBeenCalledWith(expect.objectContaining({ workspaceId: 'ws-1' }), 'org-1')
+            expect(mockService.createCustomMcpServer).toHaveBeenCalledWith(expect.objectContaining({ userId: 'ws-1' }), 'org-1')
         })
 
         it('should call next on service error', async () => {
@@ -250,7 +250,7 @@ describe('customMcpServersController', () => {
             )
         })
 
-        it('should call service with id and workspaceId', async () => {
+        it('should call service with id and userId', async () => {
             const req = makeReq({ params: { id: 'mcp-1' } as any })
             const res = makeRes()
             const mockResponse = { id: 'mcp-1', name: 'Test' }
@@ -316,7 +316,7 @@ describe('customMcpServersController', () => {
                 authType: 'CUSTOM_HEADERS',
                 authConfig: { headers: { 'X-Key': 'val' } },
                 id: 'should-be-stripped',
-                workspaceId: 'should-be-stripped',
+                userId: 'should-be-stripped',
                 status: 'should-be-stripped'
             }
             const req = makeReq({ params: { id: 'mcp-1' } as any, body })
@@ -371,7 +371,7 @@ describe('customMcpServersController', () => {
             )
         })
 
-        it('should call service with id and workspaceId', async () => {
+        it('should call service with id and userId', async () => {
             const req = makeReq({ params: { id: 'mcp-1' } as any })
             const res = makeRes()
             mockService.deleteCustomMcpServer.mockResolvedValue({ affected: 1 })
@@ -413,7 +413,7 @@ describe('customMcpServersController', () => {
             )
         })
 
-        it('should call service with id and workspaceId', async () => {
+        it('should call service with id and userId', async () => {
             const req = makeReq({ params: { id: 'mcp-1' } as any })
             const res = makeRes()
             mockService.authorizeCustomMcpServer.mockResolvedValue({ id: 'mcp-1', status: 'AUTHORIZED' })
@@ -465,7 +465,7 @@ describe('customMcpServersController', () => {
             )
         })
 
-        it('should call service with id and workspaceId', async () => {
+        it('should call service with id and userId', async () => {
             const req = makeReq({ params: { id: 'mcp-1' } as any })
             const res = makeRes()
             const tools = [

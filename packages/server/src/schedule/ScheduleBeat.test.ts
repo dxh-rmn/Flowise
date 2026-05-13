@@ -80,7 +80,7 @@ const makeRecord = (overrides: Record<string, unknown> = {}) => ({
     timezone: 'UTC',
     enabled: true,
     targetId: 'flow-1',
-    workspaceId: 'ws-1',
+    userId: 'ws-1',
     ...overrides
 })
 

@@ -163,14 +163,14 @@ const makeChatflow = (overrides: Record<string, unknown> = {}) => ({
     id: 'flow-1',
     type: EnumChatflowType.AGENTFLOW,
     flowData: makeScheduleFlowData(),
-    workspaceId: 'ws-1',
+    userId: 'ws-1',
     chatbotConfig: undefined,
     ...overrides
 })
 
 const SAVE_ARGS = {
     orgId: 'org-1',
-    workspaceId: 'ws-1',
+    userId: 'ws-1',
     subscriptionId: 'sub-1',
     usageCacheManager: {} as any
 }
@@ -202,7 +202,7 @@ describe('saveChatflow', () => {
         const result = await chatflowsService.saveChatflow(
             newFlow as any,
             SAVE_ARGS.orgId,
-            SAVE_ARGS.workspaceId,
+            SAVE_ARGS.userId,
             SAVE_ARGS.subscriptionId,
             SAVE_ARGS.usageCacheManager
         )
@@ -218,7 +218,7 @@ describe('saveChatflow', () => {
             chatflowsService.saveChatflow(
                 badFlow as any,
                 SAVE_ARGS.orgId,
-                SAVE_ARGS.workspaceId,
+                SAVE_ARGS.userId,
                 SAVE_ARGS.subscriptionId,
                 SAVE_ARGS.usageCacheManager
             )
@@ -234,7 +234,7 @@ describe('saveChatflow', () => {
         await chatflowsService.saveChatflow(
             newFlow as any,
             SAVE_ARGS.orgId,
-            SAVE_ARGS.workspaceId,
+            SAVE_ARGS.userId,
             SAVE_ARGS.subscriptionId,
             SAVE_ARGS.usageCacheManager
         )
@@ -243,7 +243,7 @@ describe('saveChatflow', () => {
             expect.objectContaining({
                 triggerType: ScheduleTriggerType.AGENTFLOW,
                 targetId: 'flow-1',
-                workspaceId: 'ws-1'
+                userId: 'ws-1'
             })
         )
     })
@@ -256,7 +256,7 @@ describe('saveChatflow', () => {
         await chatflowsService.saveChatflow(
             makeChatflow() as any,
             SAVE_ARGS.orgId,
-            SAVE_ARGS.workspaceId,
+            SAVE_ARGS.userId,
             SAVE_ARGS.subscriptionId,
             SAVE_ARGS.usageCacheManager
         )
@@ -273,7 +273,7 @@ describe('saveChatflow', () => {
         await chatflowsService.saveChatflow(
             makeChatflow() as any,
             SAVE_ARGS.orgId,
-            SAVE_ARGS.workspaceId,
+            SAVE_ARGS.userId,
             SAVE_ARGS.subscriptionId,
             SAVE_ARGS.usageCacheManager
         )
@@ -289,7 +289,7 @@ describe('saveChatflow', () => {
         await chatflowsService.saveChatflow(
             makeChatflow() as any,
             SAVE_ARGS.orgId,
-            SAVE_ARGS.workspaceId,
+            SAVE_ARGS.userId,
             SAVE_ARGS.subscriptionId,
             SAVE_ARGS.usageCacheManager
         )
@@ -303,7 +303,7 @@ describe('saveChatflow', () => {
         await chatflowsService.saveChatflow(
             makeChatflow() as any,
             SAVE_ARGS.orgId,
-            SAVE_ARGS.workspaceId,
+            SAVE_ARGS.userId,
             SAVE_ARGS.subscriptionId,
             SAVE_ARGS.usageCacheManager
         )
@@ -319,7 +319,7 @@ describe('saveChatflow', () => {
         await chatflowsService.saveChatflow(
             makeChatflow() as any,
             SAVE_ARGS.orgId,
-            SAVE_ARGS.workspaceId,
+            SAVE_ARGS.userId,
             SAVE_ARGS.subscriptionId,
             SAVE_ARGS.usageCacheManager
         )
@@ -343,7 +343,7 @@ describe('saveChatflow', () => {
         await chatflowsService.saveChatflow(
             makeChatflow() as any,
             SAVE_ARGS.orgId,
-            SAVE_ARGS.workspaceId,
+            SAVE_ARGS.userId,
             SAVE_ARGS.subscriptionId,
             SAVE_ARGS.usageCacheManager
         )
@@ -362,7 +362,7 @@ describe('saveChatflow', () => {
         await chatflowsService.saveChatflow(
             makeChatflow() as any,
             SAVE_ARGS.orgId,
-            SAVE_ARGS.workspaceId,
+            SAVE_ARGS.userId,
             SAVE_ARGS.subscriptionId,
             SAVE_ARGS.usageCacheManager
         )
@@ -378,7 +378,7 @@ describe('saveChatflow', () => {
         await chatflowsService.saveChatflow(
             makeChatflow({ flowData: makeChatInputFlowData() }) as any,
             SAVE_ARGS.orgId,
-            SAVE_ARGS.workspaceId,
+            SAVE_ARGS.userId,
             SAVE_ARGS.subscriptionId,
             SAVE_ARGS.usageCacheManager
         )
@@ -393,7 +393,7 @@ describe('saveChatflow', () => {
         await chatflowsService.saveChatflow(
             chatflow as any,
             SAVE_ARGS.orgId,
-            SAVE_ARGS.workspaceId,
+            SAVE_ARGS.userId,
             SAVE_ARGS.subscriptionId,
             SAVE_ARGS.usageCacheManager
         )
@@ -409,7 +409,7 @@ describe('saveChatflow', () => {
         await chatflowsService.saveChatflow(
             makeChatflow({ type: EnumChatflowType.CHATFLOW, flowData: makePlainFlowData() }) as any,
             SAVE_ARGS.orgId,
-            SAVE_ARGS.workspaceId,
+            SAVE_ARGS.userId,
             SAVE_ARGS.subscriptionId,
             SAVE_ARGS.usageCacheManager
         )
@@ -475,7 +475,7 @@ describe('updateChatflow', () => {
         await chatflowsService.updateChatflow(existingFlow as any, updates as any, 'org-1', 'ws-1', 'sub-1')
 
         expect(mockCreateOrUpdateSchedule).toHaveBeenCalledWith(
-            expect.objectContaining({ triggerType: ScheduleTriggerType.AGENTFLOW, targetId: 'flow-1', workspaceId: 'ws-1' })
+            expect.objectContaining({ triggerType: ScheduleTriggerType.AGENTFLOW, targetId: 'flow-1', userId: 'ws-1' })
         )
     })
 

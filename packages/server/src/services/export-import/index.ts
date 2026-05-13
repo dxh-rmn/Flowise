@@ -145,7 +145,7 @@ const exportData = async (exportInput: ExportInput, activeWorkspaceId: string): 
                 ? await documenStoreService.getAllDocumentFileChunksByDocumentStoreIds(documentStoreIds)
                 : []
 
-        const filters: ExecutionFilters = { workspaceId: activeWorkspaceId }
+        const filters: ExecutionFilters = { userId: activeWorkspaceId }
         const { data: totalExecutions } = exportInput.execution === true ? await executionService.getAllExecutions(filters) : { data: [] }
         let Execution: Execution[] = exportInput.execution === true ? totalExecutions : []
 
@@ -250,7 +250,7 @@ async function replaceDuplicateIdsForChatMessage(
             await queryRunner.manager.find(ChatFlow, {
                 where: {
                     id: In(chatmessageChatflowIds.map((chatmessageChatflowId) => chatmessageChatflowId.id)),
-                    workspaceId: activeWorkspaceId
+                    userId: activeWorkspaceId
                 }
             })
         ).map((chatflow) => chatflow.id)
@@ -326,7 +326,7 @@ async function replaceExecutionIdForChatMessage(
             await queryRunner.manager.find(Execution, {
                 where: {
                     id: In(chatMessageExecutionIds.map((chatMessageExecutionId) => chatMessageExecutionId.id)),
-                    workspaceId: activeWorkspaceId
+                    userId: activeWorkspaceId
                 }
             })
         ).map((execution) => execution.id)
@@ -378,7 +378,7 @@ async function replaceDuplicateIdsForChatMessageFeedback(
         })
         const databaseChatflowIds = await (
             await queryRunner.manager.find(ChatFlow, {
-                where: { id: In(feedbackChatflowIds.map((feedbackChatflowId) => feedbackChatflowId.id)), workspaceId: activeWorkspaceId }
+                where: { id: In(feedbackChatflowIds.map((feedbackChatflowId) => feedbackChatflowId.id)), userId: activeWorkspaceId }
             })
         ).map((chatflow) => chatflow.id)
         feedbackChatflowIds.forEach((item) => {
@@ -606,7 +606,7 @@ function insertWorkspaceId(importedData: any, activeWorkspaceId?: string) {
                 func: item.func
             })
         }
-        item.workspaceId = activeWorkspaceId
+        item.userId = activeWorkspaceId
     })
     return importedData
 }
@@ -808,7 +808,7 @@ const exportChatflowMessages = async (
     feedbackType?: ChatMessageRatingType[] | string,
     startDate?: string,
     endDate?: string,
-    workspaceId?: string
+    userId?: string
 ) => {
     try {
         // Parse chatType if it's a string
@@ -842,7 +842,7 @@ const exportChatflowMessages = async (
             endDate,
             sortOrder: 'DESC',
             feedback: true,
-            activeWorkspaceId: workspaceId
+            activeWorkspaceId: userId
         })
 
         const storagePath = getStoragePath()

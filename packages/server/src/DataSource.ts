@@ -23,8 +23,8 @@ export const init = async (): Promise<void> => {
             homePath = process.env.DATABASE_PATH ?? flowisePath
             appDataSource = new DataSource({
                 type: 'sqlite',
-                database: path.resolve(homePath, 'database.sqlite'),
-                synchronize: false,
+                database: path.resolve(homePath, process.env.DATABASE_NAME ?? 'flowise.sqlite'),
+                synchronize: true,
                 migrationsRun: false,
                 entities: Object.values(entities),
                 migrations: sqliteMigrations
@@ -91,8 +91,8 @@ export const init = async (): Promise<void> => {
             homePath = process.env.DATABASE_PATH ?? flowisePath
             appDataSource = new DataSource({
                 type: 'sqlite',
-                database: path.resolve(homePath, 'database.sqlite'),
-                synchronize: false,
+                database: path.resolve(homePath, process.env.DATABASE_NAME ?? 'flowise.sqlite'),
+                synchronize: true,
                 migrationsRun: false,
                 entities: Object.values(entities),
                 migrations: sqliteMigrations

@@ -2,9 +2,6 @@ import { StatusCodes } from 'http-status-codes'
 import { omit } from 'lodash'
 import { ICredentialReturnResponse } from '../../Interface'
 import { Credential } from '../../database/entities/Credential'
-import { WorkspaceShared } from '../../enterprise/database/entities/EnterpriseEntities'
-import { WorkspaceService } from '../../enterprise/services/workspace.service'
-import { getWorkspaceSearchOptions } from '../../enterprise/utils/ControllerServiceUtils'
 import { InternalFlowiseError } from '../../errors/internalFlowiseError'
 import { getErrorMessage } from '../../errors/utils'
 import { decryptCredentialData, transformToCredentialEntity, REDACTED_CREDENTIAL_VALUE } from '../../utils'
@@ -31,10 +28,10 @@ const createCredential = async (requestBody: any) => {
 }
 
 // Delete all credentials from chatflowid
-const deleteCredentials = async (credentialId: string, workspaceId: string): Promise<any> => {
+const deleteCredentials = async (credentialId: string, userId: string): Promise<any> => {
     try {
         const appServer = getRunningExpressApp()
-        const dbResponse = await appServer.AppDataSource.getRepository(Credential).delete({ id: credentialId, workspaceId: workspaceId })
+        const dbResponse = await appServer.AppDataSource.getRepository(Credential).delete({ id: credentialId, userId: userId })
         if (!dbResponse) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Credential ${credentialId} not found`)
         }
@@ -47,7 +44,7 @@ const deleteCredentials = async (credentialId: string, workspaceId: string): Pro
     }
 }
 
-const getAllCredentials = async (paramCredentialName: any, workspaceId: string) => {
+const getAllCredentials = async (paramCredentialName: any, userId: string) => {
     try {
         const appServer = getRunningExpressApp()
         let dbResponse: any[] = []
@@ -57,7 +54,7 @@ const getAllCredentials = async (paramCredentialName: any, workspaceId: string) 
                     const name = paramCredentialName[i] as string
                     const searchOptions = {
                         credentialName: name,
-                        ...getWorkspaceSearchOptions(workspaceId)
+                        ...{}
                     }
                     const credentials = await appServer.AppDataSource.getRepository(Credential).findBy(searchOptions)
                     dbResponse.push(...credentials.map((c) => omit(c, ['encryptedData'])))
@@ -65,15 +62,14 @@ const getAllCredentials = async (paramCredentialName: any, workspaceId: string) 
             } else {
                 const searchOptions = {
                     credentialName: paramCredentialName,
-                    ...getWorkspaceSearchOptions(workspaceId)
+                    ...{}
                 }
                 const credentials = await appServer.AppDataSource.getRepository(Credential).findBy(searchOptions)
                 dbResponse = credentials.map((c) => omit(c, ['encryptedData']))
             }
             // get shared credentials
-            if (workspaceId) {
-                const workspaceService = new WorkspaceService()
-                const sharedItems = (await workspaceService.getSharedItemsForWorkspace(workspaceId, 'credential')) as Credential[]
+            if (userId) {
+                const sharedItems = [] as Credential[]
                 if (sharedItems.length) {
                     for (const sharedItem of sharedItems) {
                         // Check if paramCredentialName is array
@@ -97,15 +93,14 @@ const getAllCredentials = async (paramCredentialName: any, workspaceId: string) 
                 }
             }
         } else {
-            const credentials = await appServer.AppDataSource.getRepository(Credential).findBy(getWorkspaceSearchOptions(workspaceId))
+            const credentials = await appServer.AppDataSource.getRepository(Credential).findBy({})
             for (const credential of credentials) {
                 dbResponse.push(omit(credential, ['encryptedData']))
             }
 
             // get shared credentials
-            if (workspaceId) {
-                const workspaceService = new WorkspaceService()
-                const sharedItems = (await workspaceService.getSharedItemsForWorkspace(workspaceId, 'credential')) as Credential[]
+            if (userId) {
+                const sharedItems = [] as Credential[]
                 if (sharedItems.length) {
                     for (const sharedItem of sharedItems) {
                         // @ts-ignore
@@ -124,12 +119,12 @@ const getAllCredentials = async (paramCredentialName: any, workspaceId: string) 
     }
 }
 
-const getCredentialById = async (credentialId: string, workspaceId: string): Promise<any> => {
+const getCredentialById = async (credentialId: string, userId: string): Promise<any> => {
     try {
         const appServer = getRunningExpressApp()
         const credential = await appServer.AppDataSource.getRepository(Credential).findOneBy({
             id: credentialId,
-            workspaceId: workspaceId
+            userId: userId
         })
         if (!credential) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Credential ${credentialId} not found`)
@@ -145,18 +140,6 @@ const getCredentialById = async (credentialId: string, workspaceId: string): Pro
             plainDataObj: decryptedCredentialData
         }
         const dbResponse: any = omit(returnCredential, ['encryptedData'])
-        if (workspaceId) {
-            const shared = await appServer.AppDataSource.getRepository(WorkspaceShared).count({
-                where: {
-                    workspaceId: workspaceId,
-                    sharedItemId: credentialId,
-                    itemType: 'credential'
-                }
-            })
-            if (shared > 0) {
-                dbResponse.shared = true
-            }
-        }
         return dbResponse
     } catch (error) {
         throw new InternalFlowiseError(
@@ -166,12 +149,12 @@ const getCredentialById = async (credentialId: string, workspaceId: string): Pro
     }
 }
 
-const updateCredential = async (credentialId: string, requestBody: any, workspaceId: string): Promise<any> => {
+const updateCredential = async (credentialId: string, requestBody: any, userId: string): Promise<any> => {
     try {
         const appServer = getRunningExpressApp()
         const credential = await appServer.AppDataSource.getRepository(Credential).findOneBy({
             id: credentialId,
-            workspaceId: workspaceId
+            userId: userId
         })
         if (!credential) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Credential ${credentialId} not found`)
@@ -180,7 +163,7 @@ const updateCredential = async (credentialId: string, requestBody: any, workspac
         const incomingData = requestBody.plainDataObj ?? {}
         requestBody.plainDataObj = { ...decryptedCredentialData, ...incomingData }
         const updateCredential = await transformToCredentialEntity(requestBody)
-        updateCredential.workspaceId = workspaceId
+        updateCredential.userId = userId
         await appServer.AppDataSource.getRepository(Credential).merge(credential, updateCredential)
         const dbResponse = await appServer.AppDataSource.getRepository(Credential).save(credential)
         return dbResponse
@@ -192,12 +175,12 @@ const updateCredential = async (credentialId: string, requestBody: any, workspac
     }
 }
 
-const revealCredentialById = async (credentialId: string, workspaceId: string): Promise<any> => {
+const revealCredentialById = async (credentialId: string, userId: string): Promise<any> => {
     try {
         const appServer = getRunningExpressApp()
         const credential = await appServer.AppDataSource.getRepository(Credential).findOneBy({
             id: credentialId,
-            workspaceId: workspaceId
+            userId: userId
         })
         if (!credential) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Credential ${credentialId} not found`)

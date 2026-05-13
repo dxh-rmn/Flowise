@@ -4,8 +4,6 @@ import path from 'path'
 import { DeleteResult } from 'typeorm'
 import { v4 as uuidv4 } from 'uuid'
 import { CustomTemplate } from '../../database/entities/CustomTemplate'
-import { WorkspaceService } from '../../enterprise/services/workspace.service'
-import { getWorkspaceSearchOptions } from '../../enterprise/utils/ControllerServiceUtils'
 import { InternalFlowiseError } from '../../errors/internalFlowiseError'
 import { getErrorMessage } from '../../errors/utils'
 import { IReactFlowEdge, IReactFlowNode } from '../../Interface'
@@ -139,10 +137,10 @@ const getAllTemplates = async () => {
     }
 }
 
-const deleteCustomTemplate = async (templateId: string, workspaceId: string): Promise<DeleteResult> => {
+const deleteCustomTemplate = async (templateId: string, userId: string): Promise<DeleteResult> => {
     try {
         const appServer = getRunningExpressApp()
-        return await appServer.AppDataSource.getRepository(CustomTemplate).delete({ id: templateId, workspaceId: workspaceId })
+        return await appServer.AppDataSource.getRepository(CustomTemplate).delete({ id: templateId, userId: userId })
     } catch (error) {
         throw new InternalFlowiseError(
             StatusCodes.INTERNAL_SERVER_ERROR,
@@ -173,17 +171,16 @@ const _modifyTemplates = (templates: any[]) => {
     })
 }
 
-const getAllCustomTemplates = async (workspaceId?: string): Promise<any> => {
+const getAllCustomTemplates = async (userId?: string): Promise<any> => {
     try {
         const appServer = getRunningExpressApp()
-        const templates: any[] = await appServer.AppDataSource.getRepository(CustomTemplate).findBy(getWorkspaceSearchOptions(workspaceId))
+        const templates: any[] = await appServer.AppDataSource.getRepository(CustomTemplate).findBy({})
         const dbResponse = []
         _modifyTemplates(templates)
         dbResponse.push(...templates)
         // get shared credentials
-        if (workspaceId) {
-            const workspaceService = new WorkspaceService()
-            const sharedItems = (await workspaceService.getSharedItemsForWorkspace(workspaceId, 'custom_template')) as CustomTemplate[]
+        if (userId) {
+            const sharedItems = [] as CustomTemplate[]
             if (sharedItems && sharedItems.length) {
                 _modifyTemplates(sharedItems)
                 // add shared = true flag to all shared items, to differentiate them in the UI
@@ -210,10 +207,10 @@ const saveCustomTemplate = async (body: any): Promise<any> => {
         let derivedFramework = ''
         const customTemplate = new CustomTemplate()
         Object.assign(customTemplate, stripProtectedFields(body))
-        customTemplate.workspaceId = body.workspaceId // re-apply: set by controller from req.user
+        customTemplate.userId = body.userId // re-apply: set by controller from req.user
 
         if (body.chatflowId) {
-            const chatflow = await chatflowsService.getChatflowById(body.chatflowId, body.workspaceId)
+            const chatflow = await chatflowsService.getChatflowById(body.chatflowId, body.userId)
             const flowData = JSON.parse(chatflow.flowData)
             const { framework, exportJson } = _generateExportFlowData(flowData)
             flowDataStr = JSON.stringify(exportJson)

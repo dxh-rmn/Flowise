@@ -17,7 +17,7 @@ export class AddScheduleEntities1772000000000 implements MigrationInterface {
                 "lastRunAt" datetime,
                 "nextRunAt" datetime,
                 "endDate" datetime,
-                "workspaceId" varchar NOT NULL,
+                "userId" varchar NOT NULL,
                 "createdDate" datetime NOT NULL DEFAULT (datetime('now')),
                 "updatedDate" datetime NOT NULL DEFAULT (datetime('now'))
             );
@@ -36,7 +36,7 @@ export class AddScheduleEntities1772000000000 implements MigrationInterface {
                 "error" text,
                 "elapsedTimeMs" integer,
                 "scheduledAt" datetime NOT NULL,
-                "workspaceId" varchar NOT NULL,
+                "userId" varchar NOT NULL,
                 "createdDate" datetime NOT NULL DEFAULT (datetime('now'))
             );
         `)

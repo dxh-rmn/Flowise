@@ -13,7 +13,7 @@ export class AddTextToSpeechToChatFlow1759419136055 implements MigrationInterfac
         await queryRunner.query(`CREATE TABLE "chat_flow_temp" AS SELECT * FROM "chat_flow" WHERE 1=0;`)
         await queryRunner.query(`
             INSERT INTO "chat_flow_temp"
-            SELECT id, name, flowData, deployed, isPublic, apikeyid, chatbotConfig, apiConfig, analytic, speechToText, followUpPrompts, category, type, createdDate, updatedDate, workspaceId
+            SELECT id, name, flowData, deployed, isPublic, apikeyid, chatbotConfig, apiConfig, analytic, speechToText, followUpPrompts, category, type, createdDate, updatedDate, userId
             FROM "chat_flow";
         `)
         await queryRunner.query(`DROP TABLE "chat_flow";`)

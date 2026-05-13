@@ -1,7 +1,6 @@
 import { StatusCodes } from 'http-status-codes'
 import { v4 as uuidv4 } from 'uuid'
 import { ApiKey } from '../../database/entities/ApiKey'
-import { LoggedInUser } from '../../enterprise/Interface.Enterprise'
 import { InternalFlowiseError } from '../../errors/internalFlowiseError'
 import { getErrorMessage } from '../../errors/utils'
 import { Platform } from '../../Interface'
@@ -17,7 +16,7 @@ import logger from '../../utils/logger'
  * @param operation - The operation being performed (for error message)
  * @throws InternalFlowiseError if validation fails
  */
-function validatePermissions(user: LoggedInUser, requestedPermissions: string[], operation: string) {
+function validatePermissions(user: any, requestedPermissions: string[], operation: string) {
     // API Keys should not have workspace or admin permissions
     // This applies to ALL users, including admins (platform constraint)
     const hasRestrictedPermissions = requestedPermissions.some(
@@ -96,7 +95,7 @@ async function getAllApiKeysByOrganization(organizationId: string): Promise<ApiK
     const ApiKeys = await appServer.AppDataSource.getRepository(ApiKey)
         .createQueryBuilder('api_key')
         .select(['api_key.keyName', 'api_key.permissions'])
-        .leftJoin('workspace', 'workspace', 'api_key.workspaceId = workspace.id')
+        .leftJoin('workspace', 'workspace', 'api_key.userId = workspace.id')
         .where('workspace.organizationId = :organizationId', { organizationId })
         .getMany()
     return ApiKeys
@@ -106,7 +105,7 @@ async function getAllApiKeysByOrganization(organizationId: string): Promise<ApiK
  * Get all API keys for a workspace
  * Non-admin users can only view API keys whose permissions are a subset of their own permissions
  */
-const getAllApiKeys = async (user: LoggedInUser, page: number = -1, limit: number = -1) => {
+const getAllApiKeys = async (user: any, page: number = -1, limit: number = -1) => {
     try {
         const appServer = getRunningExpressApp()
         const queryBuilder = appServer.AppDataSource.getRepository(ApiKey)
@@ -116,7 +115,7 @@ const getAllApiKeys = async (user: LoggedInUser, page: number = -1, limit: numbe
             queryBuilder.skip((page - 1) * limit)
             queryBuilder.take(limit)
         }
-        queryBuilder.andWhere('api_key.workspaceId = :workspaceId', { workspaceId: user.activeWorkspaceId })
+        queryBuilder.andWhere('api_key.userId = :userId', { userId: user.activeWorkspaceId })
         const allKeys = await queryBuilder.getMany()
 
         // Filter keys based on user permissions
@@ -171,7 +170,7 @@ const getApiKeyById = async (apiKeyId: string) => {
     }
 }
 
-const createApiKey = async (user: LoggedInUser, keyName: string, permissions: string[]) => {
+const createApiKey = async (user: any, keyName: string, permissions: string[]) => {
     // Validate permissions before creating the key
     validatePermissions(user, permissions, 'create')
 
@@ -184,21 +183,21 @@ const createApiKey = async (user: LoggedInUser, keyName: string, permissions: st
     newKey.apiSecret = apiSecret
     newKey.keyName = keyName
     newKey.permissions = permissions
-    newKey.workspaceId = user.activeWorkspaceId
+    newKey.userId = user.activeWorkspaceId
     const key = appServer.AppDataSource.getRepository(ApiKey).create(newKey)
     await appServer.AppDataSource.getRepository(ApiKey).save(key)
     return await getAllApiKeys(user)
 }
 
 // Update api key
-const updateApiKey = async (user: LoggedInUser, id: string, keyName: string, permissions: string[]) => {
+const updateApiKey = async (user: any, id: string, keyName: string, permissions: string[]) => {
     // Validate permissions before updating the key
     validatePermissions(user, permissions, 'update')
 
     const appServer = getRunningExpressApp()
     const currentKey = await appServer.AppDataSource.getRepository(ApiKey).findOneBy({
         id: id,
-        workspaceId: user.activeWorkspaceId
+        userId: user.activeWorkspaceId
     })
     if (!currentKey) {
         throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `ApiKey ${currentKey} not found`)
@@ -209,10 +208,10 @@ const updateApiKey = async (user: LoggedInUser, id: string, keyName: string, per
     return await getAllApiKeys(user)
 }
 
-const deleteApiKey = async (id: string, workspaceId: string) => {
+const deleteApiKey = async (id: string, userId: string) => {
     try {
         const appServer = getRunningExpressApp()
-        const dbResponse = await appServer.AppDataSource.getRepository(ApiKey).delete({ id, workspaceId })
+        const dbResponse = await appServer.AppDataSource.getRepository(ApiKey).delete({ id, userId })
         if (!dbResponse) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `ApiKey ${id} not found`)
         }

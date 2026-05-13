@@ -7,7 +7,7 @@ import chatflowsService from '../chatflows'
 
 const validateWebhookChatflow = async (
     chatflowId: string,
-    workspaceId?: string,
+    userId?: string,
     body?: Record<string, any>,
     method?: string,
     headers?: Record<string, any>,
@@ -16,7 +16,7 @@ const validateWebhookChatflow = async (
     options?: { skipFieldValidation?: boolean }
 ): Promise<{ responseMode: 'sync' | 'async' | 'stream'; callbackUrl?: string; callbackSecret?: string }> => {
     try {
-        const chatflow = await chatflowsService.getChatflowById(chatflowId, workspaceId)
+        const chatflow = await chatflowsService.getChatflowById(chatflowId, userId)
         if (!chatflow) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Chatflow ${chatflowId} not found`)
         }
@@ -45,7 +45,7 @@ const validateWebhookChatflow = async (
 
         // Signature verification (runs before any other validation to fail-fast on bad auth)
         if (enableAuth) {
-            const secret = await chatflowsService.getWebhookSecret(chatflowId, chatflow.workspaceId)
+            const secret = await chatflowsService.getWebhookSecret(chatflowId, chatflow.userId)
             if (!secret) {
                 throw new InternalFlowiseError(
                     StatusCodes.INTERNAL_SERVER_ERROR,

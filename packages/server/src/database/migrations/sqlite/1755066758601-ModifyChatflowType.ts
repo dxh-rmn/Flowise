@@ -19,16 +19,16 @@ export class ModifyChatflowType1755066758601 implements MigrationInterface {
                 "category" TEXT, 
                 "speechToText" TEXT, 
                 "type" VARCHAR(20) NOT NULL DEFAULT '${EnumChatflowType.CHATFLOW}', 
-                "workspaceId" TEXT, 
+                "userId" TEXT, 
                 "followUpPrompts" TEXT,
-                FOREIGN KEY ("workspaceId") REFERENCES "workspace"("id")
+                FOREIGN KEY ("userId") REFERENCES "workspace"("id")
             );
         `)
 
         await queryRunner.query(`
-            INSERT INTO "temp_chat_flow" ("id", "name", "flowData", "deployed", "isPublic", "apikeyid", "chatbotConfig", "createdDate", "updatedDate", "apiConfig", "analytic", "category", "speechToText", "type", "workspaceId", "followUpPrompts")
+            INSERT INTO "temp_chat_flow" ("id", "name", "flowData", "deployed", "isPublic", "apikeyid", "chatbotConfig", "createdDate", "updatedDate", "apiConfig", "analytic", "category", "speechToText", "type", "userId", "followUpPrompts")
             SELECT "id", "name", "flowData", "deployed", "isPublic", "apikeyid", "chatbotConfig", "createdDate", "updatedDate", "apiConfig", "analytic", "category", "speechToText",
-            CASE WHEN "type" IS NULL OR "type" = '' THEN '${EnumChatflowType.CHATFLOW}' ELSE "type" END, "workspaceId", "followUpPrompts" FROM "chat_flow";
+            CASE WHEN "type" IS NULL OR "type" = '' THEN '${EnumChatflowType.CHATFLOW}' ELSE "type" END, "userId", "followUpPrompts" FROM "chat_flow";
         `)
 
         await queryRunner.query(`DROP TABLE "chat_flow";`)

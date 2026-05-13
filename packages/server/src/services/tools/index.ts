@@ -31,12 +31,12 @@ const createTool = async (requestBody: any, orgId: string): Promise<any> => {
     }
 }
 
-const deleteTool = async (toolId: string, workspaceId: string): Promise<any> => {
+const deleteTool = async (toolId: string, userId: string): Promise<any> => {
     try {
         const appServer = getRunningExpressApp()
         const dbResponse = await appServer.AppDataSource.getRepository(Tool).delete({
             id: toolId,
-            workspaceId: workspaceId
+            userId: userId
         })
         return dbResponse
     } catch (error) {
@@ -44,7 +44,7 @@ const deleteTool = async (toolId: string, workspaceId: string): Promise<any> => 
     }
 }
 
-const getAllTools = async (workspaceId?: string, page: number = -1, limit: number = -1) => {
+const getAllTools = async (userId?: string, page: number = -1, limit: number = -1) => {
     try {
         const appServer = getRunningExpressApp()
         const queryBuilder = appServer.AppDataSource.getRepository(Tool).createQueryBuilder('tool').orderBy('tool.updatedDate', 'DESC')
@@ -53,7 +53,7 @@ const getAllTools = async (workspaceId?: string, page: number = -1, limit: numbe
             queryBuilder.skip((page - 1) * limit)
             queryBuilder.take(limit)
         }
-        if (workspaceId) queryBuilder.andWhere('tool.workspaceId = :workspaceId', { workspaceId })
+        if (userId) queryBuilder.andWhere('tool.userId = :userId', { userId })
         const [data, total] = await queryBuilder.getManyAndCount()
 
         if (page > 0 && limit > 0) {
@@ -66,12 +66,12 @@ const getAllTools = async (workspaceId?: string, page: number = -1, limit: numbe
     }
 }
 
-const getToolById = async (toolId: string, workspaceId: string): Promise<any> => {
+const getToolById = async (toolId: string, userId: string): Promise<any> => {
     try {
         const appServer = getRunningExpressApp()
         const dbResponse = await appServer.AppDataSource.getRepository(Tool).findOneBy({
             id: toolId,
-            workspaceId: workspaceId
+            userId: userId
         })
         if (!dbResponse) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Tool ${toolId} not found`)
@@ -82,12 +82,12 @@ const getToolById = async (toolId: string, workspaceId: string): Promise<any> =>
     }
 }
 
-const updateTool = async (toolId: string, toolBody: any, workspaceId: string): Promise<any> => {
+const updateTool = async (toolId: string, toolBody: any, userId: string): Promise<any> => {
     try {
         const appServer = getRunningExpressApp()
         const tool = await appServer.AppDataSource.getRepository(Tool).findOneBy({
             id: toolId,
-            workspaceId: workspaceId
+            userId: userId
         })
         if (!tool) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Tool ${toolId} not found`)
@@ -95,7 +95,7 @@ const updateTool = async (toolId: string, toolBody: any, workspaceId: string): P
         const updateTool = new Tool()
         Object.assign(updateTool, toolBody)
         appServer.AppDataSource.getRepository(Tool).merge(tool, updateTool)
-        tool.workspaceId = workspaceId // defense-in-depth: never trust client-supplied workspaceId
+        tool.userId = userId // defense-in-depth: never trust client-supplied userId
         const dbResponse = await appServer.AppDataSource.getRepository(Tool).save(tool)
         return dbResponse
     } catch (error) {

@@ -58,7 +58,7 @@ export class ScheduleRecord implements IScheduleRecord {
     endDate?: Date
 
     @Column({ type: 'varchar' })
-    workspaceId: string
+    userId: string
 
     @Column({ type: 'timestamp' })
     @CreateDateColumn()

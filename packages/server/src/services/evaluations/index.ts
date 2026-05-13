@@ -10,7 +10,6 @@ import { Dataset } from '../../database/entities/Dataset'
 import { DatasetRow } from '../../database/entities/DatasetRow'
 import { Evaluation } from '../../database/entities/Evaluation'
 import { EvaluationRun } from '../../database/entities/EvaluationRun'
-import { getWorkspaceSearchOptions } from '../../enterprise/utils/ControllerServiceUtils'
 import { InternalFlowiseError } from '../../errors/internalFlowiseError'
 import { getErrorMessage } from '../../errors/utils'
 import { EvaluationStatus, IEvaluationResult } from '../../Interface'
@@ -22,12 +21,12 @@ import { calculateCost, formatCost } from './CostCalculator'
 import { runAdditionalEvaluators } from './EvaluatorRunner'
 import { LLMEvaluationRunner } from './LLMEvaluationRunner'
 
-const runAgain = async (id: string, baseURL: string, orgId: string, workspaceId: string) => {
+const runAgain = async (id: string, baseURL: string, orgId: string, userId: string) => {
     try {
         const appServer = getRunningExpressApp()
         const evaluation = await appServer.AppDataSource.getRepository(Evaluation).findOneBy({
             id: id,
-            workspaceId: workspaceId
+            userId: userId
         })
         if (!evaluation) throw new Error(`Evaluation ${id} not found`)
         const additionalConfig = evaluation.additionalConfig ? JSON.parse(evaluation.additionalConfig) : {}
@@ -42,7 +41,7 @@ const runAgain = async (id: string, baseURL: string, orgId: string, workspaceId:
             chatflowType: JSON.stringify(additionalConfig.chatflowTypes ? additionalConfig.chatflowTypes : [])
         }
         data.name = evaluation.name
-        data.workspaceId = evaluation.workspaceId
+        data.userId = evaluation.userId
         if (evaluation.evaluationType === 'llm') {
             data.selectedLLMEvaluators = JSON.stringify(additionalConfig.lLMEvaluators)
             data.credentialId = additionalConfig.credentialId
@@ -57,18 +56,18 @@ const runAgain = async (id: string, baseURL: string, orgId: string, workspaceId:
             }
         }
         data.version = true
-        return await createEvaluation(data, baseURL, orgId, workspaceId)
+        return await createEvaluation(data, baseURL, orgId, userId)
     } catch (error) {
         throw new InternalFlowiseError(StatusCodes.INTERNAL_SERVER_ERROR, `Error: EvalsService.runAgain - ${getErrorMessage(error)}`)
     }
 }
 
-const createEvaluation = async (body: ICommonObject, baseURL: string, orgId: string, workspaceId: string) => {
+const createEvaluation = async (body: ICommonObject, baseURL: string, orgId: string, userId: string) => {
     try {
         const appServer = getRunningExpressApp()
         const newEval = new Evaluation()
         Object.assign(newEval, stripProtectedFields(body))
-        newEval.workspaceId = workspaceId
+        newEval.userId = userId
         newEval.status = EvaluationStatus.PENDING
 
         const row = appServer.AppDataSource.getRepository(Evaluation).create(newEval)
@@ -119,7 +118,7 @@ const createEvaluation = async (body: ICommonObject, baseURL: string, orgId: str
 
         const dataset = await appServer.AppDataSource.getRepository(Dataset).findOneBy({
             id: body.datasetId,
-            workspaceId: workspaceId
+            userId: userId
         })
         if (!dataset) throw new Error(`Dataset ${body.datasetId} not found`)
 
@@ -152,7 +151,7 @@ const createEvaluation = async (body: ICommonObject, baseURL: string, orgId: str
             const chatflowId = chatflowIds[i]
             const cFlow = await appServer.AppDataSource.getRepository(ChatFlow).findOneBy({
                 id: chatflowId,
-                workspaceId: workspaceId
+                userId: userId
             })
             if (cFlow && cFlow.apikeyid) {
                 const apikeyObj = await appServer.AppDataSource.getRepository(ApiKey).findOneBy({
@@ -272,7 +271,7 @@ const createEvaluation = async (body: ICommonObject, baseURL: string, orgId: str
                             actualOutputArray,
                             errorArray,
                             additionalConfig.simpleEvaluators,
-                            workspaceId
+                            userId
                         )
 
                         newRun.evaluators = JSON.stringify(results)
@@ -286,7 +285,7 @@ const createEvaluation = async (body: ICommonObject, baseURL: string, orgId: str
                             const llmEvaluatorMap: { evaluatorId: string; evaluator: any }[] = []
                             for (let i = 0; i < resultRow.LLMEvaluators.length; i++) {
                                 const evaluatorId = resultRow.LLMEvaluators[i]
-                                const evaluator = await evaluatorsService.getEvaluator(evaluatorId, workspaceId)
+                                const evaluator = await evaluatorsService.getEvaluator(evaluatorId, userId)
                                 llmEvaluatorMap.push({
                                     evaluatorId: evaluatorId,
                                     evaluator: evaluator
@@ -358,7 +357,7 @@ const createEvaluation = async (body: ICommonObject, baseURL: string, orgId: str
                     })
             })
 
-        return getAllEvaluations(body.workspaceId)
+        return getAllEvaluations(body.userId)
     } catch (error) {
         throw new InternalFlowiseError(
             StatusCodes.INTERNAL_SERVER_ERROR,
@@ -367,7 +366,7 @@ const createEvaluation = async (body: ICommonObject, baseURL: string, orgId: str
     }
 }
 
-const getAllEvaluations = async (workspaceId: string, page: number = -1, limit: number = -1) => {
+const getAllEvaluations = async (userId: string, page: number = -1, limit: number = -1) => {
     try {
         const appServer = getRunningExpressApp()
 
@@ -376,7 +375,7 @@ const getAllEvaluations = async (workspaceId: string, page: number = -1, limit: 
         const countQuery = appServer.AppDataSource.getRepository(Evaluation)
             .createQueryBuilder('ev')
             .select('COUNT(DISTINCT(ev.name))', 'count')
-            .where('ev.workspaceId = :workspaceId', { workspaceId: workspaceId })
+            .where('ev.userId = :userId', { userId: userId })
 
         const totalResult = await countQuery.getRawOne()
         const total = totalResult ? parseInt(totalResult.count) : 0
@@ -387,7 +386,7 @@ const getAllEvaluations = async (workspaceId: string, page: number = -1, limit: 
             .select('DISTINCT(ev.name)', 'name')
             .addSelect('COUNT(ev.name)', 'count')
             .addSelect('MAX(ev.runDate)', 'latestRunDate')
-            .andWhere('ev.workspaceId = :workspaceId', { workspaceId: workspaceId })
+            .andWhere('ev.userId = :userId', { userId: userId })
             .groupBy('ev.name')
             .orderBy('max(ev.runDate)', 'DESC') // Order by the latest run date
 
@@ -406,7 +405,7 @@ const getAllEvaluations = async (workspaceId: string, page: number = -1, limit: 
             const allEvaluations = await appServer.AppDataSource.getRepository(Evaluation)
                 .createQueryBuilder('ev')
                 .where('ev.name IN (:...names)', { names })
-                .andWhere('ev.workspaceId = :workspaceId', { workspaceId })
+                .andWhere('ev.userId = :userId', { userId })
                 .orderBy('ev.name', 'ASC')
                 .addOrderBy('ev.runDate', 'DESC')
                 .getMany()
@@ -425,7 +424,7 @@ const getAllEvaluations = async (workspaceId: string, page: number = -1, limit: 
             for (const item of evaluationNames) {
                 const evaluationsForName = evaluationsByName.get(item.name) || []
                 for (let i = 0; i < evaluationsForName.length; i++) {
-                    const evaluation = evaluationsForName[i] as IEvaluationResult
+                    const evaluation = evaluationsForName[i] as unknown as IEvaluationResult
                     evaluation.latestEval = i === 0
                     evaluation.version = parseInt(item.count) - i
                     returnResults.push(evaluation)
@@ -456,14 +455,14 @@ const deleteEvaluation = async (id: string, activeWorkspaceId: string) => {
         const evaluationRepo = appServer.AppDataSource.getRepository(Evaluation)
         const existing = await evaluationRepo.findOneBy({
             id,
-            workspaceId: activeWorkspaceId
+            userId: activeWorkspaceId
         })
         if (!existing) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Evaluation ${id} not found`)
         }
         await appServer.AppDataSource.getRepository(EvaluationRun).delete({ evaluationId: id })
-        await evaluationRepo.delete({ id, workspaceId: activeWorkspaceId })
-        const results = await evaluationRepo.findBy(getWorkspaceSearchOptions(activeWorkspaceId))
+        await evaluationRepo.delete({ id, userId: activeWorkspaceId })
+        const results = await evaluationRepo.findBy({})
         return results
     } catch (error) {
         if (error instanceof InternalFlowiseError) {
@@ -477,12 +476,12 @@ const deleteEvaluation = async (id: string, activeWorkspaceId: string) => {
 }
 
 // check for outdated evaluations
-const isOutdated = async (id: string, workspaceId: string) => {
+const isOutdated = async (id: string, userId: string) => {
     try {
         const appServer = getRunningExpressApp()
         const evaluation = await appServer.AppDataSource.getRepository(Evaluation).findOneBy({
             id: id,
-            workspaceId: workspaceId
+            userId: userId
         })
         if (!evaluation) throw new Error(`Evaluation ${id} not found`)
         const evaluationRunDate = evaluation.runDate.getTime()
@@ -498,7 +497,7 @@ const isOutdated = async (id: string, workspaceId: string) => {
         // as the chatflows last updated time. If the evaluation is outdated, then return true else return false
         const dataset = await appServer.AppDataSource.getRepository(Dataset).findOneBy({
             id: evaluation.datasetId,
-            workspaceId: workspaceId
+            userId: userId
         })
         if (dataset) {
             const datasetLastUpdated = dataset.updatedDate.getTime()
@@ -526,7 +525,7 @@ const isOutdated = async (id: string, workspaceId: string) => {
             }
             const chatflow = await appServer.AppDataSource.getRepository(ChatFlow).findOneBy({
                 id: chatflowIds[i],
-                workspaceId: workspaceId
+                userId: userId
             })
             if (!chatflow) {
                 returnObj.errors.push({
@@ -555,7 +554,7 @@ const isOutdated = async (id: string, workspaceId: string) => {
                 }
                 const assistant = await appServer.AppDataSource.getRepository(Assistant).findOneBy({
                     id: chatflowIds[i],
-                    workspaceId: workspaceId
+                    userId: userId
                 })
                 if (!assistant) {
                     returnObj.errors.push({
@@ -584,12 +583,12 @@ const isOutdated = async (id: string, workspaceId: string) => {
     }
 }
 
-const getEvaluation = async (id: string, workspaceId: string) => {
+const getEvaluation = async (id: string, userId: string) => {
     try {
         const appServer = getRunningExpressApp()
         const evaluation = await appServer.AppDataSource.getRepository(Evaluation).findOneBy({
             id: id,
-            workspaceId: workspaceId
+            userId: userId
         })
         if (!evaluation) throw new Error(`Evaluation ${id} not found`)
         const versionCount = await appServer.AppDataSource.getRepository(Evaluation).countBy({
@@ -598,7 +597,7 @@ const getEvaluation = async (id: string, workspaceId: string) => {
         const items = await appServer.AppDataSource.getRepository(EvaluationRun).find({
             where: { evaluationId: id }
         })
-        const versions = (await getVersions(id, workspaceId)).versions
+        const versions = (await getVersions(id, userId)).versions
         const versionNo = versions.findIndex((version) => version.id === id) + 1
         return {
             ...evaluation,
@@ -611,12 +610,12 @@ const getEvaluation = async (id: string, workspaceId: string) => {
     }
 }
 
-const getVersions = async (id: string, workspaceId: string) => {
+const getVersions = async (id: string, userId: string) => {
     try {
         const appServer = getRunningExpressApp()
         const evaluation = await appServer.AppDataSource.getRepository(Evaluation).findOneBy({
             id: id,
-            workspaceId: workspaceId
+            userId: userId
         })
         if (!evaluation) throw new Error(`Evaluation ${id} not found`)
         const versions = await appServer.AppDataSource.getRepository(Evaluation).find({
@@ -649,7 +648,7 @@ const patchDeleteEvaluations = async (ids: string[] = [], activeWorkspaceId: str
         const evalsToBeDeleted = await appServer.AppDataSource.getRepository(Evaluation).find({
             where: {
                 id: In(ids),
-                workspaceId: activeWorkspaceId
+                userId: activeWorkspaceId
             }
         })
         await appServer.AppDataSource.getRepository(Evaluation).delete(ids)
@@ -675,7 +674,7 @@ const patchDeleteEvaluations = async (ids: string[] = [], activeWorkspaceId: str
             }
         }
 
-        const results = await appServer.AppDataSource.getRepository(Evaluation).findBy(getWorkspaceSearchOptions(activeWorkspaceId))
+        const results = await appServer.AppDataSource.getRepository(Evaluation).findBy({})
         return results
     } catch (error) {
         throw new InternalFlowiseError(

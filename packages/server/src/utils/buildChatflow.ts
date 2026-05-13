@@ -67,11 +67,8 @@ import { checkPredictions, checkStorage, updatePredictionsUsage, updateStorageUs
 import { buildAgentGraph } from './buildAgentGraph'
 import { getErrorMessage } from '../errors/utils'
 import { FLOWISE_METRIC_COUNTERS, FLOWISE_COUNTER_STATUS, IMetricsProvider } from '../Interface.Metrics'
-import { getWorkspaceSearchOptions } from '../enterprise/utils/ControllerServiceUtils'
 import { OMIT_QUEUE_JOB_DATA } from './constants'
 import { executeAgentFlow } from './buildAgentflow'
-import { Workspace } from '../enterprise/database/entities/workspace.entity'
-import { Organization } from '../enterprise/database/entities/organization.entity'
 
 const shouldAutoPlayTTS = (textToSpeechConfig: string | undefined | null): boolean => {
     if (!textToSpeechConfig) return false
@@ -317,7 +314,7 @@ export const executeFlow = async ({
     isTool,
     chatType,
     orgId,
-    workspaceId,
+    userId,
     subscriptionId,
     productId
 }: IExecuteFlowParams) => {
@@ -361,7 +358,7 @@ export const executeFlow = async ({
                 validateFileMimeTypeAndExtensionMatch(filename, mime)
 
                 const { totalSize } = await addSingleFileToStorage(mime, bf, filename, orgId, chatflowid, chatId)
-                await updateStorageUsage(orgId, workspaceId, totalSize, usageCacheManager)
+                await updateStorageUsage(orgId, userId, totalSize, usageCacheManager)
                 upload.type = 'stored-file'
                 // Omit upload.data since we don't store the content in database
                 fileUploads[i] = omit(upload, ['data'])
@@ -436,7 +433,7 @@ export const executeFlow = async ({
                 orgId,
                 chatflowid
             )
-            await updateStorageUsage(orgId, workspaceId, totalSize, usageCacheManager)
+            await updateStorageUsage(orgId, userId, totalSize, usageCacheManager)
 
             const fileInputFieldFromMimeType = mapMimeTypeToInputField(file.mimetype)
 
@@ -499,9 +496,9 @@ export const executeFlow = async ({
             signal,
             isTool,
             orgId,
-            workspaceId,
+            userId,
             subscriptionId,
-            productId
+            productId: ''
         })
     }
 
@@ -553,7 +550,7 @@ export const executeFlow = async ({
     })
 
     /*** Get API Config ***/
-    const availableVariables = await appDataSource.getRepository(Variable).findBy(getWorkspaceSearchOptions(workspaceId))
+    const availableVariables = await appDataSource.getRepository(Variable).findBy({})
     const { nodeOverrides, variableOverrides, apiOverrideStatus } = getAPIOverrideConfig(chatflow)
 
     const flowConfig: IFlowConfig = {
@@ -594,7 +591,7 @@ export const executeFlow = async ({
         uploads,
         baseURL,
         orgId,
-        workspaceId,
+        userId,
         subscriptionId,
         updateStorageUsage,
         checkStorage
@@ -624,7 +621,7 @@ export const executeFlow = async ({
             baseURL,
             signal,
             orgId,
-            workspaceId
+            userId
         })
 
         if (streamResults) {
@@ -766,7 +763,7 @@ export const executeFlow = async ({
         /*** Prepare run params ***/
         const runParams = {
             orgId,
-            workspaceId,
+            userId,
             subscriptionId,
             chatId,
             chatflowid,
@@ -837,7 +834,7 @@ export const executeFlow = async ({
                         },
                         appDataSource,
                         databaseEntities,
-                        workspaceId,
+                        userId,
                         orgId,
                         logger
                     }
@@ -901,7 +898,7 @@ export const executeFlow = async ({
                 chatId,
                 type: isEvaluation ? ChatType.EVALUATION : isInternal ? ChatType.INTERNAL : ChatType.EXTERNAL,
                 flowGraph: getTelemetryFlowObj(nodes, edges),
-                productId,
+                productId: '',
                 subscriptionId
             },
             orgId
@@ -1035,18 +1032,14 @@ export const utilBuildChatflow = async (req: Request, isInternal: boolean = fals
         }
 
         // This can be public API, so we can only get orgId from the chatflow
-        const chatflowWorkspaceId = chatflow.workspaceId
-        const workspace = await appServer.AppDataSource.getRepository(Workspace).findOneBy({
-            id: chatflowWorkspaceId
-        })
+        const chatflowWorkspaceId = chatflow.userId
+        const workspace: any = {}
         if (!workspace) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Workspace ${chatflowWorkspaceId} not found`)
         }
-        const workspaceId = workspace.id
+        const userId = workspace.id
 
-        const org = await appServer.AppDataSource.getRepository(Organization).findOneBy({
-            id: workspace.organizationId
-        })
+        const org: any = {}
         if (!org) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Organization ${workspace.organizationId} not found`)
         }
@@ -1054,7 +1047,7 @@ export const utilBuildChatflow = async (req: Request, isInternal: boolean = fals
         const orgId = org.id
         organizationId = orgId
         const subscriptionId = org.subscriptionId as string
-        const productId = await appServer.identityManager.getProductIdFromSubscription(subscriptionId)
+        const productId = ''
 
         await checkPredictions(orgId, subscriptionId, appServer.usageCacheManager)
 
@@ -1076,9 +1069,9 @@ export const utilBuildChatflow = async (req: Request, isInternal: boolean = fals
             chatType,
             usageCacheManager: appServer.usageCacheManager,
             orgId,
-            workspaceId,
+            userId,
             subscriptionId,
-            productId
+            productId: ''
         }
 
         if (process.env.MODE === MODE.QUEUE) {
@@ -1092,7 +1085,7 @@ export const utilBuildChatflow = async (req: Request, isInternal: boolean = fals
             if (!result) {
                 throw new Error('Job execution failed')
             }
-            await updatePredictionsUsage(orgId, subscriptionId, workspaceId, appServer.usageCacheManager)
+            await updatePredictionsUsage(orgId, subscriptionId, userId, appServer.usageCacheManager)
             incrementSuccessMetricCounter(appServer.metricsProvider, isInternal, isAgentFlow)
             return result
         } else {
@@ -1104,7 +1097,7 @@ export const utilBuildChatflow = async (req: Request, isInternal: boolean = fals
             const result = await executeFlow(executeData)
 
             appServer.abortControllerPool.remove(abortControllerId)
-            await updatePredictionsUsage(orgId, subscriptionId, workspaceId, appServer.usageCacheManager)
+            await updatePredictionsUsage(orgId, subscriptionId, userId, appServer.usageCacheManager)
             incrementSuccessMetricCounter(appServer.metricsProvider, isInternal, isAgentFlow)
             return result
         }

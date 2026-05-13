@@ -1,10 +1,8 @@
 import { Args } from '@oclif/core'
 import { QueryRunner } from 'typeorm'
 import * as DataSource from '../DataSource'
-import { User } from '../enterprise/database/entities/user.entity'
-import { getHash } from '../enterprise/utils/encryption.util'
-import { validatePasswordOrThrow } from '../enterprise/utils/validation.util'
 import logger from '../utils/logger'
+import { hashPassword } from '../utils/auth'
 import { BaseCommand } from './base'
 
 export default class user extends BaseCommand {
@@ -33,8 +31,8 @@ export default class user extends BaseCommand {
                 logger.info('Running resetPassword')
                 await this.resetPassword(queryRunner, args.email, args.password)
             } else {
-                logger.info('Running listUserEmails')
-                await this.listUserEmails(queryRunner)
+                logger.info('Running listanyEmails')
+                await this.listanyEmails(queryRunner)
             }
         } catch (error) {
             logger.error(error)
@@ -44,13 +42,13 @@ export default class user extends BaseCommand {
         }
     }
 
-    async listUserEmails(queryRunner: QueryRunner) {
+    async listanyEmails(queryRunner: QueryRunner) {
         logger.info('Listing all user emails')
-        const users = await queryRunner.manager.find(User, {
+        const users = await queryRunner.manager.find('User', {
             select: ['email']
         })
 
-        const emails = users.map((user) => user.email)
+        const emails = users.map((user: any) => user.email)
         logger.info(`Email addresses: ${emails.join(', ')}`)
         logger.info(`Email count: ${emails.length}`)
         logger.info('To reset user password, run the following command: pnpm user --email "myEmail" --password "myPassword"')
@@ -58,15 +56,14 @@ export default class user extends BaseCommand {
 
     async resetPassword(queryRunner: QueryRunner, email: string, password: string) {
         logger.info(`Finding user by email: ${email}`)
-        const user = await queryRunner.manager.findOne(User, {
+        const user: any = await queryRunner.manager.findOne('User', {
             where: { email }
         })
         if (!user) throw new Error(`User not found with email: ${email}`)
 
-        validatePasswordOrThrow(password)
-
-        user.credential = getHash(password)
-        await queryRunner.manager.save(user)
-        logger.info(`Password reset for user: ${email}`)
+        const hashedPassword = await hashPassword(password)
+        user.password = hashedPassword
+        await queryRunner.manager.save('User', user)
+        logger.info(`Password successfully reset for user: ${email}`)
     }
 }

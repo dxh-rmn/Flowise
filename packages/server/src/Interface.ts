@@ -74,7 +74,7 @@ export interface IChatFlow {
     category?: string
     type?: ChatflowType
     mcpServerConfig?: string
-    workspaceId: string
+    userId: string
     webhookSecret?: string | null
     webhookSecretConfigured?: boolean
 }
@@ -122,7 +122,7 @@ export interface ITool {
     func?: string
     updatedDate: Date
     createdDate: Date
-    workspaceId: string
+    userId: string
 }
 
 export interface IAssistant {
@@ -132,7 +132,7 @@ export interface IAssistant {
     iconSrc?: string
     updatedDate: Date
     createdDate: Date
-    workspaceId: string
+    userId: string
 }
 
 export interface ICredential {
@@ -142,7 +142,7 @@ export interface ICredential {
     encryptedData: string
     updatedDate: Date
     createdDate: Date
-    workspaceId: string
+    userId: string
 }
 
 export interface IVariable {
@@ -152,7 +152,7 @@ export interface IVariable {
     type: string
     updatedDate: Date
     createdDate: Date
-    workspaceId: string
+    userId: string
 }
 
 export interface ILead {
@@ -184,7 +184,7 @@ export interface IExecution {
     createdDate: Date
     updatedDate: Date
     stoppedDate: Date
-    workspaceId: string
+    userId: string
 }
 
 export type ScheduleInputMode = 'text' | 'form' | 'none'
@@ -203,7 +203,7 @@ export interface IScheduleRecord {
     lastRunAt?: Date
     nextRunAt?: Date
     endDate?: Date
-    workspaceId: string
+    userId: string
     createdDate: Date
     updatedDate: Date
 }
@@ -218,7 +218,7 @@ export interface IScheduleTriggerLog {
     error?: string
     elapsedTimeMs?: number
     scheduledAt: Date
-    workspaceId: string
+    userId: string
     createdDate: Date
 }
 
@@ -246,7 +246,7 @@ export interface ICustomMcpServer {
     status: CustomMcpServerStatus | string
     createdDate: Date
     updatedDate: Date
-    workspaceId: string
+    userId: string
 }
 
 export interface ICustomMcpServerResponse extends Omit<ICustomMcpServer, 'authConfig'> {
@@ -407,7 +407,7 @@ export interface ICredentialReqBody {
     name: string
     credentialName: string
     plainDataObj: ICredentialDataDecrypted
-    workspaceId: string
+    userId: string
 }
 
 // Decrypted credential object sent back to client
@@ -431,7 +431,7 @@ export interface ICustomTemplate {
     badge?: string
     framework?: string
     usecases?: string
-    workspaceId: string
+    userId: string
 }
 
 export interface IFlowConfig {
@@ -460,7 +460,7 @@ export interface IExecuteFlowParams extends IPredictionQueueAppServer {
     chatflow: IChatFlow
     chatId: string
     orgId: string
-    workspaceId: string
+    userId: string
     subscriptionId: string
     productId: string
     baseURL: string

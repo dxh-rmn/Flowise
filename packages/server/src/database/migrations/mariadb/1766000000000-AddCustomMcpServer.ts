@@ -16,13 +16,11 @@ export class AddCustomMcpServer1766000000000 implements MigrationInterface {
                 \`status\` varchar(255) NOT NULL DEFAULT 'PENDING',
                 \`createdDate\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
                 \`updatedDate\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
-                \`workspaceId\` varchar(36) NOT NULL,
+                \`userId\` varchar(36) NOT NULL,
                 PRIMARY KEY (\`id\`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;`
         )
-        await queryRunner.query(
-            `CREATE INDEX \`IDX_custom_mcp_workspace_updated\` ON \`custom_mcp_server\` (\`workspaceId\`, \`updatedDate\`);`
-        )
+        await queryRunner.query(`CREATE INDEX \`IDX_custom_mcp_workspace_updated\` ON \`custom_mcp_server\` (\`userId\`, \`updatedDate\`);`)
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {

@@ -17,9 +17,9 @@ describe('stripProtectedFields', () => {
         expect(result).not.toHaveProperty('updatedDate')
     })
 
-    it('removes workspaceId from input', () => {
-        const result = stripProtectedFields({ workspaceId: 'ws-999', details: '{}' })
-        expect(result).not.toHaveProperty('workspaceId')
+    it('removes userId from input', () => {
+        const result = stripProtectedFields({ userId: 'ws-999', details: '{}' })
+        expect(result).not.toHaveProperty('userId')
         expect(result).toHaveProperty('details', '{}')
     })
 
@@ -46,7 +46,7 @@ describe('stripProtectedFields', () => {
             id: 'abc',
             createdDate: '2026-01-01T00:00:00.000Z',
             updatedDate: '2026-01-02T00:00:00.000Z',
-            workspaceId: '11111111-2222-3333-4444-555555555555',
+            userId: '11111111-2222-3333-4444-555555555555',
             organizationId: 'org-789',
             webhookSecret: 'some-secret',
             webhookSecretConfigured: true,
@@ -79,7 +79,7 @@ describe('stripProtectedFields', () => {
     })
 
     it('does not mutate the original input object', () => {
-        const original = { id: 'abc', workspaceId: 'ws-1', name: 'assistant' }
+        const original = { id: 'abc', userId: 'ws-1', name: 'assistant' }
         const copy = { ...original }
         stripProtectedFields(original)
         expect(original).toEqual(copy)

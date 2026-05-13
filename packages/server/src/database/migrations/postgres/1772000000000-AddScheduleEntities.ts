@@ -17,7 +17,7 @@ export class AddScheduleEntities1772000000000 implements MigrationInterface {
                 "lastRunAt" timestamp,
                 "nextRunAt" timestamp,
                 "endDate" timestamp,
-                "workspaceId" varchar NOT NULL,
+                "userId" varchar NOT NULL,
                 "createdDate" timestamp NOT NULL DEFAULT now(),
                 "updatedDate" timestamp NOT NULL DEFAULT now(),
                 CONSTRAINT "PK_schedule_record" PRIMARY KEY (id)
@@ -37,7 +37,7 @@ export class AddScheduleEntities1772000000000 implements MigrationInterface {
                 "error" text,
                 "elapsedTimeMs" integer,
                 "scheduledAt" timestamp NOT NULL,
-                "workspaceId" varchar NOT NULL,
+                "userId" varchar NOT NULL,
                 "createdDate" timestamp NOT NULL DEFAULT now(),
                 CONSTRAINT "PK_schedule_trigger_log" PRIMARY KEY (id)
             );

@@ -54,11 +54,11 @@ function parseMcpConfig(chatflow: ChatFlow): IMcpServerConfig | null {
 /**
  * Get MCP server config for a chatflow
  */
-const getMcpServerConfig = async (chatflowId: string, workspaceId: string): Promise<IMcpServerConfig> => {
+const getMcpServerConfig = async (chatflowId: string, userId: string): Promise<IMcpServerConfig> => {
     try {
         const appServer = getRunningExpressApp()
         const chatflow = await appServer.AppDataSource.getRepository(ChatFlow).findOne({
-            where: { id: chatflowId, workspaceId }
+            where: { id: chatflowId, userId }
         })
         if (!chatflow) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Chatflow ${chatflowId} not found`)
@@ -79,13 +79,13 @@ const getMcpServerConfig = async (chatflowId: string, workspaceId: string): Prom
  */
 const createMcpServerConfig = async (
     chatflowId: string,
-    workspaceId: string,
+    userId: string,
     body: { description: string; toolName: string }
 ): Promise<IMcpServerConfig> => {
     try {
         const appServer = getRunningExpressApp()
         const chatflow = await appServer.AppDataSource.getRepository(ChatFlow).findOne({
-            where: { id: chatflowId, workspaceId }
+            where: { id: chatflowId, userId }
         })
         if (!chatflow) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Chatflow ${chatflowId} not found`)
@@ -124,13 +124,13 @@ const createMcpServerConfig = async (
  */
 const updateMcpServerConfig = async (
     chatflowId: string,
-    workspaceId: string,
+    userId: string,
     body: { description?: string; toolName?: string; enabled?: boolean }
 ): Promise<IMcpServerConfig> => {
     try {
         const appServer = getRunningExpressApp()
         const chatflow = await appServer.AppDataSource.getRepository(ChatFlow).findOne({
-            where: { id: chatflowId, workspaceId }
+            where: { id: chatflowId, userId }
         })
         if (!chatflow) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Chatflow ${chatflowId} not found`)
@@ -163,11 +163,11 @@ const updateMcpServerConfig = async (
 /**
  * Disable (soft delete) MCP server config
  */
-const deleteMcpServerConfig = async (chatflowId: string, workspaceId: string): Promise<void> => {
+const deleteMcpServerConfig = async (chatflowId: string, userId: string): Promise<void> => {
     try {
         const appServer = getRunningExpressApp()
         const chatflow = await appServer.AppDataSource.getRepository(ChatFlow).findOne({
-            where: { id: chatflowId, workspaceId }
+            where: { id: chatflowId, userId }
         })
         if (!chatflow) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Chatflow ${chatflowId} not found`)
@@ -191,11 +191,11 @@ const deleteMcpServerConfig = async (chatflowId: string, workspaceId: string): P
 /**
  * Rotate (regenerate) the token
  */
-const refreshMcpToken = async (chatflowId: string, workspaceId: string): Promise<IMcpServerConfig> => {
+const refreshMcpToken = async (chatflowId: string, userId: string): Promise<IMcpServerConfig> => {
     try {
         const appServer = getRunningExpressApp()
         const chatflow = await appServer.AppDataSource.getRepository(ChatFlow).findOne({
-            where: { id: chatflowId, workspaceId }
+            where: { id: chatflowId, userId }
         })
         if (!chatflow) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Chatflow ${chatflowId} not found`)

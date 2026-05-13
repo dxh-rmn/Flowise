@@ -57,7 +57,6 @@ import { utilAddChatMessage } from './addChatMesage'
 import { CachePool } from '../CachePool'
 import { ChatMessage } from '../database/entities/ChatMessage'
 import { Telemetry } from './telemetry'
-import { getWorkspaceSearchOptions } from '../enterprise/utils/ControllerServiceUtils'
 import { UsageCacheManager } from '../UsageCacheManager'
 import { generateTTSForResponseStream, shouldAutoPlayTTS } from './buildChatflow'
 
@@ -159,7 +158,7 @@ interface IExecuteNodeParams {
     iterationContext?: ICommonObject
     loopCounts?: Map<string, number>
     orgId: string
-    workspaceId: string
+    userId: string
     subscriptionId: string
     productId: string
 }
@@ -183,14 +182,14 @@ const addExecution = async (
     agentflowId: string,
     agentFlowExecutedData: IAgentflowExecutedData[],
     sessionId: string,
-    workspaceId: string
+    userId: string
 ) => {
     const newExecution = new Execution()
     const bodyExecution = {
         agentflowId,
         state: 'INPROGRESS',
         sessionId,
-        workspaceId,
+        userId,
         executionData: JSON.stringify(agentFlowExecutedData)
     }
     Object.assign(newExecution, bodyExecution)
@@ -206,10 +205,10 @@ const addExecution = async (
  * @param {Partial<IExecution>} data
  * @returns {Promise<void>}
  */
-const updateExecution = async (appDataSource: DataSource, executionId: string, workspaceId: string, data?: Partial<IExecution>) => {
+const updateExecution = async (appDataSource: DataSource, executionId: string, userId: string, data?: Partial<IExecution>) => {
     const execution = await appDataSource.getRepository(Execution).findOneBy({
         id: executionId,
-        workspaceId
+        userId
     })
 
     if (!execution) {
@@ -1085,7 +1084,7 @@ const executeNode = async ({
     iterationContext,
     loopCounts,
     orgId,
-    workspaceId,
+    userId,
     subscriptionId,
     productId
 }: IExecuteNodeParams): Promise<{
@@ -1120,7 +1119,7 @@ const executeNode = async ({
         }
 
         // Get available variables and resolve them
-        const availableVariables = await appDataSource.getRepository(Variable).findBy(getWorkspaceSearchOptions(workspaceId))
+        const availableVariables = await appDataSource.getRepository(Variable).findBy({})
 
         // Prepare flow config
         let updatedState = cloneDeep(agentflowRuntime.state)
@@ -1223,7 +1222,7 @@ const executeNode = async ({
         // Prepare run parameters
         const runParams = {
             orgId,
-            workspaceId,
+            userId,
             subscriptionId,
             chatId,
             sessionId,
@@ -1328,7 +1327,7 @@ const executeNode = async ({
                                 agentflowRuntime
                             },
                             orgId,
-                            workspaceId,
+                            userId,
                             subscriptionId,
                             productId
                         })
@@ -1357,7 +1356,7 @@ const executeNode = async ({
                             if (parentExecutionId) {
                                 try {
                                     logger.debug(`  📝 Updating parent execution ${parentExecutionId} with iteration ${i + 1} data`)
-                                    await updateExecution(appDataSource, parentExecutionId, workspaceId, {
+                                    await updateExecution(appDataSource, parentExecutionId, userId, {
                                         executionData: JSON.stringify(agentFlowExecutedData)
                                     })
                                 } catch (error) {
@@ -1557,7 +1556,7 @@ export const executeAgentFlow = async ({
     isTool = false,
     chatType,
     orgId,
-    workspaceId,
+    userId,
     subscriptionId,
     productId
 }: IExecuteAgentFlowParams) => {
@@ -1648,7 +1647,7 @@ export const executeAgentFlow = async ({
             where: {
                 sessionId,
                 agentflowId: chatflowid,
-                workspaceId
+                userId
             },
             order: {
                 createdDate: 'DESC'
@@ -1831,7 +1830,7 @@ export const executeAgentFlow = async ({
         // Update execution data if we removed an error item
         if (shouldUpdateExecution) {
             logger.debug(`  📝 Updating execution data after removing error item`)
-            await updateExecution(appDataSource, previousExecution.id, workspaceId, {
+            await updateExecution(appDataSource, previousExecution.id, userId, {
                 executionData: JSON.stringify(executionData),
                 state: 'INPROGRESS'
             })
@@ -1844,7 +1843,7 @@ export const executeAgentFlow = async ({
         agentflowRuntime.state = (lastState as ICommonObject) ?? {}
 
         // Update execution state to INPROGRESS
-        await updateExecution(appDataSource, previousExecution.id, workspaceId, {
+        await updateExecution(appDataSource, previousExecution.id, userId, {
             state: 'INPROGRESS'
         })
         newExecution = previousExecution
@@ -1860,7 +1859,7 @@ export const executeAgentFlow = async ({
         // For recursive calls with a valid parent execution ID, don't create a new execution
         // Instead, fetch the parent execution to use it
         const parentExecution = await appDataSource.getRepository(Execution).findOne({
-            where: { id: parentExecutionId, workspaceId }
+            where: { id: parentExecutionId, userId }
         })
 
         if (parentExecution) {
@@ -1868,7 +1867,7 @@ export const executeAgentFlow = async ({
             newExecution = parentExecution
         } else {
             console.warn(`   ⚠️ Parent execution ID ${parentExecutionId} not found, will create new execution`)
-            newExecution = await addExecution(appDataSource, chatflowid, agentFlowExecutedData, sessionId, workspaceId)
+            newExecution = await addExecution(appDataSource, chatflowid, agentFlowExecutedData, sessionId, userId)
             parentExecutionId = newExecution.id
         }
     } else {
@@ -1877,7 +1876,7 @@ export const executeAgentFlow = async ({
         checkForMultipleStartNodes(startingNodeIds, isRecursive, nodes)
 
         // Only create a new execution if this is not a recursive call
-        newExecution = await addExecution(appDataSource, chatflowid, agentFlowExecutedData, sessionId, workspaceId)
+        newExecution = await addExecution(appDataSource, chatflowid, agentFlowExecutedData, sessionId, userId)
         parentExecutionId = newExecution.id
     }
 
@@ -1978,7 +1977,7 @@ export const executeAgentFlow = async ({
             }
             analyticHandlers = AnalyticHandler.getInstance({ inputs: { analytics: analyticInputs } } as any, {
                 orgId,
-                workspaceId,
+                userId,
                 appDataSource,
                 databaseEntities,
                 componentNodes,
@@ -2066,7 +2065,7 @@ export const executeAgentFlow = async ({
                 iterationContext,
                 loopCounts,
                 orgId,
-                workspaceId,
+                userId,
                 subscriptionId,
                 productId
             })
@@ -2173,7 +2172,7 @@ export const executeAgentFlow = async ({
             if (!isRecursive) {
                 sseStreamer?.streamAgentFlowExecutedDataEvent(chatId, agentFlowExecutedData)
 
-                await updateExecution(appDataSource, newExecution.id, workspaceId, {
+                await updateExecution(appDataSource, newExecution.id, userId, {
                     executionData: JSON.stringify(agentFlowExecutedData),
                     state: errorStatus
                 })
@@ -2208,7 +2207,7 @@ export const executeAgentFlow = async ({
 
     // Only update execution record if this is not a recursive call
     if (!isRecursive) {
-        await updateExecution(appDataSource, newExecution.id, workspaceId, {
+        await updateExecution(appDataSource, newExecution.id, userId, {
             executionData: JSON.stringify(agentFlowExecutedData),
             state: status
         })
@@ -2259,7 +2258,7 @@ export const executeAgentFlow = async ({
                 },
                 appDataSource,
                 databaseEntities,
-                workspaceId,
+                userId,
                 orgId,
                 logger
             }
@@ -2374,7 +2373,7 @@ export const executeAgentFlow = async ({
         const followUpPromptsConfig = JSON.parse(chatflow.followUpPrompts)
         const followUpPrompts = await generateFollowUpPrompts(followUpPromptsConfig, apiMessage.content, {
             orgId,
-            workspaceId,
+            userId,
             chatId,
             chatflowid,
             appDataSource,

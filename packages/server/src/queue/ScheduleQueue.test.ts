@@ -70,7 +70,7 @@ const makeRecord = (overrides: Record<string, unknown> = {}) => ({
     cronExpression: '* * * * *',
     timezone: 'UTC',
     defaultInput: 'hello',
-    workspaceId: 'ws-1',
+    userId: 'ws-1',
     enabled: true,
     ...overrides
 })
@@ -216,7 +216,7 @@ describe('upsertJobScheduler', () => {
         )
     })
 
-    it('includes scheduleRecordId, targetId, and workspaceId in job data', async () => {
+    it('includes scheduleRecordId, targetId, and userId in job data', async () => {
         const q = makeQueue()
         await q.upsertJobScheduler(makeRecord() as any)
 
@@ -227,7 +227,7 @@ describe('upsertJobScheduler', () => {
                 data: expect.objectContaining({
                     scheduleRecordId: 'rec-1',
                     targetId: 'flow-1',
-                    workspaceId: 'ws-1'
+                    userId: 'ws-1'
                 })
             })
         )

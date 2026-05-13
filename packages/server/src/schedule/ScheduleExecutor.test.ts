@@ -78,7 +78,7 @@ const makeRecord = (overrides: Record<string, unknown> = {}) => ({
     cronExpression: '* * * * *',
     timezone: 'UTC',
     enabled: true,
-    workspaceId: 'ws-1',
+    userId: 'ws-1',
     scheduleInputMode: 'text' as const,
     defaultInput: 'hello',
     endDate: undefined as Date | undefined,
@@ -90,7 +90,7 @@ const makeRecord = (overrides: Record<string, unknown> = {}) => ({
 const makeChatFlow = (overrides: Record<string, unknown> = {}) => ({
     id: 'flow-1',
     type: 'AGENTFLOW',
-    workspaceId: 'ws-1',
+    userId: 'ws-1',
     ...overrides
 })
 
@@ -197,7 +197,7 @@ describe('executeScheduleJob — record disabled', () => {
                 scheduleRecordId: 'rec-1',
                 status: ScheduleTriggerStatus.SKIPPED,
                 targetId: 'flow-1',
-                workspaceId: 'ws-1'
+                userId: 'ws-1'
             })
         )
     })
@@ -409,26 +409,22 @@ describe('executeScheduleJob — successful execution', () => {
         expect(mockExecuteAgentFlow.mock.calls[0][0].isTool).toBeUndefined()
     })
 
-    it('uses chatflow.workspaceId when set', async () => {
-        mockFindOneBy
-            .mockResolvedValueOnce(makeRecord({ workspaceId: 'ws-record' }))
-            .mockResolvedValueOnce(makeChatFlow({ workspaceId: 'ws-flow' }))
+    it('uses chatflow.userId when set', async () => {
+        mockFindOneBy.mockResolvedValueOnce(makeRecord({ userId: 'ws-record' })).mockResolvedValueOnce(makeChatFlow({ userId: 'ws-flow' }))
         mockExecuteAgentFlow.mockResolvedValue({})
 
         await executeScheduleJob(mockCtx, 'rec-1')
 
-        expect(mockExecuteAgentFlow).toHaveBeenCalledWith(expect.objectContaining({ workspaceId: 'ws-flow' }))
+        expect(mockExecuteAgentFlow).toHaveBeenCalledWith(expect.objectContaining({ userId: 'ws-flow' }))
     })
 
-    it('falls back to record.workspaceId when chatflow.workspaceId is null', async () => {
-        mockFindOneBy
-            .mockResolvedValueOnce(makeRecord({ workspaceId: 'ws-record' }))
-            .mockResolvedValueOnce(makeChatFlow({ workspaceId: null }))
+    it('falls back to record.userId when chatflow.userId is null', async () => {
+        mockFindOneBy.mockResolvedValueOnce(makeRecord({ userId: 'ws-record' })).mockResolvedValueOnce(makeChatFlow({ userId: null }))
         mockExecuteAgentFlow.mockResolvedValue({})
 
         await executeScheduleJob(mockCtx, 'rec-1')
 
-        expect(mockExecuteAgentFlow).toHaveBeenCalledWith(expect.objectContaining({ workspaceId: 'ws-record' }))
+        expect(mockExecuteAgentFlow).toHaveBeenCalledWith(expect.objectContaining({ userId: 'ws-record' }))
     })
 
     it('sets executionId to undefined when result has no executionId field', async () => {

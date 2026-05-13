@@ -16,12 +16,12 @@ export class AddCustomMcpServer1766000000000 implements MigrationInterface {
                 "status" varchar NOT NULL DEFAULT 'PENDING',
                 "createdDate" timestamp NOT NULL DEFAULT now(),
                 "updatedDate" timestamp NOT NULL DEFAULT now(),
-                "workspaceId" text NOT NULL,
+                "userId" text NOT NULL,
                 CONSTRAINT "PK_custom_mcp_server_id" PRIMARY KEY (id)
             );`
         )
         await queryRunner.query(
-            `CREATE INDEX IF NOT EXISTS "IDX_custom_mcp_workspace_updated" ON custom_mcp_server ("workspaceId", "updatedDate");`
+            `CREATE INDEX IF NOT EXISTS "IDX_custom_mcp_workspace_updated" ON custom_mcp_server ("userId", "updatedDate");`
         )
     }
 

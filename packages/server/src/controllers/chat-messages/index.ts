@@ -158,15 +158,15 @@ const removeAllChatMessages = async (req: Request, res: Response, next: NextFunc
                 `Error: chatMessagesController.removeAllChatMessages - organization ${orgId} not found!`
             )
         }
-        const workspaceId = req.user?.activeWorkspaceId
-        if (!workspaceId) {
+        const userId = req.user?.activeWorkspaceId
+        if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
-                `Error: chatMessagesController.removeAllChatMessages - workspace ${workspaceId} not found!`
+                `Error: chatMessagesController.removeAllChatMessages - workspace ${userId} not found!`
             )
         }
         const chatflowid = req.params.id
-        const chatflow = await chatflowsService.getChatflowByIdForWorkspace(req.params.id, workspaceId)
+        const chatflow = await chatflowsService.getChatflowByIdForWorkspace(req.params.id, userId)
         if (!chatflow) {
             return res.status(404).send('Chatflow not found')
         }
@@ -209,7 +209,7 @@ const removeAllChatMessages = async (req: Request, res: Response, next: NextFunc
                 endDate,
                 feedback: isFeedback,
                 feedbackTypes: feedbackTypeFilters,
-                activeWorkspaceId: workspaceId
+                activeWorkspaceId: userId
             })
             const messageIds = messages.map((message) => message.id)
 
@@ -257,7 +257,7 @@ const removeAllChatMessages = async (req: Request, res: Response, next: NextFunc
                 chatIdMap,
                 messageIds,
                 orgId,
-                workspaceId,
+                userId,
                 appServer.usageCacheManager
             )
             return res.json(apiResponse)
@@ -294,7 +294,7 @@ const removeAllChatMessages = async (req: Request, res: Response, next: NextFunc
                 chatflowid,
                 deleteOptions,
                 orgId,
-                workspaceId,
+                userId,
                 appServer.usageCacheManager
             )
             return res.json(apiResponse)

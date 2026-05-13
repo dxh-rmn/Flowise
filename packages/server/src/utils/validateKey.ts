@@ -23,10 +23,10 @@ export const validateFlowAPIKey = async (req: Request, chatflow: ChatFlow): Prom
         const apiKey = await apikeyService.getApiKeyById(chatFlowApiKeyId)
         if (!apiKey) return false
 
-        const apiKeyWorkSpaceId = apiKey.workspaceId
+        const apiKeyWorkSpaceId = apiKey.userId
         if (!apiKeyWorkSpaceId) return false
 
-        if (apiKeyWorkSpaceId !== chatflow.workspaceId) return false
+        if (apiKeyWorkSpaceId !== chatflow.userId) return false
 
         const apiSecret = apiKey.apiSecret
         if (!apiSecret || !compareKeys(apiSecret, suppliedKey)) return false
@@ -53,7 +53,7 @@ export const validateAPIKey = async (req: Request): Promise<{ isValid: boolean; 
         const apiKey = await apikeyService.getApiKey(suppliedKey)
         if (!apiKey) return { isValid: false }
 
-        const apiKeyWorkSpaceId = apiKey.workspaceId
+        const apiKeyWorkSpaceId = apiKey.userId
         if (!apiKeyWorkSpaceId) return { isValid: false }
 
         const apiSecret = apiKey.apiSecret

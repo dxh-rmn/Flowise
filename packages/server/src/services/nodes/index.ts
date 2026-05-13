@@ -126,7 +126,7 @@ const getSingleNodeAsyncOptions = async (nodeName: string, requestBody: any): Pr
 }
 
 // execute custom function node
-const executeCustomFunction = async (requestBody: any, workspaceId?: string, orgId?: string) => {
+const executeCustomFunction = async (requestBody: any, userId?: string, orgId?: string) => {
     const appServer = getRunningExpressApp()
     const executeData = {
         appDataSource: appServer.AppDataSource,
@@ -134,7 +134,7 @@ const executeCustomFunction = async (requestBody: any, workspaceId?: string, org
         data: requestBody,
         isExecuteCustomFunction: true,
         orgId,
-        workspaceId
+        userId
     }
 
     if (process.env.MODE === MODE.QUEUE) {

@@ -15,7 +15,7 @@ export const addChatflowsCount = async (keys: any) => {
                 const chatflows = await appServer.AppDataSource.getRepository(ChatFlow)
                     .createQueryBuilder('cf')
                     .where('cf.apikeyid = :apikeyid', { apikeyid: key.id })
-                    .andWhere('cf.workspaceId = :workspaceId', { workspaceId: key.workspaceId })
+                    .andWhere('cf.userId = :userId', { userId: key.userId })
                     .getMany()
                 const linkedChatFlows: any[] = []
                 chatflows.map((cf) => {

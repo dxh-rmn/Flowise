@@ -2,7 +2,6 @@ import { NextFunction, Request, Response } from 'express'
 import { StatusCodes } from 'http-status-codes'
 import { QueryRunner } from 'typeorm'
 import { ChatFlow } from '../../database/entities/ChatFlow'
-import { WorkspaceUserErrorMessage, WorkspaceUserService } from '../../enterprise/services/workspace-user.service'
 import { InternalFlowiseError } from '../../errors/internalFlowiseError'
 import { ChatflowType } from '../../Interface'
 import apiKeyService from '../../services/apikey'
@@ -59,14 +58,14 @@ const deleteChatflow = async (req: Request, res: Response, next: NextFunction) =
                 `Error: chatflowsController.deleteChatflow - organization ${orgId} not found!`
             )
         }
-        const workspaceId = req.user?.activeWorkspaceId
-        if (!workspaceId) {
+        const userId = req.user?.activeWorkspaceId
+        if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
-                `Error: chatflowsController.deleteChatflow - workspace ${workspaceId} not found!`
+                `Error: chatflowsController.deleteChatflow - workspace ${userId} not found!`
             )
         }
-        const apiResponse = await chatflowsService.deleteChatflow(req.params.id, orgId, workspaceId)
+        const apiResponse = await chatflowsService.deleteChatflow(req.params.id, orgId, userId)
         return res.json(apiResponse)
     } catch (error) {
         next(error)
@@ -102,7 +101,7 @@ const getChatflowByApiKey = async (req: Request, res: Response, next: NextFuncti
         if (!apikey) {
             return res.status(401).send('Unauthorized')
         }
-        const apiResponse = await chatflowsService.getChatflowByApiKey(apikey.id, apikey.workspaceId, req.query.keyonly)
+        const apiResponse = await chatflowsService.getChatflowByApiKey(apikey.id, apikey.userId, req.query.keyonly)
         return res.json(apiResponse)
     } catch (error) {
         next(error)
@@ -114,14 +113,14 @@ const getChatflowById = async (req: Request, res: Response, next: NextFunction) 
         if (typeof req.params === 'undefined' || !req.params.id) {
             throw new InternalFlowiseError(StatusCodes.PRECONDITION_FAILED, `Error: chatflowsController.getChatflowById - id not provided!`)
         }
-        const workspaceId = req.user?.activeWorkspaceId
-        if (!workspaceId) {
+        const userId = req.user?.activeWorkspaceId
+        if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
-                `Error: chatflowsController.getChatflowById - workspace ${workspaceId} not found!`
+                `Error: chatflowsController.getChatflowById - workspace ${userId} not found!`
             )
         }
-        const apiResponse = await chatflowsService.getChatflowById(req.params.id, workspaceId)
+        const apiResponse = await chatflowsService.getChatflowById(req.params.id, userId)
         return res.json(apiResponse)
     } catch (error) {
         next(error)
@@ -140,11 +139,11 @@ const saveChatflow = async (req: Request, res: Response, next: NextFunction) => 
                 `Error: chatflowsController.saveChatflow - organization ${orgId} not found!`
             )
         }
-        const workspaceId = req.user?.activeWorkspaceId
-        if (!workspaceId) {
+        const userId = req.user?.activeWorkspaceId
+        if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
-                `Error: chatflowsController.saveChatflow - workspace ${workspaceId} not found!`
+                `Error: chatflowsController.saveChatflow - workspace ${userId} not found!`
             )
         }
         const subscriptionId = req.user?.activeOrganizationSubscriptionId || ''
@@ -157,11 +156,11 @@ const saveChatflow = async (req: Request, res: Response, next: NextFunction) => 
         const newChatFlow = new ChatFlow()
         Object.assign(newChatFlow, stripProtectedFields(body))
 
-        newChatFlow.workspaceId = workspaceId
+        newChatFlow.userId = userId
         const apiResponse = await chatflowsService.saveChatflow(
             newChatFlow,
             orgId,
-            workspaceId,
+            userId,
             subscriptionId,
             getRunningExpressApp().usageCacheManager
         )
@@ -177,14 +176,14 @@ const updateChatflow = async (req: Request, res: Response, next: NextFunction) =
         if (typeof req.params === 'undefined' || !req.params.id) {
             throw new InternalFlowiseError(StatusCodes.PRECONDITION_FAILED, `Error: chatflowsController.updateChatflow - id not provided!`)
         }
-        const workspaceId = req.user?.activeWorkspaceId
-        if (!workspaceId) {
+        const userId = req.user?.activeWorkspaceId
+        if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
-                `Error: chatflowsController.saveChatflow - workspace ${workspaceId} not found!`
+                `Error: chatflowsController.saveChatflow - workspace ${userId} not found!`
             )
         }
-        const chatflow = await chatflowsService.getChatflowById(req.params.id, workspaceId)
+        const chatflow = await chatflowsService.getChatflowById(req.params.id, userId)
         if (!chatflow) {
             return res.status(404).send('Chatflow not found')
         }
@@ -204,7 +203,7 @@ const updateChatflow = async (req: Request, res: Response, next: NextFunction) =
         const rateLimiterManager = RateLimiterManager.getInstance()
         await rateLimiterManager.updateRateLimiter(updateChatFlow)
 
-        const apiResponse = await chatflowsService.updateChatflow(chatflow, updateChatFlow, orgId, workspaceId, subscriptionId)
+        const apiResponse = await chatflowsService.updateChatflow(chatflow, updateChatFlow, orgId, userId, subscriptionId)
         return res.json(apiResponse)
     } catch (error) {
         next(error)
@@ -225,14 +224,9 @@ const getSinglePublicChatflow = async (req: Request, res: Response, next: NextFu
         if (chatflow.isPublic)
             return res.status(StatusCodes.OK).json({ ...chatflow, flowData: sanitizeFlowDataForPublicEndpoint(chatflow.flowData) })
         if (!req.user) return res.status(StatusCodes.UNAUTHORIZED).json({ message: GeneralErrorMessage.UNAUTHORIZED })
-        queryRunner = getRunningExpressApp().AppDataSource.createQueryRunner()
-        const workspaceUserService = new WorkspaceUserService()
-        const workspaceUser = await workspaceUserService.readWorkspaceUserByUserId(req.user.id, queryRunner)
-        if (workspaceUser.length === 0)
-            return res.status(StatusCodes.NOT_FOUND).json({ message: WorkspaceUserErrorMessage.WORKSPACE_USER_NOT_FOUND })
-        const workspaceIds = workspaceUser.map((user) => user.workspaceId)
-        if (!workspaceIds.includes(chatflow.workspaceId))
-            return res.status(StatusCodes.BAD_REQUEST).json({ message: 'You are not in the workspace that owns this chatflow' })
+
+        if (chatflow.userId !== req.user.id)
+            return res.status(StatusCodes.BAD_REQUEST).json({ message: 'You are not the owner of this chatflow' })
         return res.status(StatusCodes.OK).json(chatflow)
     } catch (error) {
         next(error)
@@ -270,14 +264,14 @@ const checkIfChatflowHasChanged = async (req: Request, res: Response, next: Next
                 `Error: chatflowsController.checkIfChatflowHasChanged - lastUpdatedDateTime not provided!`
             )
         }
-        const workspaceId = req.user?.activeWorkspaceId
-        if (!workspaceId) {
+        const userId = req.user?.activeWorkspaceId
+        if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
                 'Error: chatflowsController.checkIfChatflowHasChanged - active workspace ID not found!'
             )
         }
-        const apiResponse = await chatflowsService.checkIfChatflowHasChanged(req.params.id, req.params.lastUpdatedDateTime, workspaceId)
+        const apiResponse = await chatflowsService.checkIfChatflowHasChanged(req.params.id, req.params.lastUpdatedDateTime, userId)
         return res.json(apiResponse)
     } catch (error) {
         next(error)
@@ -292,11 +286,11 @@ const setWebhookSecret = async (req: Request, res: Response, next: NextFunction)
                 `Error: chatflowsController.setWebhookSecret - id not provided!`
             )
         }
-        const workspaceId = req.user?.activeWorkspaceId
-        if (!workspaceId) {
+        const userId = req.user?.activeWorkspaceId
+        if (!userId) {
             throw new InternalFlowiseError(StatusCodes.UNAUTHORIZED, `Error: chatflowsController.setWebhookSecret - workspace not found!`)
         }
-        const apiResponse = await chatflowsService.setWebhookSecret(req.params.id, workspaceId)
+        const apiResponse = await chatflowsService.setWebhookSecret(req.params.id, userId)
         return res.json(apiResponse)
     } catch (error) {
         next(error)
@@ -311,11 +305,11 @@ const clearWebhookSecret = async (req: Request, res: Response, next: NextFunctio
                 `Error: chatflowsController.clearWebhookSecret - id not provided!`
             )
         }
-        const workspaceId = req.user?.activeWorkspaceId
-        if (!workspaceId) {
+        const userId = req.user?.activeWorkspaceId
+        if (!userId) {
             throw new InternalFlowiseError(StatusCodes.UNAUTHORIZED, `Error: chatflowsController.clearWebhookSecret - workspace not found!`)
         }
-        await chatflowsService.clearWebhookSecret(req.params.id, workspaceId)
+        await chatflowsService.clearWebhookSecret(req.params.id, userId)
         return res.sendStatus(StatusCodes.NO_CONTENT)
     } catch (error) {
         next(error)
@@ -330,11 +324,11 @@ const getScheduleStatus = async (req: Request, res: Response, next: NextFunction
                 'Error: chatflowsController.getScheduleStatus - id not provided!'
             )
         }
-        const workspaceId = req.user?.activeWorkspaceId
-        if (!workspaceId) {
+        const userId = req.user?.activeWorkspaceId
+        if (!userId) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, 'Error: chatflowsController.getScheduleStatus - workspace not found!')
         }
-        const status = await scheduleService.getScheduleStatus(req.params.id, workspaceId)
+        const status = await scheduleService.getScheduleStatus(req.params.id, userId)
         return res.json({
             enabled: status.record?.enabled ?? false,
             canEnable: status.canEnable,
@@ -354,8 +348,8 @@ const getScheduleTriggerLogs = async (req: Request, res: Response, next: NextFun
                 'Error: chatflowsController.getScheduleTriggerLogs - id not provided!'
             )
         }
-        const workspaceId = req.user?.activeWorkspaceId
-        if (!workspaceId) {
+        const userId = req.user?.activeWorkspaceId
+        if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
                 'Error: chatflowsController.getScheduleTriggerLogs - workspace not found!'
@@ -365,7 +359,7 @@ const getScheduleTriggerLogs = async (req: Request, res: Response, next: NextFun
         const limit = req.query.limit ? parseInt(String(req.query.limit), 10) : undefined
         const statusRaw = req.query.status
         const status = Array.isArray(statusRaw) ? (statusRaw as any) : statusRaw ? (String(statusRaw) as any) : undefined
-        const result = await scheduleService.getTriggerLogs(req.params.id, workspaceId, { page, limit, status })
+        const result = await scheduleService.getTriggerLogs(req.params.id, userId, { page, limit, status })
         return res.json(result)
     } catch (error) {
         next(error)
@@ -380,8 +374,8 @@ const deleteScheduleTriggerLogs = async (req: Request, res: Response, next: Next
                 'Error: chatflowsController.deleteScheduleTriggerLogs - id not provided!'
             )
         }
-        const workspaceId = req.user?.activeWorkspaceId
-        if (!workspaceId) {
+        const userId = req.user?.activeWorkspaceId
+        if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
                 'Error: chatflowsController.deleteScheduleTriggerLogs - workspace not found!'
@@ -391,7 +385,7 @@ const deleteScheduleTriggerLogs = async (req: Request, res: Response, next: Next
         if (!Array.isArray(logIds) || logIds.some((x) => typeof x !== 'string')) {
             throw new InternalFlowiseError(StatusCodes.BAD_REQUEST, 'logIds must be a string[]')
         }
-        const result = await scheduleService.deleteTriggerLogs(req.params.id, workspaceId, logIds as string[])
+        const result = await scheduleService.deleteTriggerLogs(req.params.id, userId, logIds as string[])
         return res.json(result)
     } catch (error) {
         next(error)
@@ -406,15 +400,15 @@ const toggleScheduleEnabled = async (req: Request, res: Response, next: NextFunc
                 'Error: chatflowsController.toggleScheduleEnabled - id not provided!'
             )
         }
-        const workspaceId = req.user?.activeWorkspaceId
-        if (!workspaceId) {
+        const userId = req.user?.activeWorkspaceId
+        if (!userId) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, 'Error: chatflowsController.toggleScheduleEnabled - workspace not found!')
         }
         const { enabled } = req.body
         if (typeof enabled !== 'boolean') {
             throw new InternalFlowiseError(StatusCodes.BAD_REQUEST, '"enabled" must be a boolean')
         }
-        const record = await scheduleService.toggleScheduleEnabled(req.params.id, workspaceId, enabled)
+        const record = await scheduleService.toggleScheduleEnabled(req.params.id, userId, enabled)
         await ScheduleBeat.getInstance().onScheduleChanged(record.id, enabled ? 'upsert' : 'delete')
         return res.json(record)
     } catch (error) {

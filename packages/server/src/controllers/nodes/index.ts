@@ -4,7 +4,6 @@ import nodesService from '../../services/nodes'
 import { ClientType, VALID_CLIENT_TYPES } from 'flowise-components'
 import { InternalFlowiseError } from '../../errors/internalFlowiseError'
 import { StatusCodes } from 'http-status-codes'
-import { getWorkspaceSearchOptionsFromReq } from '../../enterprise/utils/ControllerServiceUtils'
 
 // if req.query.client does not contain a valid client type, then return undefined so it won't filter the nodes unnecessarily
 const parseClientParam = (req: Request): ClientType | undefined => {
@@ -76,7 +75,7 @@ const getSingleNodeAsyncOptions = async (req: Request, res: Response, next: Next
             )
         }
         const body = req.body
-        body.searchOptions = getWorkspaceSearchOptionsFromReq(req)
+        body.searchOptions = {}
         const apiResponse = await nodesService.getSingleNodeAsyncOptions(req.params.name, body)
         return res.json(apiResponse)
     } catch (error) {
@@ -93,8 +92,8 @@ const executeCustomFunction = async (req: Request, res: Response, next: NextFunc
             )
         }
         const orgId = req.user?.activeOrganizationId
-        const workspaceId = req.user?.activeWorkspaceId
-        const apiResponse = await nodesService.executeCustomFunction(req.body, workspaceId, orgId)
+        const userId = req.user?.activeWorkspaceId
+        const apiResponse = await nodesService.executeCustomFunction(req.body, userId, orgId)
         return res.json(apiResponse)
     } catch (error) {
         next(error)

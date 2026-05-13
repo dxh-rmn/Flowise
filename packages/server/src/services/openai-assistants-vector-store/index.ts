@@ -1,7 +1,6 @@
 import OpenAI from 'openai'
 import { StatusCodes } from 'http-status-codes'
 import { Credential } from '../../database/entities/Credential'
-import { WorkspaceShared } from '../../enterprise/database/entities/EnterpriseEntities'
 import { InternalFlowiseError } from '../../errors/internalFlowiseError'
 import { getErrorMessage } from '../../errors/utils'
 import { getRunningExpressApp } from '../../utils/getRunningExpressApp'
@@ -14,8 +13,8 @@ const rethrowIfFlowiseError = (error: unknown): void => {
     }
 }
 
-const resolveCredentialForWorkspace = async (credentialId: string, workspaceId: string): Promise<Credential> => {
-    if (!workspaceId) {
+const resolveCredentialForWorkspace = async (credentialId: string, userId: string): Promise<Credential> => {
+    if (!userId) {
         throw new InternalFlowiseError(StatusCodes.BAD_REQUEST, 'Workspace ID is required')
     }
     const appServer = getRunningExpressApp()
@@ -23,14 +22,10 @@ const resolveCredentialForWorkspace = async (credentialId: string, workspaceId: 
 
     let credential = await credentialRepo.findOneBy({
         id: credentialId,
-        workspaceId
+        userId
     })
     if (!credential) {
-        const share = await appServer.AppDataSource.getRepository(WorkspaceShared).findOneBy({
-            workspaceId,
-            sharedItemId: credentialId,
-            itemType: 'credential'
-        })
+        const share = undefined
         if (share) {
             credential = await credentialRepo.findOneBy({ id: credentialId })
         }
@@ -41,9 +36,9 @@ const resolveCredentialForWorkspace = async (credentialId: string, workspaceId: 
     throw new InternalFlowiseError(StatusCodes.NOT_FOUND, 'Credential not found')
 }
 
-const getAssistantVectorStore = async (credentialId: string, vectorStoreId: string, workspaceId: string) => {
+const getAssistantVectorStore = async (credentialId: string, vectorStoreId: string, userId: string) => {
     try {
-        const credential = await resolveCredentialForWorkspace(credentialId, workspaceId)
+        const credential = await resolveCredentialForWorkspace(credentialId, userId)
         // Decrpyt credentialData
         const decryptedCredentialData = await decryptCredentialData(credential.encryptedData)
         const openAIApiKey = decryptedCredentialData['openAIApiKey']
@@ -63,9 +58,9 @@ const getAssistantVectorStore = async (credentialId: string, vectorStoreId: stri
     }
 }
 
-const listAssistantVectorStore = async (credentialId: string, workspaceId: string) => {
+const listAssistantVectorStore = async (credentialId: string, userId: string) => {
     try {
-        const credential = await resolveCredentialForWorkspace(credentialId, workspaceId)
+        const credential = await resolveCredentialForWorkspace(credentialId, userId)
         // Decrpyt credentialData
         const decryptedCredentialData = await decryptCredentialData(credential.encryptedData)
         const openAIApiKey = decryptedCredentialData['openAIApiKey']
@@ -85,9 +80,9 @@ const listAssistantVectorStore = async (credentialId: string, workspaceId: strin
     }
 }
 
-const createAssistantVectorStore = async (credentialId: string, obj: OpenAI.VectorStores.VectorStoreCreateParams, workspaceId: string) => {
+const createAssistantVectorStore = async (credentialId: string, obj: OpenAI.VectorStores.VectorStoreCreateParams, userId: string) => {
     try {
-        const credential = await resolveCredentialForWorkspace(credentialId, workspaceId)
+        const credential = await resolveCredentialForWorkspace(credentialId, userId)
         // Decrpyt credentialData
         const decryptedCredentialData = await decryptCredentialData(credential.encryptedData)
         const openAIApiKey = decryptedCredentialData['openAIApiKey']
@@ -111,10 +106,10 @@ const updateAssistantVectorStore = async (
     credentialId: string,
     vectorStoreId: string,
     obj: OpenAI.VectorStores.VectorStoreUpdateParams,
-    workspaceId: string
+    userId: string
 ) => {
     try {
-        const credential = await resolveCredentialForWorkspace(credentialId, workspaceId)
+        const credential = await resolveCredentialForWorkspace(credentialId, userId)
         // Decrpyt credentialData
         const decryptedCredentialData = await decryptCredentialData(credential.encryptedData)
         const openAIApiKey = decryptedCredentialData['openAIApiKey']
@@ -143,9 +138,9 @@ const updateAssistantVectorStore = async (
     }
 }
 
-const deleteAssistantVectorStore = async (credentialId: string, vectorStoreId: string, workspaceId: string) => {
+const deleteAssistantVectorStore = async (credentialId: string, vectorStoreId: string, userId: string) => {
     try {
-        const credential = await resolveCredentialForWorkspace(credentialId, workspaceId)
+        const credential = await resolveCredentialForWorkspace(credentialId, userId)
         // Decrpyt credentialData
         const decryptedCredentialData = await decryptCredentialData(credential.encryptedData)
         const openAIApiKey = decryptedCredentialData['openAIApiKey']
@@ -169,10 +164,10 @@ const uploadFilesToAssistantVectorStore = async (
     credentialId: string,
     vectorStoreId: string,
     files: { filePath: string; fileName: string }[],
-    workspaceId: string
+    userId: string
 ): Promise<any> => {
     try {
-        const credential = await resolveCredentialForWorkspace(credentialId, workspaceId)
+        const credential = await resolveCredentialForWorkspace(credentialId, userId)
         // Decrpyt credentialData
         const decryptedCredentialData = await decryptCredentialData(credential.encryptedData)
         const openAIApiKey = decryptedCredentialData['openAIApiKey']
@@ -218,14 +213,9 @@ const uploadFilesToAssistantVectorStore = async (
     }
 }
 
-const deleteFilesFromAssistantVectorStore = async (
-    credentialId: string,
-    vectorStoreId: string,
-    file_ids: string[],
-    workspaceId: string
-) => {
+const deleteFilesFromAssistantVectorStore = async (credentialId: string, vectorStoreId: string, file_ids: string[], userId: string) => {
     try {
-        const credential = await resolveCredentialForWorkspace(credentialId, workspaceId)
+        const credential = await resolveCredentialForWorkspace(credentialId, userId)
         // Decrpyt credentialData
         const decryptedCredentialData = await decryptCredentialData(credential.encryptedData)
         const openAIApiKey = decryptedCredentialData['openAIApiKey']
