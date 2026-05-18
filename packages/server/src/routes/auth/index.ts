@@ -20,8 +20,10 @@ router.post('/register', async (req, res) => {
         }
 
         const hashedPassword = await hashPassword(password)
+        const username = email.split('@')[0] + '_' + Math.random().toString(36).substring(2, 6)
         const newUser = userRepository.create({
             email,
+            username,
             password: hashedPassword,
             name
         })

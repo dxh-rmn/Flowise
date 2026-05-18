@@ -11,13 +11,13 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
         const token = authHeader.split(' ')[1]
         const decoded = verifyToken(token)
 
-        if (!decoded || !decoded.id) {
+        if (!decoded || (!decoded.id && !decoded.user_id)) {
             return res.status(401).json({ error: 'Invalid Token' })
         }
 
         // @ts-ignore
         req.user = {
-            id: decoded.id
+            id: String(decoded.id || decoded.user_id)
         }
         next()
     } catch (error) {
