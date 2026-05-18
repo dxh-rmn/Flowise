@@ -3,7 +3,7 @@ import { extractResponseContent, ICommonObject } from 'flowise-components'
 import { StatusCodes } from 'http-status-codes'
 import { cloneDeep, isEqual, uniqWith } from 'lodash'
 import OpenAI from 'openai'
-import { DeleteResult, In, QueryRunner } from 'typeorm'
+import { DeleteResult, QueryRunner } from 'typeorm'
 import { Assistant } from '../../database/entities/Assistant'
 import { Credential } from '../../database/entities/Credential'
 import { DocumentStore } from '../../database/entities/DocumentStore'
@@ -19,7 +19,7 @@ import { ASSISTANT_PROMPT_GENERATOR } from '../../utils/prompt'
 import { checkUsageLimit } from '../../utils/quotaUsage'
 import nodesService from '../nodes'
 
-const createAssistant = async (requestBody: any, orgId: string, userId: string): Promise<Assistant> => {
+const createAssistant = async (requestBody: any, userId: string): Promise<Assistant> => {
     try {
         const appServer = getRunningExpressApp()
         if (!requestBody.details) {
@@ -43,7 +43,7 @@ const createAssistant = async (requestBody: any, orgId: string, userId: string):
                     version: await getAppVersion(),
                     assistantId: dbResponse.id
                 },
-                orgId
+                userId
             )
             appServer.metricsProvider?.incrementCounter(FLOWISE_METRIC_COUNTERS.ASSISTANT_CREATED, {
                 status: FLOWISE_COUNTER_STATUS.SUCCESS
@@ -150,7 +150,7 @@ const createAssistant = async (requestBody: any, orgId: string, userId: string):
                 version: await getAppVersion(),
                 assistantId: dbResponse.id
             },
-            orgId
+            userId
         )
 
         appServer.metricsProvider?.incrementCounter(FLOWISE_METRIC_COUNTERS.ASSISTANT_CREATED, { status: FLOWISE_COUNTER_STATUS.SUCCESS })
@@ -411,7 +411,7 @@ const updateAssistant = async (assistantId: string, requestBody: any, userId: st
 
 const importAssistants = async (
     newAssistants: Partial<Assistant>[],
-    orgId: string,
+    userId: string,
     _: string,
     subscriptionId: string,
     queryRunner?: QueryRunner
@@ -479,7 +479,7 @@ const getChatModels = async (): Promise<any> => {
     }
 }
 
-const getDocumentStores = async (activeWorkspaceId: string): Promise<any> => {
+const getDocumentStores = async (userId: string): Promise<any> => {
     try {
         const appServer = getRunningExpressApp()
         const stores = await appServer.AppDataSource.getRepository(DocumentStore).findBy({})

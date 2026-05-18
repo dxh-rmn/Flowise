@@ -31,7 +31,7 @@ const getVoicesForProvider = async (provider: string, credentialId?: string): Pr
 
         const appServer = getRunningExpressApp()
         const options = {
-            orgId: '',
+            userId: '',
             chatflowid: '',
             chatId: '',
             appDataSource: appServer.AppDataSource,

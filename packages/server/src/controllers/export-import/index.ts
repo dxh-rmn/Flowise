@@ -5,12 +5,9 @@ import exportImportService from '../../services/export-import'
 
 const exportData = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
-            throw new InternalFlowiseError(
-                StatusCodes.NOT_FOUND,
-                `Error: exportImportController.exportData - workspace ${userId} not found!`
-            )
+            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Error: exportImportController.exportData - user ${userId} not found!`)
         }
         const apiResponse = await exportImportService.exportData(exportImportService.convertExportInput(req.body), userId)
         return res.json(apiResponse)
@@ -21,28 +18,18 @@ const exportData = async (req: Request, res: Response, next: NextFunction) => {
 
 const importData = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const orgId = req.user?.activeOrganizationId
-        if (!orgId) {
-            throw new InternalFlowiseError(
-                StatusCodes.NOT_FOUND,
-                `Error: exportImportController.importData - organization ${orgId} not found!`
-            )
-        }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
-            throw new InternalFlowiseError(
-                StatusCodes.NOT_FOUND,
-                `Error: exportImportController.importData - workspace ${userId} not found!`
-            )
+            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Error: exportImportController.importData - user ${userId} not found!`)
         }
-        const subscriptionId = req.user?.activeOrganizationSubscriptionId || ''
+        const subscriptionId = ''
 
         const importData = req.body
         if (!importData) {
             throw new InternalFlowiseError(StatusCodes.BAD_REQUEST, 'Error: exportImportController.importData - importData is required!')
         }
 
-        await exportImportService.importData(importData, orgId, userId, subscriptionId)
+        await exportImportService.importData(importData, userId, subscriptionId)
         return res.status(StatusCodes.OK).json({ message: 'success' })
     } catch (error) {
         next(error)
@@ -51,11 +38,11 @@ const importData = async (req: Request, res: Response, next: NextFunction) => {
 
 const exportChatflowMessages = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
-                `Error: exportImportController.exportChatflowMessages - workspace ${userId} not found!`
+                `Error: exportImportController.exportChatflowMessages - user ${userId} not found!`
             )
         }
 

@@ -17,9 +17,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
 
         // @ts-ignore
         req.user = {
-            id: decoded.id,
-            activeWorkspaceId: decoded.id,
-            activeOrganizationId: decoded.id
+            id: decoded.id
         }
         next()
     } catch (error) {

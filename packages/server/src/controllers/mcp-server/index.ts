@@ -11,7 +11,7 @@ const getMcpServerConfig = async (req: Request, res: Response, next: NextFunctio
                 'Error: mcpServerController.getMcpServerConfig - id not provided!'
             )
         }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, 'Error: mcpServerController.getMcpServerConfig - workspace not found!')
         }
@@ -30,7 +30,7 @@ const createMcpServerConfig = async (req: Request, res: Response, next: NextFunc
                 'Error: mcpServerController.createMcpServerConfig - id not provided!'
             )
         }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, 'Error: mcpServerController.createMcpServerConfig - workspace not found!')
         }
@@ -49,7 +49,7 @@ const updateMcpServerConfig = async (req: Request, res: Response, next: NextFunc
                 'Error: mcpServerController.updateMcpServerConfig - id not provided!'
             )
         }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, 'Error: mcpServerController.updateMcpServerConfig - workspace not found!')
         }
@@ -68,7 +68,7 @@ const deleteMcpServerConfig = async (req: Request, res: Response, next: NextFunc
                 'Error: mcpServerController.deleteMcpServerConfig - id not provided!'
             )
         }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, 'Error: mcpServerController.deleteMcpServerConfig - workspace not found!')
         }
@@ -84,7 +84,7 @@ const refreshMcpToken = async (req: Request, res: Response, next: NextFunction) 
         if (!req.params.id) {
             throw new InternalFlowiseError(StatusCodes.PRECONDITION_FAILED, 'Error: mcpServerController.refreshMcpToken - id not provided!')
         }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, 'Error: mcpServerController.refreshMcpToken - workspace not found!')
         }

@@ -8,7 +8,7 @@ import { FLOWISE_COUNTER_STATUS, FLOWISE_METRIC_COUNTERS } from '../../Interface
 import { getAppVersion } from '../../utils'
 import { getRunningExpressApp } from '../../utils/getRunningExpressApp'
 
-const createTool = async (requestBody: any, orgId: string): Promise<any> => {
+const createTool = async (requestBody: any, userId: string): Promise<any> => {
     try {
         const appServer = getRunningExpressApp()
         const newTool = new Tool()
@@ -22,7 +22,7 @@ const createTool = async (requestBody: any, orgId: string): Promise<any> => {
                 toolId: dbResponse.id,
                 toolName: dbResponse.name
             },
-            orgId
+            userId
         )
         appServer.metricsProvider?.incrementCounter(FLOWISE_METRIC_COUNTERS.TOOL_CREATED, { status: FLOWISE_COUNTER_STATUS.SUCCESS })
         return dbResponse

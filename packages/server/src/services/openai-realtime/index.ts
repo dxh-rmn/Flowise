@@ -66,21 +66,9 @@ const buildAndInitTool = async (chatflowid: string, _chatId?: string, _apiMessag
     const availableVariables = await appServer.AppDataSource.getRepository(Variable).findBy({})
     const { nodeOverrides, variableOverrides, apiOverrideStatus } = getAPIOverrideConfig(chatflow)
 
-    // This can be public API, so we can only get orgId from the chatflow
-    const chatflowWorkspaceId = chatflow.userId
-    const workspace: any = {}
-    if (!workspace) {
-        throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Workspace ${chatflowWorkspaceId} not found`)
-    }
-    const userId = workspace.id
-
-    const org: any = {}
-    if (!org) {
-        throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Organization ${workspace.organizationId} not found`)
-    }
-
-    const orgId = org.id
-    const subscriptionId = org.subscriptionId
+    // This can be public API, so we can only get userId from the chatflow
+    const userId = chatflow.userId
+    const subscriptionId = ''
 
     const reactFlowNodes = await buildFlow({
         startingNodeIds,
@@ -102,7 +90,6 @@ const buildAndInitTool = async (chatflowid: string, _chatId?: string, _apiMessag
         nodeOverrides,
         availableVariables,
         variableOverrides,
-        orgId,
         userId,
         subscriptionId,
         updateStorageUsage,
@@ -139,7 +126,6 @@ const buildAndInitTool = async (chatflowid: string, _chatId?: string, _apiMessag
     const agent = await nodeInstance.init(nodeToExecuteData, '', {
         chatflowid,
         chatId,
-        orgId,
         userId,
         appDataSource: appServer.AppDataSource,
         databaseEntities,

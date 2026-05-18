@@ -31,7 +31,7 @@ interface GetChatMessageParams {
     messageId?: string
     feedback?: boolean
     feedbackTypes?: ChatMessageRatingType[]
-    activeWorkspaceId?: string
+    userId?: string
     page?: number
     pageSize?: number
 }
@@ -48,7 +48,7 @@ export const utilGetChatMessage = async ({
     messageId,
     feedback,
     feedbackTypes,
-    activeWorkspaceId,
+    userId,
     page = -1,
     pageSize = -1
 }: GetChatMessageParams): Promise<ChatMessage[]> => {
@@ -57,11 +57,11 @@ export const utilGetChatMessage = async ({
 
     const appServer = getRunningExpressApp()
 
-    // Check if chatflow userId is same as activeWorkspaceId
-    if (activeWorkspaceId) {
+    // Check if chatflow userId matches the authenticated user
+    if (userId) {
         const chatflow = await appServer.AppDataSource.getRepository(ChatFlow).findOneBy({
             id: chatflowid,
-            userId: activeWorkspaceId
+            userId: userId
         })
         if (!chatflow) {
             throw new Error('Unauthorized access')

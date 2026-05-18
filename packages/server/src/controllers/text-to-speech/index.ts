@@ -30,13 +30,13 @@ const generateTextToSpeech = async (req: Request, res: Response) => {
         let provider: string, credentialId: string, voice: string, model: string
 
         if (chatflowId) {
-            let userId = req.user?.activeWorkspaceId
+            let userId = req.user?.id
             let chatflow: Awaited<ReturnType<typeof chatflowsService.getChatflowById>>
 
             if (userId) {
                 chatflow = await chatflowsService.getChatflowById(chatflowId, userId)
             } else {
-                // Fallback: get userId from chatflow when req.user.activeWorkspaceId is not set (from whitelist API)
+                // Fallback: get userId from chatflow when req.user.id is not set (from whitelist API)
                 chatflow = await chatflowsService.getChatflowById(chatflowId)
                 userId = chatflow.userId
             }
@@ -92,7 +92,7 @@ const generateTextToSpeech = async (req: Request, res: Response) => {
 
         const appServer = getRunningExpressApp()
         const options = {
-            orgId: '',
+            userId: '',
             chatflowid: chatflowId || '',
             chatId: chatId || '',
             appDataSource: appServer.AppDataSource,

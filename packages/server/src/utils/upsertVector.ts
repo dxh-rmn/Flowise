@@ -46,7 +46,6 @@ export const executeUpsert = async ({
     cachePool,
     isInternal,
     files,
-    orgId,
     userId,
     subscriptionId,
     usageCacheManager
@@ -62,7 +61,7 @@ export const executeUpsert = async ({
     if (files?.length) {
         overrideConfig = { ...incomingInput }
         for (const file of files) {
-            await checkStorage(orgId, subscriptionId, usageCacheManager)
+            await checkStorage(userId, subscriptionId, usageCacheManager)
 
             const fileNames: string[] = []
             const fileBuffer = await getFileFromUpload(file.path ?? file.key)
@@ -77,10 +76,10 @@ export const executeUpsert = async ({
                 fileBuffer,
                 file.originalname,
                 fileNames,
-                orgId,
+                userId,
                 chatflowid
             )
-            await updateStorageUsage(orgId, userId, totalSize, usageCacheManager)
+            await updateStorageUsage(userId, totalSize, usageCacheManager)
 
             const fileInputFieldFromMimeType = mapMimeTypeToInputField(file.mimetype)
 
@@ -193,7 +192,6 @@ export const executeUpsert = async ({
         nodeOverrides,
         availableVariables,
         variableOverrides,
-        orgId,
         userId,
         subscriptionId,
         updateStorageUsage,
@@ -221,7 +219,7 @@ export const executeUpsert = async ({
             flowGraph: getTelemetryFlowObj(nodes, edges),
             stopNodeId
         },
-        orgId
+        userId
     )
 
     return upsertedResult['result'] ?? { result: 'Successfully Upserted' }
@@ -259,22 +257,16 @@ export const upsertVector = async (req: Request, isInternal: boolean = false) =>
             }
         }
 
-        const chatflowWorkspaceId = chatflow.userId
-        const workspace: any = {}
-        if (!workspace) {
-            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Workspace ${chatflowWorkspaceId} not found`)
-        }
-        const userId = workspace.id
-
-        if (userId !== req.user?.activeWorkspaceId) throw new InternalFlowiseError(StatusCodes.UNAUTHORIZED, 'Unauthorized')
-
-        const org: any = {}
-        if (!org) {
-            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Organization ${workspace.organizationId} not found`)
+        const userId = req.user?.id
+        if (!userId) {
+            throw new InternalFlowiseError(StatusCodes.UNAUTHORIZED, 'Unauthorized')
         }
 
-        const orgId = org.id
-        const subscriptionId = org.subscriptionId as string
+        if (userId !== chatflow.userId) {
+            throw new InternalFlowiseError(StatusCodes.UNAUTHORIZED, 'Unauthorized')
+        }
+
+        const subscriptionId = ''
         const productId = ''
 
         const executeData: IExecuteFlowParams = {
@@ -291,7 +283,6 @@ export const upsertVector = async (req: Request, isInternal: boolean = false) =>
             isInternal,
             files,
             isUpsert: true,
-            orgId,
             userId,
             subscriptionId,
             productId
@@ -301,7 +292,7 @@ export const upsertVector = async (req: Request, isInternal: boolean = false) =>
             const upsertQueue = appServer.queueManager.getQueue('upsert')
 
             const job = await upsertQueue.addJob(omit(executeData, OMIT_QUEUE_JOB_DATA))
-            logger.debug(`[server]: [${orgId}]: Job added to queue: ${job.id}`)
+            logger.debug(`[server]: [${userId}]: Job added to queue: ${job.id}`)
 
             const queueEvents = upsertQueue.getQueueEvents()
             const result = await job.waitUntilFinished(queueEvents)

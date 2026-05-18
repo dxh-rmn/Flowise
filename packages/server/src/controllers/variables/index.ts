@@ -13,13 +13,13 @@ const createVariable = async (req: Request, res: Response, next: NextFunction) =
                 `Error: variablesController.createVariable - body not provided!`
             )
         }
-        const orgId = req.user?.activeOrganizationId
-        if (!orgId) {
-            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Error: toolsController.createTool - organization ${orgId} not found!`)
-        }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
-            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Error: toolsController.createTool - workspace ${userId} not found!`)
+            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Error: toolsController.createTool - user ${userId} not found!`)
+        }
+
+        if (!userId) {
+            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Error: toolsController.createTool - user ${userId} not found!`)
         }
         const body = req.body
         // Explicit allowlist — id/userId/timestamps must not be overrideable by client
@@ -28,7 +28,7 @@ const createVariable = async (req: Request, res: Response, next: NextFunction) =
         if (body.value !== undefined) newVariable.value = body.value
         if (body.type !== undefined) newVariable.type = body.type
         newVariable.userId = userId
-        const apiResponse = await variablesService.createVariable(newVariable, orgId)
+        const apiResponse = await variablesService.createVariable(newVariable, userId)
         return res.json(apiResponse)
     } catch (error) {
         next(error)
@@ -40,12 +40,9 @@ const deleteVariable = async (req: Request, res: Response, next: NextFunction) =
         if (typeof req.params === 'undefined' || !req.params.id) {
             throw new InternalFlowiseError(StatusCodes.PRECONDITION_FAILED, 'Error: variablesController.deleteVariable - id not provided!')
         }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
-            throw new InternalFlowiseError(
-                StatusCodes.NOT_FOUND,
-                `Error: variablesController.deleteVariable - workspace ${userId} not found!`
-            )
+            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Error: variablesController.deleteVariable - user ${userId} not found!`)
         }
         const apiResponse = await variablesService.deleteVariable(req.params.id, userId)
         return res.json(apiResponse)
@@ -57,12 +54,9 @@ const deleteVariable = async (req: Request, res: Response, next: NextFunction) =
 const getAllVariables = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { page, limit } = getPageAndLimitParams(req)
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
-            throw new InternalFlowiseError(
-                StatusCodes.NOT_FOUND,
-                `Error: variablesController.getAllVariables - workspace ${userId} not found!`
-            )
+            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Error: variablesController.getAllVariables - user ${userId} not found!`)
         }
         const apiResponse = await variablesService.getAllVariables(userId, page, limit)
         return res.json(apiResponse)
@@ -82,12 +76,9 @@ const updateVariable = async (req: Request, res: Response, next: NextFunction) =
                 'Error: variablesController.updateVariable - body not provided!'
             )
         }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
-            throw new InternalFlowiseError(
-                StatusCodes.NOT_FOUND,
-                `Error: variablesController.updateVariable - workspace ${userId} not found!`
-            )
+            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Error: variablesController.updateVariable - user ${userId} not found!`)
         }
         const variable = await variablesService.getVariableById(req.params.id, userId)
         if (!variable) {

@@ -11,7 +11,7 @@ import { ChatFlow } from './database/entities/ChatFlow'
 import { getDataSource } from './DataSource'
 import { authenticate } from './middlewares/auth'
 import { IdentityManager } from './IdentityManager'
-import { MODE, Platform } from './Interface'
+import { MODE } from './Interface'
 import { IMetricsProvider } from './Interface.Metrics'
 import { OpenTelemetry } from './metrics/OpenTelemetry'
 import { Prometheus } from './metrics/Prometheus'
@@ -36,10 +36,6 @@ declare global {
     namespace Express {
         interface User {
             id: string
-            activeOrganizationId?: string
-            activeOrganizationSubscriptionId?: string
-            activeOrganizationCustomerId?: string
-            activeWorkspaceId?: string
         }
         interface Request {
             user?: User
@@ -249,9 +245,7 @@ export class App {
 
                         // @ts-ignore
                         req.user = {
-                            id: apiKey.userId,
-                            activeWorkspaceId: apiKey.userId,
-                            activeOrganizationId: apiKey.userId
+                            id: apiKey.userId
                         }
                         next()
                     }

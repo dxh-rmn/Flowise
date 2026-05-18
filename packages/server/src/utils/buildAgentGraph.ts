@@ -51,7 +51,6 @@ export const buildAgentGraph = async ({
     cachePool,
     baseURL,
     signal,
-    orgId,
     userId
 }: {
     agentflow: IChatFlow
@@ -72,8 +71,7 @@ export const buildAgentGraph = async ({
     cachePool: CachePool
     baseURL: string
     signal?: AbortController
-    orgId: string
-    userId?: string
+    userId: string
 }): Promise<any> => {
     try {
         const chatflowid = flowConfig.chatflowid
@@ -83,7 +81,6 @@ export const buildAgentGraph = async ({
         const uploads = incomingInput.uploads
 
         const options = {
-            orgId,
             userId,
             chatId,
             sessionId,
@@ -391,7 +388,7 @@ export const buildAgentGraph = async ({
             }
         } catch (e) {
             // clear agent memory because checkpoints were saved during runtime
-            await clearSessionMemory(nodes, componentNodes, chatId, appDataSource, orgId, sessionId)
+            await clearSessionMemory(nodes, componentNodes, chatId, appDataSource, userId, sessionId)
             if (getErrorMessage(e).includes('Aborted')) {
                 if (shouldStreamResponse && sseStreamer) {
                     sseStreamer.streamAbortEvent(chatId)
@@ -402,7 +399,7 @@ export const buildAgentGraph = async ({
         }
         return streamResults
     } catch (e) {
-        logger.error(`[server]: [${orgId}]: Error:`, e)
+        logger.error(`[server]: [${userId}]: Error:`, e)
         throw new InternalFlowiseError(StatusCodes.INTERNAL_SERVER_ERROR, `Error buildAgentGraph - ${getErrorMessage(e)}`)
     }
 }
@@ -573,7 +570,7 @@ const compileMultiAgentsGraph = async (params: MultiAgentsGraphParams) => {
 
             const graph = workflowGraph.compile({ checkpointer: memory })
 
-            const loggerHandler = new ConsoleCallbackHandler(logger, options?.orgId)
+            const loggerHandler = new ConsoleCallbackHandler(logger, options?.userId)
             const callbacks = await additionalCallbacks(flowNodeData, options)
             const config = { configurable: { thread_id: threadId } }
 
@@ -1003,7 +1000,7 @@ const compileSeqAgentsGraph = async (params: SeqAgentsGraphParams) => {
             interruptBefore: interruptToolNodeNames as any
         })
 
-        const loggerHandler = new ConsoleCallbackHandler(logger, options?.orgId)
+        const loggerHandler = new ConsoleCallbackHandler(logger, options?.userId)
         const callbacks = await additionalCallbacks(flowNodeData as any, options)
         const config = { configurable: { thread_id: threadId }, bindModel }
 
@@ -1051,7 +1048,7 @@ const compileSeqAgentsGraph = async (params: SeqAgentsGraphParams) => {
             configurable: config
         })
     } catch (e) {
-        logger.error(`[${options.orgId}]: Error compile graph`, e)
+        logger.error(`[${options.userId}]: Error compile graph`, e)
         throw new InternalFlowiseError(StatusCodes.INTERNAL_SERVER_ERROR, `Error compile graph - ${getErrorMessage(e)}`)
     }
 }

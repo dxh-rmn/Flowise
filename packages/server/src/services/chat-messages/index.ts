@@ -38,7 +38,7 @@ const getAllChatMessages = async (
     messageId?: string,
     feedback?: boolean,
     feedbackTypes?: ChatMessageRatingType[],
-    activeWorkspaceId?: string,
+    userId?: string,
     page?: number,
     pageSize?: number
 ): Promise<ChatMessage[]> => {
@@ -55,7 +55,7 @@ const getAllChatMessages = async (
             messageId,
             feedback,
             feedbackTypes,
-            activeWorkspaceId,
+            userId,
             page,
             pageSize
         })
@@ -81,7 +81,7 @@ const getAllInternalChatMessages = async (
     messageId?: string,
     feedback?: boolean,
     feedbackTypes?: ChatMessageRatingType[],
-    activeWorkspaceId?: string
+    userId?: string
 ): Promise<ChatMessage[]> => {
     try {
         const dbResponse = await utilGetChatMessage({
@@ -96,7 +96,7 @@ const getAllInternalChatMessages = async (
             messageId,
             feedback,
             feedbackTypes,
-            activeWorkspaceId
+            userId
         })
         return dbResponse
     } catch (error) {
@@ -111,7 +111,6 @@ const removeAllChatMessages = async (
     chatId: string,
     chatflowid: string,
     deleteOptions: FindOptionsWhere<ChatMessage>,
-    orgId: string,
     userId: string,
     usageCacheManager: UsageCacheManager
 ): Promise<DeleteResult> => {
@@ -125,8 +124,8 @@ const removeAllChatMessages = async (
         // Delete all uploads corresponding to this chatflow/chatId
         if (chatId) {
             try {
-                const { totalSize } = await removeFilesFromStorage(orgId, chatflowid, chatId)
-                await updateStorageUsage(orgId, userId, totalSize, usageCacheManager)
+                const { totalSize } = await removeFilesFromStorage(userId, chatflowid, chatId)
+                await updateStorageUsage(userId, totalSize, usageCacheManager)
             } catch (e) {
                 // Don't throw error if file deletion fails because file might not exist
             }
@@ -145,7 +144,6 @@ const removeChatMessagesByMessageIds = async (
     chatflowid: string,
     chatIdMap: Map<string, ChatMessage[]>,
     messageIds: string[],
-    orgId: string,
     userId: string,
     usageCacheManager: UsageCacheManager
 ): Promise<DeleteResult> => {
@@ -165,8 +163,8 @@ const removeChatMessagesByMessageIds = async (
 
             // Delete all uploads corresponding to this chatflow/chatId
             try {
-                const { totalSize } = await removeFilesFromStorage(orgId, chatflowid, chatId)
-                await updateStorageUsage(orgId, userId, totalSize, usageCacheManager)
+                const { totalSize } = await removeFilesFromStorage(userId, chatflowid, chatId)
+                await updateStorageUsage(userId, totalSize, usageCacheManager)
             } catch (e) {
                 // Don't throw error if file deletion fails because file might not exist
             }

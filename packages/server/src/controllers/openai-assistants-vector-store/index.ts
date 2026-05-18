@@ -18,7 +18,7 @@ const getAssistantVectorStore = async (req: Request, res: Response, next: NextFu
                 `Error: openaiAssistantsVectorStoreController.getAssistantVectorStore - credential not provided!`
             )
         }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
@@ -44,7 +44,7 @@ const listAssistantVectorStore = async (req: Request, res: Response, next: NextF
                 `Error: openaiAssistantsVectorStoreController.listAssistantVectorStore - credential not provided!`
             )
         }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
@@ -72,7 +72,7 @@ const createAssistantVectorStore = async (req: Request, res: Response, next: Nex
                 `Error: openaiAssistantsVectorStoreController.createAssistantVectorStore - credential not provided!`
             )
         }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
@@ -110,7 +110,7 @@ const updateAssistantVectorStore = async (req: Request, res: Response, next: Nex
                 `Error: openaiAssistantsVectorStoreController.updateAssistantVectorStore - body not provided!`
             )
         }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
@@ -143,7 +143,7 @@ const deleteAssistantVectorStore = async (req: Request, res: Response, next: Nex
                 `Error: openaiAssistantsVectorStoreController.updateAssistantVectorStore - credential not provided!`
             )
         }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
@@ -199,7 +199,7 @@ const uploadFilesToAssistantVectorStore = async (req: Request, res: Response, ne
             }
         }
 
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
@@ -239,7 +239,7 @@ const deleteFilesFromAssistantVectorStore = async (req: Request, res: Response, 
             )
         }
 
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,

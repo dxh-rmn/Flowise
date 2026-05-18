@@ -28,14 +28,14 @@ const createCustomMcpServer = async (req: Request, res: Response, next: NextFunc
                 `Error: customMcpServersController.createCustomMcpServer - body not provided!`
             )
         }
-        const orgId = req.user?.activeOrganizationId
-        if (!orgId) {
+        const userId = req.user?.id
+        if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
                 `Error: customMcpServersController.createCustomMcpServer - organization not found!`
             )
         }
-        const userId = req.user?.activeWorkspaceId
+
         if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
@@ -54,7 +54,7 @@ const createCustomMcpServer = async (req: Request, res: Response, next: NextFunc
         if (body.authConfig !== undefined) mcpBody.authConfig = body.authConfig
         mcpBody.userId = userId
 
-        const apiResponse = await customMcpServersService.createCustomMcpServer(mcpBody, orgId)
+        const apiResponse = await customMcpServersService.createCustomMcpServer(mcpBody, userId)
         return res.json(apiResponse)
     } catch (error) {
         next(error)
@@ -63,7 +63,7 @@ const createCustomMcpServer = async (req: Request, res: Response, next: NextFunc
 
 const getAllCustomMcpServers = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
@@ -88,7 +88,7 @@ const getCustomMcpServerById = async (req: Request, res: Response, next: NextFun
                 `Error: customMcpServersController.getCustomMcpServerById - id not provided!`
             )
         }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
@@ -116,7 +116,7 @@ const updateCustomMcpServer = async (req: Request, res: Response, next: NextFunc
                 `Error: customMcpServersController.updateCustomMcpServer - body not provided!`
             )
         }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
@@ -149,7 +149,7 @@ const deleteCustomMcpServer = async (req: Request, res: Response, next: NextFunc
                 `Error: customMcpServersController.deleteCustomMcpServer - id not provided!`
             )
         }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
@@ -171,7 +171,7 @@ const authorizeCustomMcpServer = async (req: Request, res: Response, next: NextF
                 `Error: customMcpServersController.authorizeCustomMcpServer - id not provided!`
             )
         }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
@@ -193,7 +193,7 @@ const getDiscoveredTools = async (req: Request, res: Response, next: NextFunctio
                 `Error: customMcpServersController.getDiscoveredTools - id not provided!`
             )
         }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,

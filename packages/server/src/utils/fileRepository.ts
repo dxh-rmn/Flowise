@@ -51,7 +51,6 @@ export const containsBase64File = (chatflow: ChatFlow) => {
 export const updateFlowDataWithFilePaths = async (
     chatflowid: string,
     flowData: string,
-    orgId: string,
     userId: string,
     subscriptionId: string,
     usageCacheManager: UsageCacheManager
@@ -85,20 +84,20 @@ export const updateFlowDataWithFilePaths = async (
                             for (let j = 0; j < files.length; j++) {
                                 const file = files[j]
                                 if (re.test(file)) {
-                                    await checkStorage(orgId, subscriptionId, usageCacheManager)
-                                    const { path, totalSize } = await addBase64FilesToStorage(file, chatflowid, fileNames, orgId)
+                                    await checkStorage(userId, subscriptionId, usageCacheManager)
+                                    const { path, totalSize } = await addBase64FilesToStorage(file, chatflowid, fileNames, userId)
                                     node.data.inputs[key] = path
-                                    await updateStorageUsage(orgId, userId, totalSize, usageCacheManager)
+                                    await updateStorageUsage(userId, totalSize, usageCacheManager)
                                 }
                             }
                         } catch (e) {
                             continue
                         }
                     } else if (re.test(input)) {
-                        await checkStorage(orgId, subscriptionId, usageCacheManager)
-                        const { path, totalSize } = await addBase64FilesToStorage(input, chatflowid, fileNames, orgId)
+                        await checkStorage(userId, subscriptionId, usageCacheManager)
+                        const { path, totalSize } = await addBase64FilesToStorage(input, chatflowid, fileNames, userId)
                         node.data.inputs[key] = path
-                        await updateStorageUsage(orgId, userId, totalSize, usageCacheManager)
+                        await updateStorageUsage(userId, totalSize, usageCacheManager)
                     }
                 }
             }

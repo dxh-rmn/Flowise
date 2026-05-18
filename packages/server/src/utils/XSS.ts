@@ -112,7 +112,7 @@ export function getCorsOptions(): any {
                     let chatflowAllowed = false
                     if (chatflowId) {
                         try {
-                            chatflowAllowed = await validateChatflowDomain(chatflowId, originLc, req.user?.activeWorkspaceId)
+                            chatflowAllowed = await validateChatflowDomain(chatflowId, originLc, req.user?.id)
                         } catch (error) {
                             console.error('Domain validation error:', error)
                             chatflowAllowed = false

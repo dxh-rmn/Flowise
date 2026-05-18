@@ -19,12 +19,12 @@ export const ENTERPRISE_FEATURE_FLAGS = [
     'feat:sso-config'
 ]
 
-export const getCurrentUsage = async (orgId: string, subscriptionId: string, usageCacheManager: UsageCacheManager) => {
+export const getCurrentUsage = async (userId: string, subscriptionId: string, usageCacheManager: UsageCacheManager) => {
     try {
-        if (!usageCacheManager || !subscriptionId || !orgId) return
+        if (!usageCacheManager || !subscriptionId || !userId) return
 
-        const currentStorageUsage = (await usageCacheManager.get(`storage:${orgId}`)) || 0
-        const currentPredictionsUsage = (await usageCacheManager.get(`predictions:${orgId}`)) || 0
+        const currentStorageUsage = (await usageCacheManager.get(`storage:${userId}`)) || 0
+        const currentPredictionsUsage = (await usageCacheManager.get(`predictions:${userId}`)) || 0
 
         const quotas = await usageCacheManager.getQuotas(subscriptionId)
         const storageLimit = quotas[LICENSE_QUOTAS.STORAGE_LIMIT]
@@ -75,30 +75,25 @@ export const checkUsageLimit = async (
 }
 
 // As predictions limit renew per month, we set to cache with 1 month TTL
-export const updatePredictionsUsage = async (
-    orgId: string,
-    subscriptionId: string,
-    _: string = '',
-    usageCacheManager?: UsageCacheManager
-) => {
+export const updatePredictionsUsage = async (userId: string, subscriptionId: string, usageCacheManager?: UsageCacheManager) => {
     if (!usageCacheManager) return
 
     const quotas = await usageCacheManager.getQuotas(subscriptionId)
     const predictionsLimit = quotas[LICENSE_QUOTAS.PREDICTIONS_LIMIT]
 
     let currentPredictions = 0
-    const existingPredictions = await usageCacheManager.get(`predictions:${orgId}`)
+    const existingPredictions = await usageCacheManager.get(`predictions:${userId}`)
     if (existingPredictions) {
         currentPredictions = 1 + (existingPredictions as number) > predictionsLimit ? predictionsLimit : 1 + (existingPredictions as number)
     } else {
         currentPredictions = 1
     }
 
-    const currentTTL = await usageCacheManager.getTTL(`predictions:${orgId}`)
+    const currentTTL = await usageCacheManager.getTTL(`predictions:${userId}`)
     if (currentTTL) {
         const currentTimestamp = Date.now()
         const timeLeft = currentTTL - currentTimestamp
-        usageCacheManager.set(`predictions:${orgId}`, currentPredictions, timeLeft)
+        usageCacheManager.set(`predictions:${userId}`, currentPredictions, timeLeft)
     } else {
         const subscriptionDetails = await usageCacheManager.getSubscriptionDetails(subscriptionId)
         if (subscriptionDetails && subscriptionDetails.created) {
@@ -114,21 +109,21 @@ export const updatePredictionsUsage = async (
             // Calculate remaining time in the current month period
             const timeLeft = approximateMonthMs - (timeElapsed % approximateMonthMs)
 
-            usageCacheManager.set(`predictions:${orgId}`, currentPredictions, timeLeft)
+            usageCacheManager.set(`predictions:${userId}`, currentPredictions, timeLeft)
         } else {
             // Fallback to default 30 days if no creation date
             const MS_PER_DAY = 24 * 60 * 60 * 1000
             const DAYS = 30
             const approximateMonthMs = DAYS * MS_PER_DAY
-            usageCacheManager.set(`predictions:${orgId}`, currentPredictions, approximateMonthMs)
+            usageCacheManager.set(`predictions:${userId}`, currentPredictions, approximateMonthMs)
         }
     }
 }
 
-export const checkPredictions = async (orgId: string, subscriptionId: string, usageCacheManager: UsageCacheManager) => {
+export const checkPredictions = async (userId: string, subscriptionId: string, usageCacheManager: UsageCacheManager) => {
     if (!usageCacheManager || !subscriptionId) return
 
-    const currentPredictions: number = (await usageCacheManager.get(`predictions:${orgId}`)) || 0
+    const currentPredictions: number = (await usageCacheManager.get(`predictions:${userId}`)) || 0
 
     const quotas = await usageCacheManager.getQuotas(subscriptionId)
     const predictionsLimit = quotas[LICENSE_QUOTAS.PREDICTIONS_LIMIT]
@@ -145,16 +140,16 @@ export const checkPredictions = async (orgId: string, subscriptionId: string, us
 }
 
 // Storage does not renew per month nor do we store the total size in database, so we just store the total size in cache
-export const updateStorageUsage = (orgId: string, _: string = '', totalSize: number, usageCacheManager?: UsageCacheManager) => {
+export const updateStorageUsage = (userId: string, totalSize: number, usageCacheManager?: UsageCacheManager) => {
     if (!usageCacheManager) return
-    usageCacheManager.set(`storage:${orgId}`, totalSize)
+    usageCacheManager.set(`storage:${userId}`, totalSize)
 }
 
-export const checkStorage = async (orgId: string, subscriptionId: string, usageCacheManager: UsageCacheManager) => {
+export const checkStorage = async (userId: string, subscriptionId: string, usageCacheManager: UsageCacheManager) => {
     if (!usageCacheManager || !subscriptionId) return
 
     let currentStorageUsage = 0
-    currentStorageUsage = (await usageCacheManager.get(`storage:${orgId}`)) || 0
+    currentStorageUsage = (await usageCacheManager.get(`storage:${userId}`)) || 0
 
     const quotas = await usageCacheManager.getQuotas(subscriptionId)
     const storageLimit = quotas[LICENSE_QUOTAS.STORAGE_LIMIT]

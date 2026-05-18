@@ -31,8 +31,7 @@ const makeReq = (overrides: Partial<Request> = {}): Request =>
         params: {},
         query: {},
         user: {
-            activeOrganizationId: 'org-1',
-            activeWorkspaceId: 'ws-1'
+            id: 'ws-1'
         },
         ...overrides
     } as unknown as Request)
@@ -66,7 +65,7 @@ describe('customMcpServersController', () => {
         it('should return error when organization is not found', async () => {
             const req = makeReq({
                 body: { name: 'test' },
-                user: { activeOrganizationId: undefined, activeWorkspaceId: 'ws-1' } as any
+                user: { id: 'ws-1' } as any
             })
             const next = makeNext()
 
@@ -82,7 +81,7 @@ describe('customMcpServersController', () => {
         it('should return error when workspace is not found', async () => {
             const req = makeReq({
                 body: { name: 'test' },
-                user: { activeOrganizationId: 'org-1', activeWorkspaceId: undefined } as any
+                user: { id: undefined } as any
             })
             const next = makeNext()
 
@@ -237,7 +236,7 @@ describe('customMcpServersController', () => {
         it('should return error when workspace is not found', async () => {
             const req = makeReq({
                 params: { id: 'mcp-1' } as any,
-                user: { activeWorkspaceId: undefined } as any
+                user: { id: undefined } as any
             })
             const next = makeNext()
 
@@ -294,7 +293,7 @@ describe('customMcpServersController', () => {
             const req = makeReq({
                 params: { id: 'mcp-1' } as any,
                 body: { name: 'updated' },
-                user: { activeWorkspaceId: undefined } as any
+                user: { id: undefined } as any
             })
             const next = makeNext()
 
@@ -358,7 +357,7 @@ describe('customMcpServersController', () => {
         it('should return error when workspace is not found', async () => {
             const req = makeReq({
                 params: { id: 'mcp-1' } as any,
-                user: { activeWorkspaceId: undefined } as any
+                user: { id: undefined } as any
             })
             const next = makeNext()
 
@@ -400,7 +399,7 @@ describe('customMcpServersController', () => {
         it('should return error when workspace is not found', async () => {
             const req = makeReq({
                 params: { id: 'mcp-1' } as any,
-                user: { activeWorkspaceId: undefined } as any
+                user: { id: undefined } as any
             })
             const next = makeNext()
 
@@ -452,7 +451,7 @@ describe('customMcpServersController', () => {
         it('should return error when workspace is not found', async () => {
             const req = makeReq({
                 params: { id: 'mcp-1' } as any,
-                user: { activeWorkspaceId: undefined } as any
+                user: { id: undefined } as any
             })
             const next = makeNext()
 

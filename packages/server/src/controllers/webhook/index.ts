@@ -20,7 +20,7 @@ const createWebhook = async (req: Request, res: Response, next: NextFunction) =>
             throw new InternalFlowiseError(StatusCodes.PRECONDITION_FAILED, `Error: webhookController.createWebhook - id not provided!`)
         }
 
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
 
         // For form-encoded requests, unwrap JSON encoded in a `payload` field (e.g. GitHub webhooks)
         // so $webhook.body.* resolves against the actual payload fields.

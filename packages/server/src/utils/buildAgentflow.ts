@@ -157,7 +157,6 @@ interface IExecuteNodeParams {
     isRecursive?: boolean
     iterationContext?: ICommonObject
     loopCounts?: Map<string, number>
-    orgId: string
     userId: string
     subscriptionId: string
     productId: string
@@ -1083,7 +1082,6 @@ const executeNode = async ({
     isRecursive,
     iterationContext,
     loopCounts,
-    orgId,
     userId,
     subscriptionId,
     productId
@@ -1221,7 +1219,6 @@ const executeNode = async ({
 
         // Prepare run parameters
         const runParams = {
-            orgId,
             userId,
             subscriptionId,
             chatId,
@@ -1326,7 +1323,6 @@ const executeNode = async ({
                                 ...iterationContext,
                                 agentflowRuntime
                             },
-                            orgId,
                             userId,
                             subscriptionId,
                             productId
@@ -1555,7 +1551,6 @@ export const executeAgentFlow = async ({
     iterationContext,
     isTool = false,
     chatType,
-    orgId,
     userId,
     subscriptionId,
     productId
@@ -1976,7 +1971,6 @@ export const executeAgentFlow = async ({
                 }
             }
             analyticHandlers = AnalyticHandler.getInstance({ inputs: { analytics: analyticInputs } } as any, {
-                orgId,
                 userId,
                 appDataSource,
                 databaseEntities,
@@ -2064,7 +2058,6 @@ export const executeAgentFlow = async ({
                 isRecursive,
                 iterationContext,
                 loopCounts,
-                orgId,
                 userId,
                 subscriptionId,
                 productId
@@ -2259,7 +2252,6 @@ export const executeAgentFlow = async ({
                 appDataSource,
                 databaseEntities,
                 userId,
-                orgId,
                 logger
             }
             const customFuncNodeInstance = new nodeModule.nodeClass()
@@ -2372,7 +2364,6 @@ export const executeAgentFlow = async ({
     if (chatflow.followUpPrompts) {
         const followUpPromptsConfig = JSON.parse(chatflow.followUpPrompts)
         const followUpPrompts = await generateFollowUpPrompts(followUpPromptsConfig, apiMessage.content, {
-            orgId,
             userId,
             chatId,
             chatflowid,
@@ -2401,7 +2392,7 @@ export const executeAgentFlow = async ({
             productId,
             subscriptionId
         },
-        orgId
+        userId
     )
 
     /*** Prepare response ***/
@@ -2420,7 +2411,7 @@ export const executeAgentFlow = async ({
 
     if (shouldAutoPlayTTS(chatflow.textToSpeech) && result.text) {
         const options = {
-            orgId,
+            userId,
             chatflowid,
             chatId,
             appDataSource,

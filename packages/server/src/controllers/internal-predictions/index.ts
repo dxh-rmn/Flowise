@@ -10,7 +10,7 @@ import { getRunningExpressApp } from '../../utils/getRunningExpressApp'
 // Send input message and get prediction result (Internal)
 const createInternalPrediction = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
 
         const chatflow = await chatflowService.getChatflowByIdForWorkspace(req.params.id, userId)
         if (!chatflow) {

@@ -45,26 +45,12 @@ export const createFileAttachment = async (req: Request) => {
         throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Chatflow ${chatflowid} not found`)
     }
 
-    let orgId = req.user?.activeOrganizationId || ''
-    let userId = req.user?.activeWorkspaceId || ''
-    let subscriptionId = req.user?.activeOrganizationSubscriptionId || ''
+    let userId = req.user?.id || ''
+    const subscriptionId = ''
 
     // This is one of the WHITELIST_URLS, API can be public and there might be no req.user
-    if (!orgId || !userId) {
-        const chatflowWorkspaceId = chatflow.userId
-        const workspace: any = {}
-        if (!workspace) {
-            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Workspace ${chatflowWorkspaceId} not found`)
-        }
-        userId = workspace.id
-
-        const org: any = {}
-        if (!org) {
-            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Organization ${workspace.organizationId} not found`)
-        }
-
-        orgId = org.id
-        subscriptionId = org.subscriptionId as string
+    if (!userId) {
+        userId = chatflow.userId
     }
 
     // Parse chatbot configuration to get file upload settings
@@ -113,7 +99,6 @@ export const createFileAttachment = async (req: Request) => {
     const fileLoaderNodeInstance = new fileLoaderNodeModule.nodeClass()
     const options = {
         retrieveAttachmentChatId: true,
-        orgId,
         userId,
         chatflowid,
         chatId
@@ -143,7 +128,7 @@ export const createFileAttachment = async (req: Request) => {
             // This addresses the vulnerability (CVE-2025-61687)
             validateFileMimeTypeAndExtensionMatch(file.originalname, file.mimetype)
 
-            await checkStorage(orgId, subscriptionId, appServer.usageCacheManager)
+            await checkStorage(userId, subscriptionId, appServer.usageCacheManager)
 
             const fileBuffer = await getFileFromUpload(file.path ?? file.key)
             const fileNames: string[] = []
@@ -154,11 +139,11 @@ export const createFileAttachment = async (req: Request) => {
                 fileBuffer,
                 file.originalname,
                 fileNames,
-                orgId,
+                userId,
                 chatflowid,
                 chatId
             )
-            await updateStorageUsage(orgId, userId, totalSize, appServer.usageCacheManager)
+            await updateStorageUsage(userId, totalSize, appServer.usageCacheManager)
 
             const fileInputFieldFromMimeType = mapMimeTypeToInputField(file.mimetype)
 
@@ -214,12 +199,12 @@ export const createFileAttachment = async (req: Request) => {
                     logger.info(`Clean up storage for ${file.originalname} (${sanitizedFilename}). Reason: ${getErrorMessage(error)}`)
                     try {
                         const { totalSize: newTotalSize } = await removeSpecificFileFromStorage(
-                            orgId,
+                            userId,
                             chatflowid,
                             chatId,
                             sanitizedFilename
                         )
-                        await updateStorageUsage(orgId, userId, newTotalSize, appServer.usageCacheManager)
+                        await updateStorageUsage(userId, newTotalSize, appServer.usageCacheManager)
                     } catch (cleanupError) {
                         logger.error(
                             `Failed to cleanup storage for ${file.originalname} (${sanitizedFilename}) - ${getErrorMessage(cleanupError)}`

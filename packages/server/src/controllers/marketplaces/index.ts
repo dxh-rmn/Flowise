@@ -22,11 +22,11 @@ const deleteCustomTemplate = async (req: Request, res: Response, next: NextFunct
                 `Error: marketplacesService.deleteCustomTemplate - id not provided!`
             )
         }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
-                `Error: marketplacesController.deleteCustomTemplate - workspace ${userId} not found!`
+                `Error: marketplacesController.deleteCustomTemplate - user ${userId} not found!`
             )
         }
         const apiResponse = await marketplacesService.deleteCustomTemplate(req.params.id, userId)
@@ -38,7 +38,7 @@ const deleteCustomTemplate = async (req: Request, res: Response, next: NextFunct
 
 const getAllCustomTemplates = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const apiResponse = await marketplacesService.getAllCustomTemplates(req.user?.activeWorkspaceId)
+        const apiResponse = await marketplacesService.getAllCustomTemplates(req.user?.id)
         return res.json(apiResponse)
     } catch (error) {
         next(error)
@@ -53,11 +53,11 @@ const saveCustomTemplate = async (req: Request, res: Response, next: NextFunctio
                 `Error: marketplacesService.saveCustomTemplate - body not provided!`
             )
         }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
-                `Error: marketplacesController.saveCustomTemplate - workspace ${userId} not found!`
+                `Error: marketplacesController.saveCustomTemplate - user ${userId} not found!`
             )
         }
         const apiResponse = await marketplacesService.saveCustomTemplate({ ...stripProtectedFields(req.body), userId })

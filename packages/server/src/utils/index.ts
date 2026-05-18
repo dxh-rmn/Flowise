@@ -500,13 +500,12 @@ type BuildFlowParams = {
     stopNodeId?: string
     uploads?: IFileUpload[]
     baseURL?: string
-    orgId?: string
     userId?: string
     subscriptionId?: string
     usageCacheManager?: any
     uploadedFilesContent?: string
-    updateStorageUsage?: (orgId: string, userId: string, totalSize: number, usageCacheManager?: any) => void
-    checkStorage?: (orgId: string, subscriptionId: string, usageCacheManager: any) => Promise<any>
+    updateStorageUsage?: (userId: string, totalSize: number, usageCacheManager?: any) => void
+    checkStorage?: (userId: string, subscriptionId: string, usageCacheManager: any) => Promise<any>
 }
 
 /**
@@ -538,7 +537,6 @@ export const buildFlow = async ({
     stopNodeId,
     uploads,
     baseURL,
-    orgId,
     userId,
     subscriptionId,
     usageCacheManager,
@@ -607,9 +605,8 @@ export const buildFlow = async ({
             )
 
             if (isUpsert && stopNodeId && nodeId === stopNodeId) {
-                logger.debug(`[server]: [${orgId}]: Upserting ${reactFlowNode.data.label} (${reactFlowNode.data.id})`)
+                logger.debug(`[server]: [${userId}]: Upserting ${reactFlowNode.data.label} (${reactFlowNode.data.id})`)
                 const indexResult = await newNodeInstance.vectorStoreMethods!['upsert']!.call(newNodeInstance, reactFlowNodeData, {
-                    orgId,
                     userId,
                     subscriptionId,
                     chatId,
@@ -627,7 +624,7 @@ export const buildFlow = async ({
                     baseURL
                 })
                 if (indexResult) upsertHistory['result'] = indexResult
-                logger.debug(`[server]: [${orgId}]: Finished upserting ${reactFlowNode.data.label} (${reactFlowNode.data.id})`)
+                logger.debug(`[server]: [${userId}]: Finished upserting ${reactFlowNode.data.label} (${reactFlowNode.data.id})`)
                 break
             } else if (
                 !isUpsert &&
@@ -636,10 +633,9 @@ export const buildFlow = async ({
             ) {
                 initializedNodes.add(nodeId)
             } else {
-                logger.debug(`[server]: [${orgId}]: Initializing ${reactFlowNode.data.label} (${reactFlowNode.data.id})`)
+                logger.debug(`[server]: [${userId}]: Initializing ${reactFlowNode.data.label} (${reactFlowNode.data.id})`)
                 const finalQuestion = uploadedFilesContent ? `${uploadedFilesContent}\n\n${question}` : question
                 let outputResult = await newNodeInstance.init(reactFlowNodeData, finalQuestion, {
-                    orgId,
                     userId,
                     subscriptionId,
                     chatId,
@@ -702,11 +698,11 @@ export const buildFlow = async ({
 
                 flowNodes[nodeIndex].data.instance = outputResult
 
-                logger.debug(`[server]: [${orgId}]: Finished initializing ${reactFlowNode.data.label} (${reactFlowNode.data.id})`)
+                logger.debug(`[server]: [${userId}]: Finished initializing ${reactFlowNode.data.label} (${reactFlowNode.data.id})`)
                 initializedNodes.add(reactFlowNode.data.id)
             }
         } catch (e: any) {
-            logger.error(`[server]: [${orgId}]:`, e)
+            logger.error(`[server]: [${userId}]:`, e)
             throw new Error(e)
         }
 
@@ -770,7 +766,7 @@ export const clearSessionMemory = async (
     componentNodes: IComponentNodes,
     chatId: string,
     appDataSource: DataSource,
-    orgId?: string,
+    userId?: string,
     sessionId?: string,
     memoryType?: string,
     isClearFromViewMessageDialog?: string
@@ -784,7 +780,7 @@ export const clearSessionMemory = async (
         const nodeInstanceFilePath = componentNodes[node.data.name].filePath as string
         const nodeModule = await import(nodeInstanceFilePath)
         const newNodeInstance = new nodeModule.nodeClass()
-        const options: ICommonObject = { orgId, chatId, appDataSource, databaseEntities, logger }
+        const options: ICommonObject = { userId, chatId, appDataSource, databaseEntities, logger }
 
         // SessionId always take priority first because it is the sessionId used for 3rd party memory node
         if (sessionId && node.data.inputs) {

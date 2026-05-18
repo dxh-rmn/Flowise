@@ -123,7 +123,6 @@ export interface IDocumentStoreWhereUsed {
 }
 
 export interface IUpsertQueueAppServer {
-    orgId: string
     userId: string
     subscriptionId: string
     appDataSource: DataSource

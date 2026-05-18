@@ -91,36 +91,36 @@ const convertExportInput = (body: any): ExportInput => {
 }
 
 const FileDefaultName = 'ExportData.json'
-const exportData = async (exportInput: ExportInput, activeWorkspaceId: string): Promise<{ FileDefaultName: string } & ExportData> => {
+const exportData = async (exportInput: ExportInput, userId: string): Promise<{ FileDefaultName: string } & ExportData> => {
     try {
         let AgentFlow: ChatFlow[] | { data: ChatFlow[]; total: number } =
-            exportInput.agentflow === true ? await chatflowService.getAllChatflows('MULTIAGENT', activeWorkspaceId) : []
+            exportInput.agentflow === true ? await chatflowService.getAllChatflows('MULTIAGENT', userId) : []
         AgentFlow = 'data' in AgentFlow ? AgentFlow.data : AgentFlow
 
         let AgentFlowV2: ChatFlow[] | { data: ChatFlow[]; total: number } =
-            exportInput.agentflowv2 === true ? await chatflowService.getAllChatflows('AGENTFLOW', activeWorkspaceId) : []
+            exportInput.agentflowv2 === true ? await chatflowService.getAllChatflows('AGENTFLOW', userId) : []
         AgentFlowV2 = 'data' in AgentFlowV2 ? AgentFlowV2.data : AgentFlowV2
 
         let AssistantCustom: Assistant[] =
-            exportInput.assistantCustom === true ? await assistantsService.getAllAssistants(activeWorkspaceId, 'CUSTOM') : []
+            exportInput.assistantCustom === true ? await assistantsService.getAllAssistants(userId, 'CUSTOM') : []
 
         let AssistantFlow: ChatFlow[] | { data: ChatFlow[]; total: number } =
-            exportInput.assistantCustom === true ? await chatflowService.getAllChatflows('ASSISTANT', activeWorkspaceId) : []
+            exportInput.assistantCustom === true ? await chatflowService.getAllChatflows('ASSISTANT', userId) : []
         AssistantFlow = 'data' in AssistantFlow ? AssistantFlow.data : AssistantFlow
 
         let AssistantOpenAI: Assistant[] =
-            exportInput.assistantOpenAI === true ? await assistantsService.getAllAssistants(activeWorkspaceId, 'OPENAI') : []
+            exportInput.assistantOpenAI === true ? await assistantsService.getAllAssistants(userId, 'OPENAI') : []
 
         let AssistantAzure: Assistant[] =
-            exportInput.assistantAzure === true ? await assistantsService.getAllAssistants(activeWorkspaceId, 'AZURE') : []
+            exportInput.assistantAzure === true ? await assistantsService.getAllAssistants(userId, 'AZURE') : []
 
         let ChatFlow: ChatFlow[] | { data: ChatFlow[]; total: number } =
-            exportInput.chatflow === true ? await chatflowService.getAllChatflows('CHATFLOW', activeWorkspaceId) : []
+            exportInput.chatflow === true ? await chatflowService.getAllChatflows('CHATFLOW', userId) : []
         ChatFlow = 'data' in ChatFlow ? ChatFlow.data : ChatFlow
 
         let allChatflow: ChatFlow[] | { data: ChatFlow[]; total: number } =
             exportInput.chat_message === true || exportInput.chat_feedback === true
-                ? await chatflowService.getAllChatflows(undefined, activeWorkspaceId)
+                ? await chatflowService.getAllChatflows(undefined, userId)
                 : []
         allChatflow = 'data' in allChatflow ? allChatflow.data : allChatflow
         const chatflowIds = allChatflow.map((chatflow) => chatflow.id)
@@ -132,10 +132,10 @@ const exportData = async (exportInput: ExportInput, activeWorkspaceId: string): 
             exportInput.chat_feedback === true ? await chatMessagesService.getMessagesFeedbackByChatflowIds(chatflowIds) : []
 
         let CustomTemplate: CustomTemplate[] =
-            exportInput.custom_template === true ? await marketplacesService.getAllCustomTemplates(activeWorkspaceId) : []
+            exportInput.custom_template === true ? await marketplacesService.getAllCustomTemplates(userId) : []
 
         let DocumentStore: DocumentStore[] | { data: DocumentStore[]; total: number } =
-            exportInput.document_store === true ? await documenStoreService.getAllDocumentStores(activeWorkspaceId) : []
+            exportInput.document_store === true ? await documenStoreService.getAllDocumentStores(userId) : []
         DocumentStore = 'data' in DocumentStore ? DocumentStore.data : DocumentStore
 
         const documentStoreIds = DocumentStore.map((documentStore) => documentStore.id)
@@ -145,16 +145,15 @@ const exportData = async (exportInput: ExportInput, activeWorkspaceId: string): 
                 ? await documenStoreService.getAllDocumentFileChunksByDocumentStoreIds(documentStoreIds)
                 : []
 
-        const filters: ExecutionFilters = { userId: activeWorkspaceId }
+        const filters: ExecutionFilters = { userId: userId }
         const { data: totalExecutions } = exportInput.execution === true ? await executionService.getAllExecutions(filters) : { data: [] }
         let Execution: Execution[] = exportInput.execution === true ? totalExecutions : []
 
-        let Tool: Tool[] | { data: Tool[]; total: number } =
-            exportInput.tool === true ? await toolsService.getAllTools(activeWorkspaceId) : []
+        let Tool: Tool[] | { data: Tool[]; total: number } = exportInput.tool === true ? await toolsService.getAllTools(userId) : []
         Tool = 'data' in Tool ? Tool.data : Tool
 
         let Variable: Variable[] | { data: Variable[]; total: number } =
-            exportInput.variable === true ? await variableService.getAllVariables(activeWorkspaceId) : []
+            exportInput.variable === true ? await variableService.getAllVariables(userId) : []
         Variable = 'data' in Variable ? Variable.data : Variable
 
         return {
@@ -229,7 +228,7 @@ async function replaceDuplicateIdsForChatMessage(
     queryRunner: QueryRunner,
     originalData: ExportData,
     chatMessages: ChatMessage[],
-    activeWorkspaceId?: string
+    userId?: string
 ) {
     try {
         const chatmessageChatflowIds = chatMessages.map((chatMessage) => {
@@ -250,7 +249,7 @@ async function replaceDuplicateIdsForChatMessage(
             await queryRunner.manager.find(ChatFlow, {
                 where: {
                     id: In(chatmessageChatflowIds.map((chatmessageChatflowId) => chatmessageChatflowId.id)),
-                    userId: activeWorkspaceId
+                    userId: userId
                 }
             })
         ).map((chatflow) => chatflow.id)
@@ -303,7 +302,7 @@ async function replaceExecutionIdForChatMessage(
     queryRunner: QueryRunner,
     originalData: ExportData,
     chatMessages: ChatMessage[],
-    activeWorkspaceId?: string
+    userId?: string
 ) {
     try {
         // step 1 - get all execution ids from chatMessages
@@ -326,7 +325,7 @@ async function replaceExecutionIdForChatMessage(
             await queryRunner.manager.find(Execution, {
                 where: {
                     id: In(chatMessageExecutionIds.map((chatMessageExecutionId) => chatMessageExecutionId.id)),
-                    userId: activeWorkspaceId
+                    userId: userId
                 }
             })
         ).map((execution) => execution.id)
@@ -359,7 +358,7 @@ async function replaceDuplicateIdsForChatMessageFeedback(
     queryRunner: QueryRunner,
     originalData: ExportData,
     chatMessageFeedbacks: ChatMessageFeedback[],
-    activeWorkspaceId?: string
+    userId?: string
 ) {
     try {
         const feedbackChatflowIds = chatMessageFeedbacks.map((feedback) => {
@@ -378,7 +377,7 @@ async function replaceDuplicateIdsForChatMessageFeedback(
         })
         const databaseChatflowIds = await (
             await queryRunner.manager.find(ChatFlow, {
-                where: { id: In(feedbackChatflowIds.map((feedbackChatflowId) => feedbackChatflowId.id)), userId: activeWorkspaceId }
+                where: { id: In(feedbackChatflowIds.map((feedbackChatflowId) => feedbackChatflowId.id)), userId: userId }
             })
         ).map((chatflow) => chatflow.id)
         feedbackChatflowIds.forEach((item) => {
@@ -594,8 +593,8 @@ function reduceSpaceForChatflowFlowData(chatflows: ChatFlow[]) {
     })
 }
 
-function insertWorkspaceId(importedData: any, activeWorkspaceId?: string) {
-    if (!activeWorkspaceId) return importedData
+function insertUserId(importedData: any, userId?: string) {
+    if (!userId) return importedData
     importedData.forEach((item: any) => {
         if (item.type === 'Tool') {
             // TODO: This is a temporary fix where export data for CustomTemplate type Tool need to be changed in the future.
@@ -606,7 +605,7 @@ function insertWorkspaceId(importedData: any, activeWorkspaceId?: string) {
                 func: item.func
             })
         }
-        item.userId = activeWorkspaceId
+        item.userId = userId
     })
     return importedData
 }
@@ -618,7 +617,7 @@ async function saveBatch(manager: EntityManager, entity: any, items: any[], batc
     }
 }
 
-const importData = async (importData: ExportData, orgId: string, activeWorkspaceId: string, subscriptionId: string) => {
+const importData = async (importData: ExportData, userId: string, subscriptionId: string) => {
     // Initialize missing properties with empty arrays to avoid "undefined" errors
     importData.AgentFlow = importData.AgentFlow || []
     importData.AgentFlowV2 = importData.AgentFlowV2 || []
@@ -644,8 +643,8 @@ const importData = async (importData: ExportData, orgId: string, activeWorkspace
         try {
             if (importData.AgentFlow.length > 0) {
                 importData.AgentFlow = reduceSpaceForChatflowFlowData(importData.AgentFlow)
-                importData.AgentFlow = insertWorkspaceId(importData.AgentFlow, activeWorkspaceId)
-                const existingChatflowCount = await chatflowService.getAllChatflowsCountByOrganization('MULTIAGENT', orgId)
+                importData.AgentFlow = insertUserId(importData.AgentFlow, userId)
+                const existingChatflowCount = await chatflowService.getAllChatflowsCountByOrganization('MULTIAGENT', userId)
                 const newChatflowCount = importData.AgentFlow.length
                 await checkUsageLimit(
                     'flows',
@@ -657,8 +656,8 @@ const importData = async (importData: ExportData, orgId: string, activeWorkspace
             }
             if (importData.AgentFlowV2.length > 0) {
                 importData.AgentFlowV2 = reduceSpaceForChatflowFlowData(importData.AgentFlowV2)
-                importData.AgentFlowV2 = insertWorkspaceId(importData.AgentFlowV2, activeWorkspaceId)
-                const existingChatflowCount = await chatflowService.getAllChatflowsCountByOrganization('AGENTFLOW', orgId)
+                importData.AgentFlowV2 = insertUserId(importData.AgentFlowV2, userId)
+                const existingChatflowCount = await chatflowService.getAllChatflowsCountByOrganization('AGENTFLOW', userId)
                 const newChatflowCount = importData.AgentFlowV2.length
                 await checkUsageLimit(
                     'flows',
@@ -669,8 +668,8 @@ const importData = async (importData: ExportData, orgId: string, activeWorkspace
                 importData = await replaceDuplicateIdsForChatFlow(queryRunner, importData, importData.AgentFlowV2)
             }
             if (importData.AssistantCustom.length > 0) {
-                importData.AssistantCustom = insertWorkspaceId(importData.AssistantCustom, activeWorkspaceId)
-                const existingAssistantCount = await assistantsService.getAssistantsCountByOrganization('CUSTOM', orgId)
+                importData.AssistantCustom = insertUserId(importData.AssistantCustom, userId)
+                const existingAssistantCount = await assistantsService.getAssistantsCountByOrganization('CUSTOM', userId)
                 const newAssistantCount = importData.AssistantCustom.length
                 await checkUsageLimit(
                     'flows',
@@ -682,8 +681,8 @@ const importData = async (importData: ExportData, orgId: string, activeWorkspace
             }
             if (importData.AssistantFlow.length > 0) {
                 importData.AssistantFlow = reduceSpaceForChatflowFlowData(importData.AssistantFlow)
-                importData.AssistantFlow = insertWorkspaceId(importData.AssistantFlow, activeWorkspaceId)
-                const existingChatflowCount = await chatflowService.getAllChatflowsCountByOrganization('ASSISTANT', orgId)
+                importData.AssistantFlow = insertUserId(importData.AssistantFlow, userId)
+                const existingChatflowCount = await chatflowService.getAllChatflowsCountByOrganization('ASSISTANT', userId)
                 const newChatflowCount = importData.AssistantFlow.length
                 await checkUsageLimit(
                     'flows',
@@ -694,8 +693,8 @@ const importData = async (importData: ExportData, orgId: string, activeWorkspace
                 importData = await replaceDuplicateIdsForChatFlow(queryRunner, importData, importData.AssistantFlow)
             }
             if (importData.AssistantOpenAI.length > 0) {
-                importData.AssistantOpenAI = insertWorkspaceId(importData.AssistantOpenAI, activeWorkspaceId)
-                const existingAssistantCount = await assistantsService.getAssistantsCountByOrganization('OPENAI', orgId)
+                importData.AssistantOpenAI = insertUserId(importData.AssistantOpenAI, userId)
+                const existingAssistantCount = await assistantsService.getAssistantsCountByOrganization('OPENAI', userId)
                 const newAssistantCount = importData.AssistantOpenAI.length
                 await checkUsageLimit(
                     'flows',
@@ -706,8 +705,8 @@ const importData = async (importData: ExportData, orgId: string, activeWorkspace
                 importData = await replaceDuplicateIdsForAssistant(queryRunner, importData, importData.AssistantOpenAI)
             }
             if (importData.AssistantAzure.length > 0) {
-                importData.AssistantAzure = insertWorkspaceId(importData.AssistantAzure, activeWorkspaceId)
-                const existingAssistantCount = await assistantsService.getAssistantsCountByOrganization('AZURE', orgId)
+                importData.AssistantAzure = insertUserId(importData.AssistantAzure, userId)
+                const existingAssistantCount = await assistantsService.getAssistantsCountByOrganization('AZURE', userId)
                 const newAssistantCount = importData.AssistantAzure.length
                 await checkUsageLimit(
                     'flows',
@@ -719,8 +718,8 @@ const importData = async (importData: ExportData, orgId: string, activeWorkspace
             }
             if (importData.ChatFlow.length > 0) {
                 importData.ChatFlow = reduceSpaceForChatflowFlowData(importData.ChatFlow)
-                importData.ChatFlow = insertWorkspaceId(importData.ChatFlow, activeWorkspaceId)
-                const existingChatflowCount = await chatflowService.getAllChatflowsCountByOrganization('CHATFLOW', orgId)
+                importData.ChatFlow = insertUserId(importData.ChatFlow, userId)
+                const existingChatflowCount = await chatflowService.getAllChatflowsCountByOrganization('CHATFLOW', userId)
                 const newChatflowCount = importData.ChatFlow.length
                 await checkUsageLimit(
                     'flows',
@@ -731,36 +730,36 @@ const importData = async (importData: ExportData, orgId: string, activeWorkspace
                 importData = await replaceDuplicateIdsForChatFlow(queryRunner, importData, importData.ChatFlow)
             }
             if (importData.ChatMessage.length > 0) {
-                importData = await replaceDuplicateIdsForChatMessage(queryRunner, importData, importData.ChatMessage, activeWorkspaceId)
-                importData = await replaceExecutionIdForChatMessage(queryRunner, importData, importData.ChatMessage, activeWorkspaceId)
+                importData = await replaceDuplicateIdsForChatMessage(queryRunner, importData, importData.ChatMessage, userId)
+                importData = await replaceExecutionIdForChatMessage(queryRunner, importData, importData.ChatMessage, userId)
             }
             if (importData.ChatMessageFeedback.length > 0)
                 importData = await replaceDuplicateIdsForChatMessageFeedback(
                     queryRunner,
                     importData,
                     importData.ChatMessageFeedback,
-                    activeWorkspaceId
+                    userId
                 )
             if (importData.CustomTemplate.length > 0) {
-                importData.CustomTemplate = insertWorkspaceId(importData.CustomTemplate, activeWorkspaceId)
+                importData.CustomTemplate = insertUserId(importData.CustomTemplate, userId)
                 importData = await replaceDuplicateIdsForCustomTemplate(queryRunner, importData, importData.CustomTemplate)
             }
             if (importData.DocumentStore.length > 0) {
-                importData.DocumentStore = insertWorkspaceId(importData.DocumentStore, activeWorkspaceId)
+                importData.DocumentStore = insertUserId(importData.DocumentStore, userId)
                 importData = await replaceDuplicateIdsForDocumentStore(queryRunner, importData, importData.DocumentStore)
             }
             if (importData.DocumentStoreFileChunk.length > 0)
                 importData = await replaceDuplicateIdsForDocumentStoreFileChunk(queryRunner, importData, importData.DocumentStoreFileChunk)
             if (importData.Tool.length > 0) {
-                importData.Tool = insertWorkspaceId(importData.Tool, activeWorkspaceId)
+                importData.Tool = insertUserId(importData.Tool, userId)
                 importData = await replaceDuplicateIdsForTool(queryRunner, importData, importData.Tool)
             }
             if (importData.Execution.length > 0) {
-                importData.Execution = insertWorkspaceId(importData.Execution, activeWorkspaceId)
+                importData.Execution = insertUserId(importData.Execution, userId)
                 importData = await replaceDuplicateIdsForExecution(queryRunner, importData, importData.Execution)
             }
             if (importData.Variable.length > 0) {
-                importData.Variable = insertWorkspaceId(importData.Variable, activeWorkspaceId)
+                importData.Variable = insertUserId(importData.Variable, userId)
                 importData = await replaceDuplicateIdsForVariable(queryRunner, importData, importData.Variable)
             }
 
@@ -842,7 +841,7 @@ const exportChatflowMessages = async (
             endDate,
             sortOrder: 'DESC',
             feedback: true,
-            activeWorkspaceId: userId
+            userId: userId
         })
 
         const storagePath = getStoragePath()

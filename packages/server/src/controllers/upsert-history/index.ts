@@ -6,11 +6,11 @@ import upsertHistoryService from '../../services/upsert-history'
 
 const getAllUpsertHistory = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
-                `Error: upsertHistoryController.getAllUpsertHistory - workspace ${userId} not found!`
+                `Error: upsertHistoryController.getAllUpsertHistory - user ${userId} not found!`
             )
         }
         const chatflowid = req.params?.id as string | undefined
@@ -34,11 +34,11 @@ const getAllUpsertHistory = async (req: Request, res: Response, next: NextFuncti
 
 const patchDeleteUpsertHistory = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
-                `Error: upsertHistoryController.patchDeleteUpsertHistory - workspace ${userId} not found!`
+                `Error: upsertHistoryController.patchDeleteUpsertHistory - user ${userId} not found!`
             )
         }
         const ids = req.body.ids ?? []

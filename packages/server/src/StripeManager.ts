@@ -120,7 +120,7 @@ export class StripeManager {
             throw new Error('Stripe is not initialized')
         }
 
-        const customerId = req.user?.activeOrganizationCustomerId
+        const customerId = req.user?.id
         if (!customerId) {
             throw new Error('Customer ID is required')
         }

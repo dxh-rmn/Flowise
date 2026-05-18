@@ -9,8 +9,8 @@ const getChatflowStats = async (req: Request, res: Response, next: NextFunction)
         if (typeof req.params === 'undefined' || !req.params.id) {
             throw new InternalFlowiseError(StatusCodes.PRECONDITION_FAILED, `Error: statsController.getChatflowStats - id not provided!`)
         }
-        const activeWorkspaceId = req.user?.activeWorkspaceId
-        if (!activeWorkspaceId) {
+        const id = req.user?.id
+        if (!id) {
             throw new InternalFlowiseError(StatusCodes.UNAUTHORIZED, `Error: statsController.getChatflowStats - unauthorized!`)
         }
         const chatflowid = req.params.id
@@ -49,14 +49,7 @@ const getChatflowStats = async (req: Request, res: Response, next: NextFunction)
                 return res.status(500).send(e)
             }
         }
-        const apiResponse = await statsService.getChatflowStats(
-            chatflowid,
-            activeWorkspaceId,
-            chatTypes,
-            startDate,
-            endDate,
-            feedbackTypeFilters
-        )
+        const apiResponse = await statsService.getChatflowStats(chatflowid, id, chatTypes, startDate, endDate, feedbackTypeFilters)
         return res.json(apiResponse)
     } catch (error) {
         next(error)

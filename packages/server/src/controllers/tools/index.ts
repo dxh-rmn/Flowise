@@ -9,13 +9,13 @@ const createTool = async (req: Request, res: Response, next: NextFunction) => {
         if (!req.body) {
             throw new InternalFlowiseError(StatusCodes.PRECONDITION_FAILED, `Error: toolsController.createTool - body not provided!`)
         }
-        const orgId = req.user?.activeOrganizationId
-        if (!orgId) {
-            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Error: toolsController.createTool - organization ${orgId} not found!`)
-        }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
-            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Error: toolsController.createTool - workspace ${userId} not found!`)
+            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Error: toolsController.createTool - user ${userId} not found!`)
+        }
+
+        if (!userId) {
+            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Error: toolsController.createTool - user ${userId} not found!`)
         }
         const body = req.body
         // Explicit allowlist — id/userId/timestamps must not be overrideable by client
@@ -28,7 +28,7 @@ const createTool = async (req: Request, res: Response, next: NextFunction) => {
         if (body.func !== undefined) toolBody.func = body.func
         toolBody.userId = userId
 
-        const apiResponse = await toolsService.createTool(toolBody, orgId)
+        const apiResponse = await toolsService.createTool(toolBody, userId)
         return res.json(apiResponse)
     } catch (error) {
         next(error)
@@ -40,9 +40,9 @@ const deleteTool = async (req: Request, res: Response, next: NextFunction) => {
         if (typeof req.params === 'undefined' || !req.params.id) {
             throw new InternalFlowiseError(StatusCodes.PRECONDITION_FAILED, `Error: toolsController.deleteTool - id not provided!`)
         }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
-            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Error: toolsController.deleteTool - workspace ${userId} not found!`)
+            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Error: toolsController.deleteTool - user ${userId} not found!`)
         }
         const apiResponse = await toolsService.deleteTool(req.params.id, userId)
         return res.json(apiResponse)
@@ -54,7 +54,7 @@ const deleteTool = async (req: Request, res: Response, next: NextFunction) => {
 const getAllTools = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { page, limit } = getPageAndLimitParams(req)
-        const apiResponse = await toolsService.getAllTools(req.user?.activeWorkspaceId, page, limit)
+        const apiResponse = await toolsService.getAllTools(req.user?.id, page, limit)
         return res.json(apiResponse)
     } catch (error) {
         next(error)
@@ -66,9 +66,9 @@ const getToolById = async (req: Request, res: Response, next: NextFunction) => {
         if (typeof req.params === 'undefined' || !req.params.id) {
             throw new InternalFlowiseError(StatusCodes.PRECONDITION_FAILED, `Error: toolsController.getToolById - id not provided!`)
         }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
-            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Error: toolsController.getToolById - workspace ${userId} not found!`)
+            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Error: toolsController.getToolById - user ${userId} not found!`)
         }
         const apiResponse = await toolsService.getToolById(req.params.id, userId)
         return res.json(apiResponse)
@@ -85,9 +85,9 @@ const updateTool = async (req: Request, res: Response, next: NextFunction) => {
         if (!req.body) {
             throw new InternalFlowiseError(StatusCodes.PRECONDITION_FAILED, `Error: toolsController.deleteTool - body not provided!`)
         }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
-            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Error: toolsController.updateTool - workspace ${userId} not found!`)
+            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Error: toolsController.updateTool - user ${userId} not found!`)
         }
         const body = req.body
         // Explicit allowlist — id/userId/timestamps must not be overrideable by client

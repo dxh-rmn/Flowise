@@ -58,7 +58,7 @@ const getFileFromAssistant = async (req: Request, res: Response, next: NextFunct
         const chatId = req.body.chatId as string
         const fileName = req.body.fileName as string
 
-        // This can be public API, so we can only get orgId from the chatflow
+        // This can be public API, so we can only get userId from the chatflow
         const chatflow = await appServer.AppDataSource.getRepository(ChatFlow).findOneBy({
             id: chatflowId
         })
@@ -70,10 +70,10 @@ const getFileFromAssistant = async (req: Request, res: Response, next: NextFunct
         if (!workspace) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Workspace ${chatflowWorkspaceId} not found`)
         }
-        const orgId = workspace.organizationId as string
+        const userId = workspace.userId as string
 
         res.setHeader('Content-Disposition', contentDisposition(fileName))
-        const fileStream = await streamStorageFile(chatflowId, chatId, fileName, orgId)
+        const fileStream = await streamStorageFile(chatflowId, chatId, fileName, userId)
 
         if (!fileStream) throw new InternalFlowiseError(StatusCodes.INTERNAL_SERVER_ERROR, `Error: getFileFromAssistant`)
 

@@ -22,10 +22,10 @@ export class Telemetry {
         }
     }
 
-    async sendTelemetry(event: string, properties: Record<string, any> = {}, orgId = ''): Promise<void> {
+    async sendTelemetry(event: string, properties: Record<string, any> = {}, userId = ''): Promise<void> {
         properties.version = await getAppVersion()
         if (this.postHog) {
-            const distinctId = orgId || uuidv4()
+            const distinctId = userId || uuidv4()
             this.postHog.capture({
                 event,
                 distinctId,
@@ -96,7 +96,6 @@ export interface TelemetryEventInput {
     eventType: string
     actionType: string
     userId: string
-    orgId: string
     resourceId?: string
     ipAddress?: string
     result: TelemetryEventResult
@@ -110,7 +109,6 @@ export interface TelemetryEventOutput {
     eventType: string
     actionType: string
     userId: string
-    orgId: string
     resourceId?: string
     ipAddress?: string
     countryCode?: string
@@ -149,7 +147,6 @@ export async function emitEvent(input: TelemetryEventInput): Promise<void> {
             eventType: input.eventType,
             actionType: input.actionType,
             userId: input.userId,
-            orgId: input.orgId,
             resourceId: input.resourceId,
             ipAddress: input.ipAddress ? sanitizeIPAddress(input.ipAddress) : undefined,
             countryCode: geo.countryCode,

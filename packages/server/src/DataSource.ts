@@ -18,14 +18,17 @@ export const init = async (): Promise<void> => {
     if (!fs.existsSync(flowisePath)) {
         fs.mkdirSync(flowisePath)
     }
+    const synchronize = process.env.DATABASE_SYNCHRONIZE === 'true'
+    const migrationsRun = process.env.DATABASE_MIGRATIONS_RUN === 'true'
+
     switch (process.env.DATABASE_TYPE) {
         case 'sqlite':
             homePath = process.env.DATABASE_PATH ?? flowisePath
             appDataSource = new DataSource({
                 type: 'sqlite',
                 database: path.resolve(homePath, process.env.DATABASE_NAME ?? 'flowise.sqlite'),
-                synchronize: true,
-                migrationsRun: false,
+                synchronize: process.env.DATABASE_SYNCHRONIZE ? synchronize : true,
+                migrationsRun: migrationsRun,
                 entities: Object.values(entities),
                 migrations: sqliteMigrations
             })
@@ -39,8 +42,8 @@ export const init = async (): Promise<void> => {
                 password: process.env.DATABASE_PASSWORD,
                 database: process.env.DATABASE_NAME,
                 charset: 'utf8mb4',
-                synchronize: false,
-                migrationsRun: false,
+                synchronize: synchronize,
+                migrationsRun: migrationsRun,
                 entities: Object.values(entities),
                 migrations: mysqlMigrations,
                 ssl: getDatabaseSSLFromEnv()
@@ -55,8 +58,8 @@ export const init = async (): Promise<void> => {
                 password: process.env.DATABASE_PASSWORD,
                 database: process.env.DATABASE_NAME,
                 charset: 'utf8mb4',
-                synchronize: false,
-                migrationsRun: false,
+                synchronize: synchronize,
+                migrationsRun: migrationsRun,
                 entities: Object.values(entities),
                 migrations: mariadbMigrations,
                 ssl: getDatabaseSSLFromEnv()
@@ -71,8 +74,8 @@ export const init = async (): Promise<void> => {
                 password: process.env.DATABASE_PASSWORD,
                 database: process.env.DATABASE_NAME,
                 ssl: getDatabaseSSLFromEnv(),
-                synchronize: false,
-                migrationsRun: false,
+                synchronize: synchronize,
+                migrationsRun: migrationsRun,
                 entities: Object.values(entities),
                 migrations: postgresMigrations,
                 extra: {
@@ -92,8 +95,8 @@ export const init = async (): Promise<void> => {
             appDataSource = new DataSource({
                 type: 'sqlite',
                 database: path.resolve(homePath, process.env.DATABASE_NAME ?? 'flowise.sqlite'),
-                synchronize: true,
-                migrationsRun: false,
+                synchronize: process.env.DATABASE_SYNCHRONIZE ? synchronize : true,
+                migrationsRun: migrationsRun,
                 entities: Object.values(entities),
                 migrations: sqliteMigrations
             })

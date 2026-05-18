@@ -8,7 +8,7 @@ import { QueryRunner } from 'typeorm'
 import { validate } from 'uuid'
 import { Platform } from '../../Interface'
 
-const createVariable = async (newVariable: Variable, orgId: string) => {
+const createVariable = async (newVariable: Variable, userId: string) => {
     const appServer = getRunningExpressApp()
     if (appServer.identityManager.getPlatformType() === Platform.CLOUD && newVariable.type === 'runtime')
         throw new InternalFlowiseError(StatusCodes.BAD_REQUEST, 'Cloud platform does not support runtime variables!')
@@ -21,7 +21,7 @@ const createVariable = async (newVariable: Variable, orgId: string) => {
                 version: await getAppVersion(),
                 variableType: variable.type
             },
-            orgId
+            userId
         )
         return dbResponse
     } catch (error) {

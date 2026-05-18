@@ -117,7 +117,7 @@ const checkIfChatflowIsValidForUploads = async (chatflowId: string): Promise<any
     }
 }
 
-const deleteChatflow = async (chatflowId: string, orgId: string, userId: string): Promise<any> => {
+const deleteChatflow = async (chatflowId: string, userId: string): Promise<any> => {
     try {
         const appServer = getRunningExpressApp()
 
@@ -147,8 +147,8 @@ const deleteChatflow = async (chatflowId: string, orgId: string, userId: string)
 
         try {
             // Delete all uploads corresponding to this chatflow
-            const { totalSize } = await removeFolderFromStorage(orgId, chatflowId)
-            await updateStorageUsage(orgId, userId, totalSize, appServer.usageCacheManager)
+            const { totalSize } = await removeFolderFromStorage(userId, chatflowId)
+            await updateStorageUsage(userId, totalSize, appServer.usageCacheManager)
         } catch (e) {
             logger.error(`[server]: Error deleting file storage for chatflow ${chatflowId}`)
         }
@@ -334,7 +334,6 @@ const assertChatflowIdsInWorkspace = async (chatflowIds: string[], userId: strin
 
 const saveChatflow = async (
     newChatFlow: ChatFlow,
-    orgId: string,
     userId: string,
     subscriptionId: string,
     usageCacheManager: UsageCacheManager
@@ -357,7 +356,6 @@ const saveChatflow = async (
         step1Results.flowData = await updateFlowDataWithFilePaths(
             step1Results.id,
             incomingFlowData,
-            orgId,
             userId,
             subscriptionId,
             usageCacheManager
@@ -428,7 +426,7 @@ const saveChatflow = async (
             productId,
             subscriptionId
         },
-        orgId
+        userId
     )
 
     appServer.metricsProvider?.incrementCounter(
@@ -439,19 +437,12 @@ const saveChatflow = async (
     return dbResponse
 }
 
-const updateChatflow = async (
-    chatflow: ChatFlow,
-    updateChatFlow: ChatFlow,
-    orgId: string,
-    userId: string,
-    subscriptionId: string
-): Promise<any> => {
+const updateChatflow = async (chatflow: ChatFlow, updateChatFlow: ChatFlow, userId: string, subscriptionId: string): Promise<any> => {
     const appServer = getRunningExpressApp()
     if (updateChatFlow.flowData && containsBase64File(updateChatFlow)) {
         updateChatFlow.flowData = await updateFlowDataWithFilePaths(
             chatflow.id,
             updateChatFlow.flowData,
-            orgId,
             userId,
             subscriptionId,
             appServer.usageCacheManager

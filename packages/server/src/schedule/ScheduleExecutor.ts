@@ -163,17 +163,10 @@ async function _executeAgentflow(ctx: ScheduleExecutionContext, record: Schedule
         if (!isAgentFlow) throw new Error(`ChatFlow ${record.targetId} is not of type AGENTFLOW`)
 
         const userId = chatflow.userId ?? record.userId
-
-        const workspace: any = {}
-        if (!workspace) throw new Error(`Workspace ${userId} not found`)
-        const org: any = {}
-        if (!org) throw new Error(`Organization ${workspace.organizationId} not found`)
-
-        const orgId = org.id
-        const subscriptionId = org.subscriptionId as string
+        const subscriptionId = ''
         const productId = ''
 
-        await checkPredictions(org.id, subscriptionId, usageCacheManager)
+        await checkPredictions(userId, subscriptionId, usageCacheManager)
 
         const chatId = uuidv4()
         const incomingInput: IncomingAgentflowInput = { chatId, streaming: false }
@@ -204,7 +197,6 @@ async function _executeAgentflow(ctx: ScheduleExecutionContext, record: Schedule
             baseURL: process.env.APP_URL ?? '',
             isInternal: true,
             chatType: ChatType.SCHEDULED,
-            orgId,
             userId,
             subscriptionId,
             productId
@@ -220,7 +212,7 @@ async function _executeAgentflow(ctx: ScheduleExecutionContext, record: Schedule
             executionId
         })
 
-        await updatePredictionsUsage(orgId, subscriptionId, userId, usageCacheManager)
+        await updatePredictionsUsage(userId, subscriptionId, usageCacheManager)
         await scheduleService.updateScheduleAfterRun(appDataSource, record.id, record.cronExpression, record.timezone ?? 'UTC')
         logger.debug(`[ScheduleExecutor]: Completed schedule ${record.id} (${elapsedTimeMs}ms)`)
         return result

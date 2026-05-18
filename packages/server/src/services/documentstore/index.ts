@@ -56,7 +56,7 @@ import { checkStorage, updateStorageUsage } from '../../utils/quotaUsage'
 import { Telemetry } from '../../utils/telemetry'
 import nodesService from '../nodes'
 
-const createDocumentStore = async (newDocumentStore: DocumentStore, orgId: string) => {
+const createDocumentStore = async (newDocumentStore: DocumentStore, userId: string) => {
     try {
         const appServer = getRunningExpressApp()
 
@@ -67,7 +67,7 @@ const createDocumentStore = async (newDocumentStore: DocumentStore, orgId: strin
             {
                 version: await getAppVersion()
             },
-            orgId
+            userId
         )
         return dbResponse
     } catch (error) {
@@ -111,13 +111,7 @@ const getAllDocumentFileChunksByDocumentStoreIds = async (documentStoreIds: stri
     return await appServer.AppDataSource.getRepository(DocumentStoreFileChunk).find({ where: { storeId: In(documentStoreIds) } })
 }
 
-const deleteLoaderFromDocumentStore = async (
-    storeId: string,
-    docId: string,
-    orgId: string,
-    userId: string,
-    usageCacheManager: UsageCacheManager
-) => {
+const deleteLoaderFromDocumentStore = async (storeId: string, docId: string, userId: string, usageCacheManager: UsageCacheManager) => {
     try {
         const appServer = getRunningExpressApp()
 
@@ -144,8 +138,13 @@ const deleteLoaderFromDocumentStore = async (
                 for (const file of found.files) {
                     if (file.name) {
                         try {
-                            const { totalSize } = await removeSpecificFileFromStorage(orgId, DOCUMENT_STORE_BASE_FOLDER, storeId, file.name)
-                            await updateStorageUsage(orgId, userId, totalSize, usageCacheManager)
+                            const { totalSize } = await removeSpecificFileFromStorage(
+                                userId,
+                                DOCUMENT_STORE_BASE_FOLDER,
+                                storeId,
+                                file.name
+                            )
+                            await updateStorageUsage(userId, totalSize, usageCacheManager)
                         } catch (error) {
                             console.error(error)
                         }
@@ -315,7 +314,7 @@ const getDocumentStoreFileChunks = async (
     }
 }
 
-const deleteDocumentStore = async (storeId: string, orgId: string, userId: string, usageCacheManager: UsageCacheManager) => {
+const deleteDocumentStore = async (storeId: string, userId: string, usageCacheManager: UsageCacheManager) => {
     try {
         const appServer = getRunningExpressApp()
 
@@ -334,8 +333,8 @@ const deleteDocumentStore = async (storeId: string, orgId: string, userId: strin
 
         // now delete the files associated with the store
         try {
-            const { totalSize } = await removeFilesFromStorage(orgId, DOCUMENT_STORE_BASE_FOLDER, entity.id)
-            await updateStorageUsage(orgId, userId, totalSize, usageCacheManager)
+            const { totalSize } = await removeFilesFromStorage(userId, DOCUMENT_STORE_BASE_FOLDER, entity.id)
+            await updateStorageUsage(userId, totalSize, usageCacheManager)
         } catch (error) {
             logger.error(`[server]: Error deleting file storage for documentStore ${storeId}`)
         }
@@ -537,12 +536,11 @@ const updateDocumentStore = async (documentStore: DocumentStore, updatedDocument
 const _saveFileToStorage = async (
     fileBase64: string,
     entity: DocumentStore,
-    orgId: string,
     userId: string,
     subscriptionId: string,
     usageCacheManager: UsageCacheManager
 ) => {
-    await checkStorage(orgId, subscriptionId, usageCacheManager)
+    await checkStorage(userId, subscriptionId, usageCacheManager)
 
     const splitDataURI = fileBase64.split(',')
     const filename = splitDataURI.pop()?.split(':')[1] ?? ''
@@ -552,8 +550,8 @@ const _saveFileToStorage = async (
     if (mimePrefix) {
         mime = mimePrefix.split(';')[0].split(':')[1]
     }
-    const { totalSize } = await addSingleFileToStorage(mime, bf, filename, orgId, DOCUMENT_STORE_BASE_FOLDER, entity.id)
-    await updateStorageUsage(orgId, userId, totalSize, usageCacheManager)
+    const { totalSize } = await addSingleFileToStorage(mime, bf, filename, userId, DOCUMENT_STORE_BASE_FOLDER, entity.id)
+    await updateStorageUsage(userId, totalSize, usageCacheManager)
 
     return {
         id: uuidv4(),
@@ -615,7 +613,6 @@ const _normalizeFilePaths = async (
     appDataSource: DataSource,
     data: IDocumentStoreLoaderForPreview,
     entity: DocumentStore | null,
-    orgId: string,
     userId: string
 ) => {
     const keys = Object.getOwnPropertyNames(data.loaderConfig)
@@ -657,7 +654,7 @@ const _normalizeFilePaths = async (
             if (currentLoader) {
                 const base64Files: string[] = []
                 for (const file of files) {
-                    const bf = await getFileFromStorage(file, orgId, DOCUMENT_STORE_BASE_FOLDER, documentStoreEntity.id)
+                    const bf = await getFileFromStorage(file, userId, DOCUMENT_STORE_BASE_FOLDER, documentStoreEntity.id)
                     // find the file entry that has the same name as the file
                     const uploadedFile = currentLoader.files.find((uFile: IDocumentStoreLoaderFile) => uFile.name === file)
                     const mimePrefix = 'data:' + uploadedFile.mimePrefix + ';base64'
@@ -674,7 +671,6 @@ const _normalizeFilePaths = async (
 
 const previewChunksMiddleware = async (
     data: IDocumentStoreLoaderForPreview,
-    orgId: string,
     userId: string,
     subscriptionId: string,
     usageCacheManager: UsageCacheManager
@@ -690,7 +686,6 @@ const previewChunksMiddleware = async (
             usageCacheManager,
             data,
             isPreviewOnly: true,
-            orgId,
             userId,
             subscriptionId
         }
@@ -698,7 +693,7 @@ const previewChunksMiddleware = async (
         if (process.env.MODE === MODE.QUEUE) {
             const upsertQueue = appServer.queueManager.getQueue('upsert')
             const job = await upsertQueue.addJob(omit(executeData, OMIT_QUEUE_JOB_DATA))
-            logger.debug(`[server]: [${orgId}]: Job added to queue: ${job.id}`)
+            logger.debug(`[server]: [${userId}]: Job added to queue: ${job.id}`)
 
             const queueEvents = upsertQueue.getQueueEvents()
             const result = await job.waitUntilFinished(queueEvents)
@@ -721,7 +716,7 @@ const previewChunksMiddleware = async (
     }
 }
 
-export const previewChunks = async ({ appDataSource, componentNodes, data, orgId, userId }: IExecutePreviewLoader) => {
+export const previewChunks = async ({ appDataSource, componentNodes, data, userId }: IExecutePreviewLoader) => {
     try {
         if (data.preview) {
             if (
@@ -733,7 +728,7 @@ export const previewChunks = async ({ appDataSource, componentNodes, data, orgId
             }
         }
         if (!data.rehydrated) {
-            await _normalizeFilePaths(appDataSource, data, null, orgId, userId)
+            await _normalizeFilePaths(appDataSource, data, null, userId)
         }
         let docs = await _splitIntoChunks(appDataSource, componentNodes, data, userId)
         const totalChunks = docs.length
@@ -846,7 +841,6 @@ export const processLoader = async ({
     componentNodes,
     data,
     docLoaderId,
-    orgId,
     userId,
     subscriptionId,
     usageCacheManager
@@ -861,14 +855,13 @@ export const processLoader = async ({
             `Error: documentStoreServices.processLoader - Document store ${data.storeId} not found`
         )
     }
-    await _saveChunksToStorage(appDataSource, componentNodes, data, entity, docLoaderId, orgId, userId, subscriptionId, usageCacheManager)
+    await _saveChunksToStorage(appDataSource, componentNodes, data, entity, docLoaderId, userId, subscriptionId, usageCacheManager)
     return getDocumentStoreFileChunks(appDataSource, data.storeId as string, docLoaderId, userId)
 }
 
 const processLoaderMiddleware = async (
     data: IDocumentStoreLoaderForPreview,
     docLoaderId: string,
-    orgId: string,
     userId: string,
     subscriptionId: string,
     usageCacheManager: UsageCacheManager,
@@ -887,7 +880,6 @@ const processLoaderMiddleware = async (
             docLoaderId,
             isProcessWithoutUpsert: true,
             telemetry,
-            orgId,
             userId,
             subscriptionId,
             usageCacheManager
@@ -896,7 +888,7 @@ const processLoaderMiddleware = async (
         if (process.env.MODE === MODE.QUEUE) {
             const upsertQueue = appServer.queueManager.getQueue('upsert')
             const job = await upsertQueue.addJob(omit(executeData, OMIT_QUEUE_JOB_DATA))
-            logger.debug(`[server]: [${orgId}]: Job added to queue: ${job.id}`)
+            logger.debug(`[server]: [${userId}]: Job added to queue: ${job.id}`)
 
             if (isInternalRequest) {
                 return {
@@ -928,7 +920,6 @@ const _saveChunksToStorage = async (
     data: IDocumentStoreLoaderForPreview,
     entity: DocumentStore,
     newLoaderId: string,
-    orgId: string,
     userId: string,
     subscriptionId: string,
     usageCacheManager: UsageCacheManager
@@ -937,7 +928,7 @@ const _saveChunksToStorage = async (
 
     try {
         //step 1: restore the full paths, if any
-        await _normalizeFilePaths(appDataSource, data, entity, orgId, userId)
+        await _normalizeFilePaths(appDataSource, data, entity, userId)
 
         //step 2: split the file into chunks
         const response = await previewChunks({
@@ -945,7 +936,6 @@ const _saveChunksToStorage = async (
             componentNodes,
             data,
             isPreviewOnly: false,
-            orgId,
             userId,
             subscriptionId,
             usageCacheManager
@@ -963,12 +953,12 @@ const _saveChunksToStorage = async (
                         loader.files.map(async (file: IDocumentStoreLoaderFile) => {
                             try {
                                 const { totalSize } = await removeSpecificFileFromStorage(
-                                    orgId,
+                                    userId,
                                     DOCUMENT_STORE_BASE_FOLDER,
                                     entity.id,
                                     file.name
                                 )
-                                await updateStorageUsage(orgId, userId, totalSize, usageCacheManager)
+                                await updateStorageUsage(userId, totalSize, usageCacheManager)
                             } catch (error) {
                                 console.error(error)
                             }
@@ -996,7 +986,7 @@ const _saveChunksToStorage = async (
                 for (let j = 0; j < files.length; j++) {
                     const file = files[j]
                     if (re.test(file)) {
-                        const fileMetadata = await _saveFileToStorage(file, entity, orgId, userId, subscriptionId, usageCacheManager)
+                        const fileMetadata = await _saveFileToStorage(file, entity, userId, subscriptionId, usageCacheManager)
                         fileNames.push(fileMetadata.name)
                         filesWithMetadata.push(fileMetadata)
                     }
@@ -1004,7 +994,7 @@ const _saveChunksToStorage = async (
                 data.loaderConfig[keys[i]] = 'FILE-STORAGE::' + JSON.stringify(fileNames)
             } else if (re.test(input)) {
                 const fileNames: string[] = []
-                const fileMetadata = await _saveFileToStorage(input, entity, orgId, userId, subscriptionId, usageCacheManager)
+                const fileMetadata = await _saveFileToStorage(input, entity, userId, subscriptionId, usageCacheManager)
                 fileNames.push(fileMetadata.name)
                 filesWithMetadata.push(fileMetadata)
                 data.loaderConfig[keys[i]] = 'FILE-STORAGE::' + JSON.stringify(fileNames)
@@ -1262,7 +1252,6 @@ export const insertIntoVectorStore = async ({
     telemetry,
     data,
     isStrictSave,
-    orgId,
     userId
 }: IExecuteVectorStoreInsert) => {
     try {
@@ -1275,7 +1264,7 @@ export const insertIntoVectorStore = async ({
 
         // Step 3: Perform the actual vector store upsert
         // Note: Configuration already saved above, worker thread just retrieves and uses it
-        const indexResult = await _insertIntoVectorStoreWorkerThread(appDataSource, componentNodes, telemetry, data, orgId, userId)
+        const indexResult = await _insertIntoVectorStoreWorkerThread(appDataSource, componentNodes, telemetry, data, userId)
         return indexResult
     } catch (error) {
         throw new InternalFlowiseError(
@@ -1288,7 +1277,6 @@ export const insertIntoVectorStore = async ({
 const insertIntoVectorStoreMiddleware = async (
     data: ICommonObject,
     isStrictSave = true,
-    orgId: string,
     userId: string,
     subscriptionId: string,
     usageCacheManager: UsageCacheManager
@@ -1306,7 +1294,6 @@ const insertIntoVectorStoreMiddleware = async (
             data,
             isStrictSave,
             isVectorStoreInsert: true,
-            orgId,
             userId,
             subscriptionId,
             usageCacheManager
@@ -1315,7 +1302,7 @@ const insertIntoVectorStoreMiddleware = async (
         if (process.env.MODE === MODE.QUEUE) {
             const upsertQueue = appServer.queueManager.getQueue('upsert')
             const job = await upsertQueue.addJob(omit(executeData, OMIT_QUEUE_JOB_DATA))
-            logger.debug(`[server]: [${orgId}]: Job added to queue: ${job.id}`)
+            logger.debug(`[server]: [${userId}]: Job added to queue: ${job.id}`)
 
             const queueEvents = upsertQueue.getQueueEvents()
             const result = await job.waitUntilFinished(queueEvents)
@@ -1340,7 +1327,6 @@ const _insertIntoVectorStoreWorkerThread = async (
     componentNodes: IComponentNodes,
     telemetry: Telemetry,
     data: ICommonObject,
-    orgId: string,
     userId: string
 ) => {
     try {
@@ -1420,7 +1406,7 @@ const _insertIntoVectorStoreWorkerThread = async (
                 type: ChatType.INTERNAL,
                 flowGraph: omit(indexResult['result'], ['totalKeys', 'addedDocs'])
             },
-            orgId
+            userId
         )
 
         entity.status = DocumentStoreStatus.UPSERTED
@@ -1683,7 +1669,6 @@ const upsertDocStore = async (
     data: IDocumentStoreUpsertData,
     files: Express.Multer.File[] = [],
     isRefreshExisting = false,
-    orgId: string,
     userId: string,
     subscriptionId: string,
     usageCacheManager: UsageCacheManager
@@ -1840,17 +1825,17 @@ const upsertDocStore = async (
             validateFileMimeTypeAndExtensionMatch(file.originalname, file.mimetype)
 
             try {
-                checkStorage(orgId, subscriptionId, usageCacheManager)
+                checkStorage(userId, subscriptionId, usageCacheManager)
                 const { totalSize } = await addArrayFilesToStorage(
                     file.mimetype,
                     fileBuffer,
                     file.originalname,
                     fileNames,
-                    orgId,
+                    userId,
                     DOCUMENT_STORE_BASE_FOLDER,
                     storeId
                 )
-                await updateStorageUsage(orgId, userId, totalSize, usageCacheManager)
+                await updateStorageUsage(userId, totalSize, usageCacheManager)
             } catch (error) {
                 continue
             }
@@ -1938,7 +1923,6 @@ const upsertDocStore = async (
             docLoaderId: newLoader.id || '',
             isProcessWithoutUpsert: false,
             telemetry,
-            orgId,
             userId,
             subscriptionId,
             usageCacheManager
@@ -1965,7 +1949,6 @@ const upsertDocStore = async (
             data: insertData,
             isStrictSave: false,
             isVectorStoreInsert: true,
-            orgId,
             userId,
             subscriptionId,
             usageCacheManager
@@ -1989,7 +1972,6 @@ export const executeDocStoreUpsert = async ({
     totalItems,
     files,
     isRefreshAPI,
-    orgId,
     userId,
     subscriptionId,
     usageCacheManager
@@ -2004,7 +1986,6 @@ export const executeDocStoreUpsert = async ({
             item,
             files,
             isRefreshAPI,
-            orgId,
             userId,
             subscriptionId,
             usageCacheManager
@@ -2018,7 +1999,6 @@ const upsertDocStoreMiddleware = async (
     storeId: string,
     data: IDocumentStoreUpsertData,
     files: Express.Multer.File[] = [],
-    orgId: string,
     userId: string,
     subscriptionId: string,
     usageCacheManager: UsageCacheManager
@@ -2037,7 +2017,6 @@ const upsertDocStoreMiddleware = async (
             totalItems: [data],
             files,
             isRefreshAPI: false,
-            orgId,
             userId,
             subscriptionId,
             usageCacheManager
@@ -2046,7 +2025,7 @@ const upsertDocStoreMiddleware = async (
         if (process.env.MODE === MODE.QUEUE) {
             const upsertQueue = appServer.queueManager.getQueue('upsert')
             const job = await upsertQueue.addJob(omit(executeData, OMIT_QUEUE_JOB_DATA))
-            logger.debug(`[server]: [${orgId}]: Job added to queue: ${job.id}`)
+            logger.debug(`[server]: [${userId}]: Job added to queue: ${job.id}`)
 
             const queueEvents = upsertQueue.getQueueEvents()
             const result = await job.waitUntilFinished(queueEvents)
@@ -2069,7 +2048,6 @@ const upsertDocStoreMiddleware = async (
 const refreshDocStoreMiddleware = async (
     storeId: string,
     data: IDocumentStoreRefreshData,
-    orgId: string,
     userId: string,
     subscriptionId: string,
     usageCacheManager: UsageCacheManager
@@ -2112,7 +2090,6 @@ const refreshDocStoreMiddleware = async (
             totalItems,
             files: [],
             isRefreshAPI: true,
-            orgId,
             userId,
             subscriptionId,
             usageCacheManager
@@ -2121,7 +2098,7 @@ const refreshDocStoreMiddleware = async (
         if (process.env.MODE === MODE.QUEUE) {
             const upsertQueue = appServer.queueManager.getQueue('upsert')
             const job = await upsertQueue.addJob(omit(executeData, OMIT_QUEUE_JOB_DATA))
-            logger.debug(`[server]: [${orgId}]: Job added to queue: ${job.id}`)
+            logger.debug(`[server]: [${userId}]: Job added to queue: ${job.id}`)
 
             const queueEvents = upsertQueue.getQueueEvents()
             const result = await job.waitUntilFinished(queueEvents)

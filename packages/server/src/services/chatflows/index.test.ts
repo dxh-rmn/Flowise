@@ -169,7 +169,6 @@ const makeChatflow = (overrides: Record<string, unknown> = {}) => ({
 })
 
 const SAVE_ARGS = {
-    orgId: 'org-1',
     userId: 'ws-1',
     subscriptionId: 'sub-1',
     usageCacheManager: {} as any
@@ -201,7 +200,6 @@ describe('saveChatflow', () => {
 
         const result = await chatflowsService.saveChatflow(
             newFlow as any,
-            SAVE_ARGS.orgId,
             SAVE_ARGS.userId,
             SAVE_ARGS.subscriptionId,
             SAVE_ARGS.usageCacheManager
@@ -215,13 +213,7 @@ describe('saveChatflow', () => {
         const badFlow = makeChatflow({ type: 'INVALID_TYPE' })
 
         await expect(
-            chatflowsService.saveChatflow(
-                badFlow as any,
-                SAVE_ARGS.orgId,
-                SAVE_ARGS.userId,
-                SAVE_ARGS.subscriptionId,
-                SAVE_ARGS.usageCacheManager
-            )
+            chatflowsService.saveChatflow(badFlow as any, SAVE_ARGS.userId, SAVE_ARGS.subscriptionId, SAVE_ARGS.usageCacheManager)
         ).rejects.toMatchObject({ statusCode: 400 })
     })
 
@@ -231,13 +223,7 @@ describe('saveChatflow', () => {
         const newFlow = makeChatflow()
         mockRepo.save.mockResolvedValue(makeChatflow({ flowData: makeScheduleFlowData() }))
 
-        await chatflowsService.saveChatflow(
-            newFlow as any,
-            SAVE_ARGS.orgId,
-            SAVE_ARGS.userId,
-            SAVE_ARGS.subscriptionId,
-            SAVE_ARGS.usageCacheManager
-        )
+        await chatflowsService.saveChatflow(newFlow as any, SAVE_ARGS.userId, SAVE_ARGS.subscriptionId, SAVE_ARGS.usageCacheManager)
 
         expect(mockCreateOrUpdateSchedule).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -253,13 +239,7 @@ describe('saveChatflow', () => {
         mockCreateOrUpdateSchedule.mockResolvedValue({ id: 'sched-1', enabled: true })
         mockCanScheduleEnable.mockReturnValue(true)
 
-        await chatflowsService.saveChatflow(
-            makeChatflow() as any,
-            SAVE_ARGS.orgId,
-            SAVE_ARGS.userId,
-            SAVE_ARGS.subscriptionId,
-            SAVE_ARGS.usageCacheManager
-        )
+        await chatflowsService.saveChatflow(makeChatflow() as any, SAVE_ARGS.userId, SAVE_ARGS.subscriptionId, SAVE_ARGS.usageCacheManager)
 
         const beat = ScheduleBeat.getInstance()
         expect(beat.onScheduleChanged).toHaveBeenCalledWith('sched-1', 'upsert')
@@ -270,13 +250,7 @@ describe('saveChatflow', () => {
         mockCreateOrUpdateSchedule.mockResolvedValue({ id: 'sched-1', enabled: false })
         mockCanScheduleEnable.mockReturnValue(false)
 
-        await chatflowsService.saveChatflow(
-            makeChatflow() as any,
-            SAVE_ARGS.orgId,
-            SAVE_ARGS.userId,
-            SAVE_ARGS.subscriptionId,
-            SAVE_ARGS.usageCacheManager
-        )
+        await chatflowsService.saveChatflow(makeChatflow() as any, SAVE_ARGS.userId, SAVE_ARGS.subscriptionId, SAVE_ARGS.usageCacheManager)
 
         const beat = ScheduleBeat.getInstance()
         expect(beat.onScheduleChanged).not.toHaveBeenCalled()
@@ -286,13 +260,7 @@ describe('saveChatflow', () => {
         const futureDate = new Date(Date.now() + 86_400_000).toISOString()
         mockRepo.save.mockResolvedValue(makeChatflow({ flowData: makeScheduleFlowData({ scheduleEndDate: futureDate }) }))
 
-        await chatflowsService.saveChatflow(
-            makeChatflow() as any,
-            SAVE_ARGS.orgId,
-            SAVE_ARGS.userId,
-            SAVE_ARGS.subscriptionId,
-            SAVE_ARGS.usageCacheManager
-        )
+        await chatflowsService.saveChatflow(makeChatflow() as any, SAVE_ARGS.userId, SAVE_ARGS.subscriptionId, SAVE_ARGS.usageCacheManager)
 
         expect(mockCreateOrUpdateSchedule).toHaveBeenCalledWith(expect.objectContaining({ endDate: expect.any(Date) }))
     })
@@ -300,13 +268,7 @@ describe('saveChatflow', () => {
     it('passes undefined endDate when scheduleEndDate is not set', async () => {
         mockRepo.save.mockResolvedValue(makeChatflow({ flowData: makeScheduleFlowData() }))
 
-        await chatflowsService.saveChatflow(
-            makeChatflow() as any,
-            SAVE_ARGS.orgId,
-            SAVE_ARGS.userId,
-            SAVE_ARGS.subscriptionId,
-            SAVE_ARGS.usageCacheManager
-        )
+        await chatflowsService.saveChatflow(makeChatflow() as any, SAVE_ARGS.userId, SAVE_ARGS.subscriptionId, SAVE_ARGS.usageCacheManager)
 
         expect(mockCreateOrUpdateSchedule).toHaveBeenCalledWith(expect.objectContaining({ endDate: undefined }))
     })
@@ -316,13 +278,7 @@ describe('saveChatflow', () => {
     it("defaults scheduleInputMode to 'text' and passes defaultInput when mode is not set", async () => {
         mockRepo.save.mockResolvedValue(makeChatflow({ flowData: makeScheduleFlowData() }))
 
-        await chatflowsService.saveChatflow(
-            makeChatflow() as any,
-            SAVE_ARGS.orgId,
-            SAVE_ARGS.userId,
-            SAVE_ARGS.subscriptionId,
-            SAVE_ARGS.usageCacheManager
-        )
+        await chatflowsService.saveChatflow(makeChatflow() as any, SAVE_ARGS.userId, SAVE_ARGS.subscriptionId, SAVE_ARGS.usageCacheManager)
 
         expect(mockCreateOrUpdateSchedule).toHaveBeenCalledWith(
             expect.objectContaining({ scheduleInputMode: 'text', defaultInput: 'hello', defaultForm: undefined })
@@ -340,13 +296,7 @@ describe('saveChatflow', () => {
             })
         )
 
-        await chatflowsService.saveChatflow(
-            makeChatflow() as any,
-            SAVE_ARGS.orgId,
-            SAVE_ARGS.userId,
-            SAVE_ARGS.subscriptionId,
-            SAVE_ARGS.usageCacheManager
-        )
+        await chatflowsService.saveChatflow(makeChatflow() as any, SAVE_ARGS.userId, SAVE_ARGS.subscriptionId, SAVE_ARGS.usageCacheManager)
 
         const call = mockCreateOrUpdateSchedule.mock.calls[0][0]
         expect(call.scheduleInputMode).toBe('form')
@@ -359,13 +309,7 @@ describe('saveChatflow', () => {
             makeChatflow({ flowData: makeScheduleFlowData({ scheduleInputMode: 'none', scheduleDefaultInput: 'ignored' }) })
         )
 
-        await chatflowsService.saveChatflow(
-            makeChatflow() as any,
-            SAVE_ARGS.orgId,
-            SAVE_ARGS.userId,
-            SAVE_ARGS.subscriptionId,
-            SAVE_ARGS.usageCacheManager
-        )
+        await chatflowsService.saveChatflow(makeChatflow() as any, SAVE_ARGS.userId, SAVE_ARGS.subscriptionId, SAVE_ARGS.usageCacheManager)
 
         expect(mockCreateOrUpdateSchedule).toHaveBeenCalledWith(
             expect.objectContaining({ scheduleInputMode: 'none', defaultInput: '', defaultForm: undefined })
@@ -377,7 +321,6 @@ describe('saveChatflow', () => {
 
         await chatflowsService.saveChatflow(
             makeChatflow({ flowData: makeChatInputFlowData() }) as any,
-            SAVE_ARGS.orgId,
             SAVE_ARGS.userId,
             SAVE_ARGS.subscriptionId,
             SAVE_ARGS.usageCacheManager
@@ -390,13 +333,7 @@ describe('saveChatflow', () => {
         const chatflow = makeChatflow({ type: EnumChatflowType.CHATFLOW, flowData: makePlainFlowData() })
         mockRepo.save.mockResolvedValue(chatflow)
 
-        await chatflowsService.saveChatflow(
-            chatflow as any,
-            SAVE_ARGS.orgId,
-            SAVE_ARGS.userId,
-            SAVE_ARGS.subscriptionId,
-            SAVE_ARGS.usageCacheManager
-        )
+        await chatflowsService.saveChatflow(chatflow as any, SAVE_ARGS.userId, SAVE_ARGS.subscriptionId, SAVE_ARGS.usageCacheManager)
 
         expect(mockCreateOrUpdateSchedule).not.toHaveBeenCalled()
     })
@@ -408,13 +345,12 @@ describe('saveChatflow', () => {
 
         await chatflowsService.saveChatflow(
             makeChatflow({ type: EnumChatflowType.CHATFLOW, flowData: makePlainFlowData() }) as any,
-            SAVE_ARGS.orgId,
             SAVE_ARGS.userId,
             SAVE_ARGS.subscriptionId,
             SAVE_ARGS.usageCacheManager
         )
 
-        expect(mockAppServer.telemetry.sendTelemetry).toHaveBeenCalledWith('chatflow_created', expect.any(Object), SAVE_ARGS.orgId)
+        expect(mockAppServer.telemetry.sendTelemetry).toHaveBeenCalledWith('chatflow_created', expect.any(Object), SAVE_ARGS.userId)
     })
 })
 
@@ -429,7 +365,7 @@ describe('updateChatflow', () => {
         mockRepo.merge.mockReturnValue(merged)
         mockRepo.save.mockResolvedValue(merged)
 
-        const result = await chatflowsService.updateChatflow(existingFlow as any, updates as any, 'org-1', 'ws-1', 'sub-1')
+        const result = await chatflowsService.updateChatflow(existingFlow as any, updates as any, 'ws-1', 'sub-1')
 
         expect(mockRepo.merge).toHaveBeenCalled()
         expect(mockRepo.save).toHaveBeenCalled()
@@ -439,7 +375,7 @@ describe('updateChatflow', () => {
     it('throws BAD_REQUEST when updateChatFlow.type is invalid', async () => {
         const updates = makeChatflow({ type: 'BAD_TYPE' })
 
-        await expect(chatflowsService.updateChatflow(existingFlow as any, updates as any, 'org-1', 'ws-1', 'sub-1')).rejects.toMatchObject({
+        await expect(chatflowsService.updateChatflow(existingFlow as any, updates as any, 'ws-1', 'sub-1')).rejects.toMatchObject({
             statusCode: 400
         })
     })
@@ -450,7 +386,7 @@ describe('updateChatflow', () => {
         mockRepo.merge.mockReturnValue(merged)
         mockRepo.save.mockResolvedValue(merged)
 
-        await chatflowsService.updateChatflow(existingFlow as any, updates as any, 'org-1', 'ws-1', 'sub-1')
+        await chatflowsService.updateChatflow(existingFlow as any, updates as any, 'ws-1', 'sub-1')
 
         // Type should have been copied from existing flow
         expect(updates).toMatchObject({ type: existingFlow.type })
@@ -459,7 +395,7 @@ describe('updateChatflow', () => {
     it('throws BAD_REQUEST when chatbotConfig is invalid JSON', async () => {
         const updates = makeChatflow({ chatbotConfig: 'not-json' })
 
-        await expect(chatflowsService.updateChatflow(existingFlow as any, updates as any, 'org-1', 'ws-1', 'sub-1')).rejects.toMatchObject({
+        await expect(chatflowsService.updateChatflow(existingFlow as any, updates as any, 'ws-1', 'sub-1')).rejects.toMatchObject({
             statusCode: 400
         })
     })
@@ -472,7 +408,7 @@ describe('updateChatflow', () => {
         mockRepo.merge.mockReturnValue(merged)
         mockRepo.save.mockResolvedValue(merged)
 
-        await chatflowsService.updateChatflow(existingFlow as any, updates as any, 'org-1', 'ws-1', 'sub-1')
+        await chatflowsService.updateChatflow(existingFlow as any, updates as any, 'ws-1', 'sub-1')
 
         expect(mockCreateOrUpdateSchedule).toHaveBeenCalledWith(
             expect.objectContaining({ triggerType: ScheduleTriggerType.AGENTFLOW, targetId: 'flow-1', userId: 'ws-1' })
@@ -485,7 +421,7 @@ describe('updateChatflow', () => {
         mockRepo.save.mockResolvedValue(merged)
         mockCreateOrUpdateSchedule.mockResolvedValue({ id: 'sched-1', enabled: true })
 
-        await chatflowsService.updateChatflow(existingFlow as any, makeChatflow() as any, 'org-1', 'ws-1', 'sub-1')
+        await chatflowsService.updateChatflow(existingFlow as any, makeChatflow() as any, 'ws-1', 'sub-1')
 
         const beat = ScheduleBeat.getInstance()
         expect(beat.onScheduleChanged).toHaveBeenCalledWith('sched-1', 'upsert')
@@ -498,7 +434,7 @@ describe('updateChatflow', () => {
         mockCreateOrUpdateSchedule.mockResolvedValue({ id: 'sched-1', enabled: false })
         mockCanScheduleEnable.mockReturnValue(false)
 
-        await chatflowsService.updateChatflow(existingFlow as any, makeChatflow() as any, 'org-1', 'ws-1', 'sub-1')
+        await chatflowsService.updateChatflow(existingFlow as any, makeChatflow() as any, 'ws-1', 'sub-1')
 
         const beat = ScheduleBeat.getInstance()
         expect(beat.onScheduleChanged).toHaveBeenCalledWith('sched-1', 'delete')
@@ -511,7 +447,7 @@ describe('updateChatflow', () => {
         mockCanScheduleEnable.mockReturnValue(false)
         mockCreateOrUpdateSchedule.mockResolvedValue({ id: 'sched-1', enabled: false })
 
-        await chatflowsService.updateChatflow(existingFlow as any, makeChatflow() as any, 'org-1', 'ws-1', 'sub-1')
+        await chatflowsService.updateChatflow(existingFlow as any, makeChatflow() as any, 'ws-1', 'sub-1')
 
         expect(mockCreateOrUpdateSchedule).toHaveBeenCalledWith(expect.objectContaining({ enabled: false }))
     })
@@ -523,7 +459,7 @@ describe('updateChatflow', () => {
         mockCanScheduleEnable.mockReturnValue(true)
         mockCreateOrUpdateSchedule.mockResolvedValue({ id: 'sched-1', enabled: true })
 
-        await chatflowsService.updateChatflow(existingFlow as any, makeChatflow() as any, 'org-1', 'ws-1', 'sub-1')
+        await chatflowsService.updateChatflow(existingFlow as any, makeChatflow() as any, 'ws-1', 'sub-1')
 
         expect(mockCreateOrUpdateSchedule).toHaveBeenCalledWith(expect.objectContaining({ enabled: undefined }))
     })
@@ -538,7 +474,6 @@ describe('updateChatflow', () => {
         await chatflowsService.updateChatflow(
             existingFlow as any,
             makeChatflow({ flowData: makeChatInputFlowData() }) as any,
-            'org-1',
             'ws-1',
             'sub-1'
         )
@@ -555,7 +490,6 @@ describe('updateChatflow', () => {
         await chatflowsService.updateChatflow(
             existingFlow as any,
             makeChatflow({ flowData: makeChatInputFlowData() }) as any,
-            'org-1',
             'ws-1',
             'sub-1'
         )
@@ -573,7 +507,6 @@ describe('updateChatflow', () => {
         await chatflowsService.updateChatflow(
             existingFlow as any,
             makeChatflow({ flowData: makeChatInputFlowData() }) as any,
-            'org-1',
             'ws-1',
             'sub-1'
         )
@@ -587,7 +520,7 @@ describe('updateChatflow', () => {
         mockRepo.merge.mockReturnValue(nonAgentFlow)
         mockRepo.save.mockResolvedValue(nonAgentFlow)
 
-        await chatflowsService.updateChatflow(existingFlow as any, nonAgentFlow as any, 'org-1', 'ws-1', 'sub-1')
+        await chatflowsService.updateChatflow(existingFlow as any, nonAgentFlow as any, 'ws-1', 'sub-1')
 
         expect(mockCreateOrUpdateSchedule).not.toHaveBeenCalled()
         expect(mockDeleteScheduleForTarget).not.toHaveBeenCalled()

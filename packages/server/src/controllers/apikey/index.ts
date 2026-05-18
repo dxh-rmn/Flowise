@@ -9,9 +9,6 @@ const getAllApiKeys = async (req: Request, res: Response, next: NextFunction) =>
     try {
         const user: any = req.user
 
-        if (req.query?.type === 'organization' && user.isOrganizationAdmin)
-            return res.status(StatusCodes.OK).json(await apikeyService.getAllApiKeysByOrganization(user.activeOrganizationId))
-
         const { page, limit } = getPageAndLimitParams(req)
         const apiResponse = await apikeyService.getAllApiKeys(user, page, limit)
         return res.status(StatusCodes.OK).json(apiResponse)

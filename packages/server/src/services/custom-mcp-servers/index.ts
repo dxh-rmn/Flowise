@@ -93,7 +93,7 @@ const sanitizeCustomMcpServer = ({ authConfig: _authConfig, ...rest }: CustomMcp
     serverUrl: maskServerUrl(rest.serverUrl)
 })
 
-const createCustomMcpServer = async (requestBody: any, orgId: string): Promise<any> => {
+const createCustomMcpServer = async (requestBody: any, userId: string): Promise<any> => {
     try {
         const appServer = getRunningExpressApp()
         const newRecord = new CustomMcpServer()
@@ -119,7 +119,7 @@ const createCustomMcpServer = async (requestBody: any, orgId: string): Promise<a
                 toolId: dbResponse.id,
                 toolName: dbResponse.name
             },
-            orgId
+            userId
         )
         appServer.metricsProvider?.incrementCounter(FLOWISE_METRIC_COUNTERS.CUSTOM_MCP_SERVER_CREATED, {
             status: FLOWISE_COUNTER_STATUS.SUCCESS

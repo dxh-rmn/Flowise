@@ -21,7 +21,7 @@ import { calculateCost, formatCost } from './CostCalculator'
 import { runAdditionalEvaluators } from './EvaluatorRunner'
 import { LLMEvaluationRunner } from './LLMEvaluationRunner'
 
-const runAgain = async (id: string, baseURL: string, orgId: string, userId: string) => {
+const runAgain = async (id: string, baseURL: string, userId: string) => {
     try {
         const appServer = getRunningExpressApp()
         const evaluation = await appServer.AppDataSource.getRepository(Evaluation).findOneBy({
@@ -56,13 +56,13 @@ const runAgain = async (id: string, baseURL: string, orgId: string, userId: stri
             }
         }
         data.version = true
-        return await createEvaluation(data, baseURL, orgId, userId)
+        return await createEvaluation(data, baseURL, userId)
     } catch (error) {
         throw new InternalFlowiseError(StatusCodes.INTERNAL_SERVER_ERROR, `Error: EvalsService.runAgain - ${getErrorMessage(error)}`)
     }
 }
 
-const createEvaluation = async (body: ICommonObject, baseURL: string, orgId: string, userId: string) => {
+const createEvaluation = async (body: ICommonObject, baseURL: string, userId: string) => {
     try {
         const appServer = getRunningExpressApp()
         const newEval = new Evaluation()
@@ -113,7 +113,7 @@ const createEvaluation = async (body: ICommonObject, baseURL: string, orgId: str
             {
                 version: await getAppVersion()
             },
-            orgId
+            userId
         )
 
         const dataset = await appServer.AppDataSource.getRepository(Dataset).findOneBy({
@@ -449,19 +449,19 @@ const getAllEvaluations = async (userId: string, page: number = -1, limit: numbe
 }
 
 // Delete evaluation and all rows via id
-const deleteEvaluation = async (id: string, activeWorkspaceId: string) => {
+const deleteEvaluation = async (id: string, userId: string) => {
     try {
         const appServer = getRunningExpressApp()
         const evaluationRepo = appServer.AppDataSource.getRepository(Evaluation)
         const existing = await evaluationRepo.findOneBy({
             id,
-            userId: activeWorkspaceId
+            userId: userId
         })
         if (!existing) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Evaluation ${id} not found`)
         }
         await appServer.AppDataSource.getRepository(EvaluationRun).delete({ evaluationId: id })
-        await evaluationRepo.delete({ id, userId: activeWorkspaceId })
+        await evaluationRepo.delete({ id, userId: userId })
         const results = await evaluationRepo.findBy({})
         return results
     } catch (error) {
@@ -642,13 +642,13 @@ const getVersions = async (id: string, userId: string) => {
     }
 }
 
-const patchDeleteEvaluations = async (ids: string[] = [], activeWorkspaceId: string, isDeleteAllVersion?: boolean) => {
+const patchDeleteEvaluations = async (ids: string[] = [], userId: string, isDeleteAllVersion?: boolean) => {
     try {
         const appServer = getRunningExpressApp()
         const evalsToBeDeleted = await appServer.AppDataSource.getRepository(Evaluation).find({
             where: {
                 id: In(ids),
-                userId: activeWorkspaceId
+                userId: userId
             }
         })
         await appServer.AppDataSource.getRepository(Evaluation).delete(ids)

@@ -12,7 +12,7 @@ const createCredential = async (req: Request, res: Response, next: NextFunction)
             )
         }
         const body = req.body
-        body.userId = req.user?.activeWorkspaceId
+        body.userId = req.user?.id
         const apiResponse = await credentialsService.createCredential(body)
         return res.json(apiResponse)
     } catch (error) {
@@ -28,11 +28,11 @@ const deleteCredentials = async (req: Request, res: Response, next: NextFunction
                 `Error: credentialsController.deleteCredentials - id not provided!`
             )
         }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
-                `Error: credentialsController.deleteCredentials - workspace ${userId} not found!`
+                `Error: credentialsController.deleteCredentials - user ${userId} not found!`
             )
         }
         const apiResponse = await credentialsService.deleteCredentials(req.params.id, userId)
@@ -44,11 +44,11 @@ const deleteCredentials = async (req: Request, res: Response, next: NextFunction
 
 const getAllCredentials = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
-                `Error: credentialsController.getAllCredentials - workspace ${userId} not found!`
+                `Error: credentialsController.getAllCredentials - user ${userId} not found!`
             )
         }
         const apiResponse = await credentialsService.getAllCredentials(req.query.credentialName, userId)
@@ -66,11 +66,11 @@ const getCredentialById = async (req: Request, res: Response, next: NextFunction
                 `Error: credentialsController.getCredentialById - id not provided!`
             )
         }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
-                `Error: credentialsController.getCredentialById - workspace ${userId} not found!`
+                `Error: credentialsController.getCredentialById - user ${userId} not found!`
             )
         }
         const apiResponse = await credentialsService.getCredentialById(req.params.id, userId)
@@ -88,11 +88,11 @@ const revealCredentialById = async (req: Request, res: Response, next: NextFunct
                 `Error: credentialsController.revealCredentialById - id not provided!`
             )
         }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
-                `Error: credentialsController.revealCredentialById - workspace ${userId} not found!`
+                `Error: credentialsController.revealCredentialById - user ${userId} not found!`
             )
         }
         const apiResponse = await credentialsService.revealCredentialById(req.params.id, userId)
@@ -116,11 +116,11 @@ const updateCredential = async (req: Request, res: Response, next: NextFunction)
                 `Error: credentialsController.updateCredential - body not provided!`
             )
         }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
-                `Error: credentialsController.updateCredential - workspace ${userId} not found!`
+                `Error: credentialsController.updateCredential - user ${userId} not found!`
             )
         }
         const apiResponse = await credentialsService.updateCredential(req.params.id, req.body, userId)

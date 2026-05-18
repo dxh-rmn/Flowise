@@ -313,7 +313,6 @@ export const executeFlow = async ({
     signal,
     isTool,
     chatType,
-    orgId,
     userId,
     subscriptionId,
     productId
@@ -343,7 +342,7 @@ export const executeFlow = async ({
     if (uploads) {
         fileUploads = uploads
         for (let i = 0; i < fileUploads.length; i += 1) {
-            await checkStorage(orgId, subscriptionId, usageCacheManager)
+            await checkStorage(userId, subscriptionId, usageCacheManager)
 
             const upload = fileUploads[i]
 
@@ -357,8 +356,8 @@ export const executeFlow = async ({
                 // Validate file extension, MIME type, and content to prevent security vulnerabilities
                 validateFileMimeTypeAndExtensionMatch(filename, mime)
 
-                const { totalSize } = await addSingleFileToStorage(mime, bf, filename, orgId, chatflowid, chatId)
-                await updateStorageUsage(orgId, userId, totalSize, usageCacheManager)
+                const { totalSize } = await addSingleFileToStorage(mime, bf, filename, userId, chatflowid, chatId)
+                await updateStorageUsage(userId, totalSize, usageCacheManager)
                 upload.type = 'stored-file'
                 // Omit upload.data since we don't store the content in database
                 fileUploads[i] = omit(upload, ['data'])
@@ -372,7 +371,7 @@ export const executeFlow = async ({
 
             // Run Speech to Text conversion
             if (upload.mime === 'audio/webm' || upload.mime === 'audio/mp4' || upload.mime === 'audio/ogg') {
-                logger.debug(`[server]: [${orgId}]: Attempting a speech to text conversion...`)
+                logger.debug(`[server]: [${userId}]: Attempting a speech to text conversion...`)
                 let speechToTextConfig: ICommonObject = {}
                 if (chatflow.speechToText) {
                     const speechToTextProviders = JSON.parse(chatflow.speechToText)
@@ -387,14 +386,14 @@ export const executeFlow = async ({
                 }
                 if (speechToTextConfig) {
                     const options: ICommonObject = {
-                        orgId,
+                        userId,
                         chatId,
                         chatflowid,
                         appDataSource,
                         databaseEntities: databaseEntities
                     }
                     const speechToTextResult = await convertSpeechToText(upload, speechToTextConfig, options)
-                    logger.debug(`[server]: [${orgId}]: Speech to text result: ${speechToTextResult}`)
+                    logger.debug(`[server]: [${userId}]: Speech to text result: ${speechToTextResult}`)
                     if (speechToTextResult) {
                         incomingInput.question = speechToTextResult
                         question = speechToTextResult
@@ -415,7 +414,7 @@ export const executeFlow = async ({
     if (files?.length) {
         overrideConfig = { ...incomingInput }
         for (const file of files) {
-            await checkStorage(orgId, subscriptionId, usageCacheManager)
+            await checkStorage(userId, subscriptionId, usageCacheManager)
 
             const fileNames: string[] = []
             const fileBuffer = await getFileFromUpload(file.path ?? file.key)
@@ -430,10 +429,10 @@ export const executeFlow = async ({
                 fileBuffer,
                 file.originalname,
                 fileNames,
-                orgId,
+                userId,
                 chatflowid
             )
-            await updateStorageUsage(orgId, userId, totalSize, usageCacheManager)
+            await updateStorageUsage(userId, totalSize, usageCacheManager)
 
             const fileInputFieldFromMimeType = mapMimeTypeToInputField(file.mimetype)
 
@@ -495,7 +494,6 @@ export const executeFlow = async ({
             fileUploads,
             signal,
             isTool,
-            orgId,
             userId,
             subscriptionId,
             productId: ''
@@ -562,7 +560,7 @@ export const executeFlow = async ({
         apiMessageId
     }
 
-    logger.debug(`[server]: [${orgId}]: Start building flow ${chatflowid}`)
+    logger.debug(`[server]: [${userId}]: Start building flow ${chatflowid}`)
 
     /*** BFS to traverse from Starting Nodes to Ending Node ***/
     const reactFlowNodes = await buildFlow({
@@ -590,7 +588,6 @@ export const executeFlow = async ({
         isUpsert: false,
         uploads,
         baseURL,
-        orgId,
         userId,
         subscriptionId,
         updateStorageUsage,
@@ -620,7 +617,6 @@ export const executeFlow = async ({
             cachePool,
             baseURL,
             signal,
-            orgId,
             userId
         })
 
@@ -680,7 +676,7 @@ export const executeFlow = async ({
                     type: isEvaluation ? ChatType.EVALUATION : isInternal ? ChatType.INTERNAL : ChatType.EXTERNAL,
                     flowGraph: getTelemetryFlowObj(nodes, edges)
                 },
-                orgId
+                userId
             )
 
             // Find the previous chat message with the same action id and remove the action
@@ -762,7 +758,6 @@ export const executeFlow = async ({
 
         /*** Prepare run params ***/
         const runParams = {
-            orgId,
             userId,
             subscriptionId,
             chatId,
@@ -835,7 +830,6 @@ export const executeFlow = async ({
                         appDataSource,
                         databaseEntities,
                         userId,
-                        orgId,
                         logger
                     }
                     const customFuncNodeInstance = new nodeModule.nodeClass()
@@ -885,7 +879,7 @@ export const executeFlow = async ({
 
         const chatMessage = await utilAddChatMessage(apiMessage, appDataSource)
 
-        logger.debug(`[server]: [${orgId}]: Finished running ${endingNodeData.label} (${endingNodeData.id})`)
+        logger.debug(`[server]: [${userId}]: Finished running ${endingNodeData.label} (${endingNodeData.id})`)
         if (evaluationRunId) {
             const metrics = await EvaluationRunner.getAndDeleteMetrics(evaluationRunId)
             result.metrics = metrics
@@ -901,7 +895,7 @@ export const executeFlow = async ({
                 productId: '',
                 subscriptionId
             },
-            orgId
+            userId
         )
 
         /*** Prepare response ***/
@@ -917,7 +911,7 @@ export const executeFlow = async ({
 
         if (shouldAutoPlayTTS(chatflow.textToSpeech) && result.text) {
             const options = {
-                orgId,
+                userId,
                 chatflowid,
                 chatId,
                 appDataSource,
@@ -1031,25 +1025,11 @@ export const utilBuildChatflow = async (req: Request, isInternal: boolean = fals
             }
         }
 
-        // This can be public API, so we can only get orgId from the chatflow
-        const chatflowWorkspaceId = chatflow.userId
-        const workspace: any = {}
-        if (!workspace) {
-            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Workspace ${chatflowWorkspaceId} not found`)
-        }
-        const userId = workspace.id
-
-        const org: any = {}
-        if (!org) {
-            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Organization ${workspace.organizationId} not found`)
-        }
-
-        const orgId = org.id
-        organizationId = orgId
-        const subscriptionId = org.subscriptionId as string
+        const userId = chatflow.userId
+        const subscriptionId = ''
         const productId = ''
 
-        await checkPredictions(orgId, subscriptionId, appServer.usageCacheManager)
+        await checkPredictions(userId, subscriptionId, appServer.usageCacheManager)
 
         const executeData: IExecuteFlowParams = {
             incomingInput, // Use the defensively created incomingInput variable
@@ -1068,7 +1048,6 @@ export const utilBuildChatflow = async (req: Request, isInternal: boolean = fals
             isTool, // used to disable streaming if incoming request its from ChatflowTool
             chatType,
             usageCacheManager: appServer.usageCacheManager,
-            orgId,
             userId,
             subscriptionId,
             productId: ''
@@ -1077,7 +1056,7 @@ export const utilBuildChatflow = async (req: Request, isInternal: boolean = fals
         if (process.env.MODE === MODE.QUEUE) {
             const predictionQueue = appServer.queueManager.getQueue('prediction')
             const job = await predictionQueue.addJob(omit(executeData, OMIT_QUEUE_JOB_DATA))
-            logger.debug(`[server]: [${orgId}/${chatflow.id}/${chatId}]: Job added to queue: ${job.id}`)
+            logger.debug(`[server]: [${userId}/${chatflow.id}/${chatId}]: Job added to queue: ${job.id}`)
 
             const queueEvents = predictionQueue.getQueueEvents()
             const result = await job.waitUntilFinished(queueEvents)
@@ -1085,7 +1064,7 @@ export const utilBuildChatflow = async (req: Request, isInternal: boolean = fals
             if (!result) {
                 throw new Error('Job execution failed')
             }
-            await updatePredictionsUsage(orgId, subscriptionId, userId, appServer.usageCacheManager)
+            await updatePredictionsUsage(userId, subscriptionId, appServer.usageCacheManager)
             incrementSuccessMetricCounter(appServer.metricsProvider, isInternal, isAgentFlow)
             return result
         } else {
@@ -1097,7 +1076,7 @@ export const utilBuildChatflow = async (req: Request, isInternal: boolean = fals
             const result = await executeFlow(executeData)
 
             appServer.abortControllerPool.remove(abortControllerId)
-            await updatePredictionsUsage(orgId, subscriptionId, userId, appServer.usageCacheManager)
+            await updatePredictionsUsage(userId, subscriptionId, appServer.usageCacheManager)
             incrementSuccessMetricCounter(appServer.metricsProvider, isInternal, isAgentFlow)
             return result
         }

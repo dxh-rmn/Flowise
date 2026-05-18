@@ -33,7 +33,7 @@ const streamUploadedFile = async (req: Request, res: Response, next: NextFunctio
 
         const appServer = getRunningExpressApp()
 
-        // This can be public API, so we can only get orgId from the chatflow
+        // This can be public API, so we can only get userId from the chatflow
         const chatflow = await appServer.AppDataSource.getRepository(ChatFlow).findOneBy({
             id: chatflowId
         })
@@ -45,7 +45,7 @@ const streamUploadedFile = async (req: Request, res: Response, next: NextFunctio
         if (!workspace) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Workspace ${chatflowWorkspaceId} not found`)
         }
-        const orgId = workspace.organizationId as string
+        const userId = workspace.userId as string
 
         // Set Content-Disposition header - force attachment for download
         if (download) {
@@ -53,7 +53,7 @@ const streamUploadedFile = async (req: Request, res: Response, next: NextFunctio
         } else {
             res.setHeader('Content-Disposition', contentDisposition(fileName))
         }
-        const fileStream = await streamStorageFile(chatflowId, chatId, fileName, orgId)
+        const fileStream = await streamStorageFile(chatflowId, chatId, fileName, userId)
 
         if (!fileStream) throw new InternalFlowiseError(StatusCodes.INTERNAL_SERVER_ERROR, `Error: streamStorageFile`)
 

@@ -123,7 +123,6 @@ describe('utils/telemetry.ts', () => {
                 eventType: 'password-reset-requested',
                 actionType: 'update',
                 userId: 'user-123',
-                orgId: 'org-456',
                 resourceId: 'res-789',
                 ipAddress: '203.0.113.42',
                 result: TelemetryEventResult.SUCCESS,
@@ -144,7 +143,6 @@ describe('utils/telemetry.ts', () => {
                     eventType: 'password-reset-requested',
                     actionType: 'update',
                     userId: 'user-123',
-                    orgId: 'org-456',
                     resourceId: 'res-789',
                     ipAddress: '203.0.113.xxx',
                     countryCode: 'US',
@@ -163,7 +161,6 @@ describe('utils/telemetry.ts', () => {
                 eventType: 'bad-ip',
                 actionType: 'create',
                 userId: 'u',
-                orgId: 'o',
                 ipAddress: 'not-an-ip',
                 result: TelemetryEventResult.SUCCESS
             })
@@ -184,7 +181,6 @@ describe('utils/telemetry.ts', () => {
                 eventType: 'geo-null',
                 actionType: 'read',
                 userId: 'u',
-                orgId: 'o',
                 ipAddress: '198.51.100.10',
                 result: TelemetryEventResult.SUCCESS
             })
@@ -204,7 +200,6 @@ describe('utils/telemetry.ts', () => {
                 eventType: 'geo-throws',
                 actionType: 'read',
                 userId: 'u',
-                orgId: 'o',
                 ipAddress: '198.51.100.10',
                 result: TelemetryEventResult.SUCCESS
             })
@@ -224,7 +219,6 @@ describe('utils/telemetry.ts', () => {
                     eventType: 'sink-fails',
                     actionType: 'execute',
                     userId: 'u',
-                    orgId: 'o',
                     result: TelemetryEventResult.SUCCESS
                 })
             ).resolves.toBeUndefined()
@@ -241,7 +235,6 @@ describe('utils/telemetry.ts', () => {
                     eventType: 'version-fails',
                     actionType: 'execute',
                     userId: 'u',
-                    orgId: 'o',
                     result: TelemetryEventResult.SUCCESS
                 })
             ).resolves.toBeUndefined()

@@ -12,11 +12,11 @@ const getAllLeadsForChatflow = async (req: Request, res: Response, next: NextFun
                 `Error: leadsController.getAllLeadsForChatflow - id not provided!`
             )
         }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
-                `Error: leadsController.getAllLeadsForChatflow - workspace ${userId} not found!`
+                `Error: leadsController.getAllLeadsForChatflow - user ${userId} not found!`
             )
         }
         const chatflowid = req.params.id
@@ -24,7 +24,7 @@ const getAllLeadsForChatflow = async (req: Request, res: Response, next: NextFun
         if (!chatflow) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
-                `Error: leadsController.getAllLeadsForChatflow - chatflow ${chatflowid} not found in workspace ${userId}`
+                `Error: leadsController.getAllLeadsForChatflow - chatflow ${chatflowid} not found in user ${userId}`
             )
         }
         const apiResponse = await leadsService.getAllLeads(chatflowid)

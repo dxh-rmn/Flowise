@@ -63,7 +63,7 @@ const getAllChatMessages = async (req: Request, res: Response, next: NextFunctio
                 chatTypes = [_chatTypes as ChatType]
             }
         }
-        const activeWorkspaceId = req.user?.activeWorkspaceId
+        const id = req.user?.id
         const sortOrder = req.query?.order as string | undefined
         const chatId = req.query?.chatId as string | undefined
         const memoryType = req.query?.memoryType as string | undefined
@@ -97,7 +97,7 @@ const getAllChatMessages = async (req: Request, res: Response, next: NextFunctio
             messageId,
             feedback,
             feedbackTypeFilters,
-            activeWorkspaceId,
+            id,
             page,
             limit
         )
@@ -109,7 +109,7 @@ const getAllChatMessages = async (req: Request, res: Response, next: NextFunctio
 
 const getAllInternalChatMessages = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const activeWorkspaceId = req.user?.activeWorkspaceId
+        const id = req.user?.id
         const sortOrder = req.query?.order as string | undefined
         const chatId = req.query?.chatId as string | undefined
         const memoryType = req.query?.memoryType as string | undefined
@@ -134,7 +134,7 @@ const getAllInternalChatMessages = async (req: Request, res: Response, next: Nex
             messageId,
             feedback,
             feedbackTypeFilters,
-            activeWorkspaceId
+            id
         )
         return res.json(parseAPIResponse(apiResponse))
     } catch (error) {
@@ -151,18 +151,11 @@ const removeAllChatMessages = async (req: Request, res: Response, next: NextFunc
                 'Error: chatMessagesController.removeAllChatMessages - id not provided!'
             )
         }
-        const orgId = req.user?.activeOrganizationId
-        if (!orgId) {
-            throw new InternalFlowiseError(
-                StatusCodes.NOT_FOUND,
-                `Error: chatMessagesController.removeAllChatMessages - organization ${orgId} not found!`
-            )
-        }
-        const userId = req.user?.activeWorkspaceId
+        const userId = req.user?.id
         if (!userId) {
             throw new InternalFlowiseError(
                 StatusCodes.NOT_FOUND,
-                `Error: chatMessagesController.removeAllChatMessages - workspace ${userId} not found!`
+                `Error: chatMessagesController.removeAllChatMessages - user ${userId} not found!`
             )
         }
         const chatflowid = req.params.id
@@ -209,7 +202,7 @@ const removeAllChatMessages = async (req: Request, res: Response, next: NextFunc
                 endDate,
                 feedback: isFeedback,
                 feedbackTypes: feedbackTypeFilters,
-                activeWorkspaceId: userId
+                userId: userId
             })
             const messageIds = messages.map((message) => message.id)
 
@@ -241,7 +234,7 @@ const removeAllChatMessages = async (req: Request, res: Response, next: NextFunc
                             appServer.nodesPool.componentNodes,
                             chatId,
                             appServer.AppDataSource,
-                            orgId,
+                            userId,
                             sessionId,
                             memoryType,
                             isClearFromViewMessageDialog
@@ -256,7 +249,6 @@ const removeAllChatMessages = async (req: Request, res: Response, next: NextFunc
                 chatflowid,
                 chatIdMap,
                 messageIds,
-                orgId,
                 userId,
                 appServer.usageCacheManager
             )
@@ -268,7 +260,7 @@ const removeAllChatMessages = async (req: Request, res: Response, next: NextFunc
                     appServer.nodesPool.componentNodes,
                     chatId,
                     appServer.AppDataSource,
-                    orgId,
+                    userId,
                     sessionId,
                     memoryType,
                     isClearFromViewMessageDialog
@@ -293,7 +285,6 @@ const removeAllChatMessages = async (req: Request, res: Response, next: NextFunc
                 chatId,
                 chatflowid,
                 deleteOptions,
-                orgId,
                 userId,
                 appServer.usageCacheManager
             )

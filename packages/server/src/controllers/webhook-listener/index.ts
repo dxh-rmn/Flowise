@@ -26,7 +26,7 @@ const registerListener = async (req: Request, res: Response, next: NextFunction)
         const chatflowid = req.params.id
         if (!chatflowid) throw new InternalFlowiseError(StatusCodes.PRECONDITION_FAILED, 'chatflow id is required')
 
-        await assertChatflowIsWebhookTriggered(chatflowid, req.user?.activeWorkspaceId)
+        await assertChatflowIsWebhookTriggered(chatflowid, req.user?.id)
 
         const registry = getWebhookListenerRegistry()
         const listenerId = await registry.register(chatflowid)
@@ -45,7 +45,7 @@ const streamListener = async (req: Request, res: Response, next: NextFunction) =
             throw new InternalFlowiseError(StatusCodes.PRECONDITION_FAILED, 'chatflow id and listener id are required')
         }
 
-        await assertChatflowIsWebhookTriggered(chatflowid, req.user?.activeWorkspaceId)
+        await assertChatflowIsWebhookTriggered(chatflowid, req.user?.id)
 
         const sseStreamer = getRunningExpressApp().sseStreamer
         const registry = getWebhookListenerRegistry()

@@ -11,24 +11,21 @@ import { getRunningExpressApp } from '../../utils/getRunningExpressApp'
 // get stats for showing in chatflow
 const getChatflowStats = async (
     chatflowid: string,
-    activeWorkspaceId: string,
+    userId: string,
     chatTypes: ChatType[] | undefined,
     startDate?: string,
     endDate?: string,
     feedbackTypes?: ChatMessageRatingType[]
 ): Promise<any> => {
     try {
-        if (!activeWorkspaceId) {
-            throw new InternalFlowiseError(
-                StatusCodes.UNAUTHORIZED,
-                `Error: statsService.getChatflowStats - activeWorkspaceId not provided!`
-            )
+        if (!userId) {
+            throw new InternalFlowiseError(StatusCodes.UNAUTHORIZED, `Error: statsService.getChatflowStats - userId not provided!`)
         }
         const appServer = getRunningExpressApp()
 
         const chatflow = await appServer.AppDataSource.getRepository(ChatFlow).findOneBy({
             id: chatflowid,
-            userId: activeWorkspaceId
+            userId: userId
         })
         if (!chatflow)
             throw new InternalFlowiseError(
