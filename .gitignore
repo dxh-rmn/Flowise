@@ -111,6 +111,8 @@
 # =============================================================================
 extensions/
 
+.puku
+
 # Only allow apps/oss-app, ignore all other apps
 apps/*/
 !apps/oss-app/
