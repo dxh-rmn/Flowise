@@ -2,7 +2,7 @@ name: Docker Build Cloud - ARM64
 
 on:
   push:
-    branches: [main, dev]
+    branches: [backend-only]
   workflow_dispatch:
     inputs:
       dockerfile_path:
