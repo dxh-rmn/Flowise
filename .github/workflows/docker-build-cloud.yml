@@ -18,13 +18,13 @@ on:
 
 env:
   # Registry configuration
-  DOCKERHUB_ORG: ${{ vars.DOCKERHUB_ORG || secrets.DOCKERHUB_ORG || 'flowiseai' }}
-  DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME || 'flowiseai' }}
+  DOCKERHUB_ORG: ${{ vars.DOCKERHUB_ORG || secrets.DOCKERHUB_ORG || 'dxhltd' }}
+  DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME || 'devxhublimited' }}
 
   # Docker Build Cloud configuration
-  DOCKER_ACCOUNT: ${{ vars.DOCKER_ACCOUNT || 'flowiseai' }}
-  CLOUD_BUILDER_NAME: ${{ vars.CLOUD_BUILDER_NAME || 'flowiseai-builder' }}
-  USE_BUILD_CLOUD: ${{ github.event_name == 'workflow_dispatch' && inputs.use_build_cloud == false && 'false' || 'true' }}
+  DOCKER_ACCOUNT: ${{ vars.DOCKER_ACCOUNT || 'dxhltd' }}
+  CLOUD_BUILDER_NAME: ${{ vars.CLOUD_BUILDER_NAME || 'devxhub' }}
+  USE_BUILD_CLOUD: ${{ github.event_name == 'workflow_dispatch' && inputs.use_build_cloud == true && 'true' || 'false' }}
 
   # Base image versions for cache consistency
   NODE_VERSION: ${{ vars.NODE_VERSION || '20' }}
@@ -56,7 +56,7 @@ jobs:
           BRANCH_NAME="${GITHUB_REF#refs/heads/}"
 
           # Determine environment and tags based on branch
-          if [[ "$BRANCH_NAME" == "main" ]]; then
+          if [[ "$BRANCH_NAME" == "backend-only" ]]; then
             ENVIRONMENT="production"
             TAG_SUFFIX="latest-arm64"
             IMAGE_DESC="Production ARM64 Flowise AI application"
@@ -186,4 +186,4 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Node Version:** \`${{ env.NODE_VERSION }}\`" >> $GITHUB_STEP_SUMMARY# trigger
+          echo "- **Node Version:** \`${{ env.NODE_VERSION }}\`" >> $GITHUB_STEP_SUMMARY
