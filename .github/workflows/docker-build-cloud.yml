@@ -119,8 +119,8 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
-          driver: ${{ steps.setup.outputs.mode == 'cloud' && 'cloud' || 'docker-container' }}
-          endpoint: ${{ steps.setup.outputs.mode == 'cloud' && steps.setup.outputs.endpoint || '' }}
+          driver: ${{ steps.setup.outputs.mode }}
+          endpoint: ${{ steps.setup.outputs.endpoint }}
           install: true
 
       - name: Verify builder configuration
@@ -178,7 +178,8 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### API Endpoints" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Registry | Image | Tag |" >> $GITHUB_STEP_SUMMARY
+          echo "| Registry | Image | Tag |" >> $GITHUB_STEP
+
           echo "|----------|-------|-----|" >> $GITHUB_STEP_SUMMARY
           echo "| Docker Hub | ${{ env.DOCKERHUB_ORG }}/${{ steps.meta.outputs.image-name }} | \`${{ steps.meta.outputs.tag-suffix }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
