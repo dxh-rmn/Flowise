@@ -24,7 +24,7 @@ env:
   # Docker Build Cloud configuration
   DOCKER_ACCOUNT: ${{ vars.DOCKER_ACCOUNT || 'dxhltd' }}
   CLOUD_BUILDER_NAME: ${{ vars.CLOUD_BUILDER_NAME || 'devxhub' }}
-  USE_BUILD_CLOUD: ${{ github.event_name == 'workflow_dispatch' && inputs.use_build_cloud == true && 'true' || 'false' }}
+  USE_BUILD_CLOUD: ${{ inputs.use_build_cloud == false && 'false' || 'true' }}
 
   # Base image versions for cache consistency
   NODE_VERSION: ${{ vars.NODE_VERSION || '20' }}
