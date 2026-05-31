@@ -44,7 +44,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -116,12 +116,19 @@ jobs:
         with:
           platforms: arm64
 
-      - name: Set up Docker Buildx
+      # Split into two steps to avoid passing empty endpoint (causes "failed to find driver local" error)
+      - name: Set up Docker Buildx (Cloud)
+        if: steps.setup.outputs.mode == 'cloud'
         uses: docker/setup-buildx-action@v3
         with:
-          driver: ${{ steps.setup.outputs.mode }}
+          driver: cloud
           endpoint: ${{ steps.setup.outputs.endpoint }}
-          install: true
+
+      - name: Set up Docker Buildx (Local)
+        if: steps.setup.outputs.mode != 'cloud'
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
 
       - name: Verify builder configuration
         run: |
@@ -178,8 +185,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### API Endpoints" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Registry | Image | Tag |" >> $GITHUB_STEP
-
+          echo "| Registry | Image | Tag |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|-------|-----|" >> $GITHUB_STEP_SUMMARY
           echo "| Docker Hub | ${{ env.DOCKERHUB_ORG }}/${{ steps.meta.outputs.image-name }} | \`${{ steps.meta.outputs.tag-suffix }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
