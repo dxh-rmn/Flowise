@@ -18,9 +18,12 @@ RUN apk add --no-cache \
     libc6-compat \
     sqlite-dev \
     sqlite \
-    linux-headers
+    linux-headers \
+    git \
+    cmake \
+    bash \
+    curl
 
-# Verify npm exists first, then install with memory flag inline
 RUN npm --version && \
     NODE_OPTIONS="--max-old-space-size=4096" npm install -g flowise --fetch-timeout=600000
 
@@ -46,7 +49,9 @@ RUN apk add --no-cache \
     curl \
     libc6-compat \
     sqlite-dev \
-    sqlite
+    sqlite \
+    cmake \
+    bash
 
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 ENV PUPPETEER_SKIP_DOWNLOAD=true
