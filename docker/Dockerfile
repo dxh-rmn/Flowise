@@ -5,7 +5,6 @@ USER root
 
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=true
-ENV NODE_OPTIONS="--max-old-space-size=4096"
 ENV npm_config_build_from_source=true
 
 RUN apk add --no-cache \
@@ -21,7 +20,9 @@ RUN apk add --no-cache \
     sqlite \
     linux-headers
 
-RUN npm install -g flowise --fetch-timeout=600000
+# Verify npm exists first, then install with memory flag inline
+RUN npm --version && \
+    NODE_OPTIONS="--max-old-space-size=4096" npm install -g flowise --fetch-timeout=600000
 
 # Stage 2: Runtime stage
 FROM node:20-alpine
