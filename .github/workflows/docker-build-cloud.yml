@@ -94,26 +94,27 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       # Only runs when use_build_cloud is explicitly set to false via workflow_dispatch
-      - name: Set up QEMU (local fallback only)
-        if: inputs.use_build_cloud == false
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
-
-      - name: Set up Docker Buildx
+      - name: Set up Docker Buildx (Cloud)
+        if: env.USE_BUILD_CLOUD == 'true'
         uses: docker/setup-buildx-action@v3
         with:
-          driver: ${{ steps.setup.outputs.mode == 'cloud' && 'cloud' || 'docker-container' }}
-          endpoint: ${{ steps.setup.outputs.mode == 'cloud' && steps.setup.outputs.endpoint || '' }}
+          driver: cloud
+          endpoint: ${{ env.DOCKER_ACCOUNT }}/${{ env.CLOUD_BUILDER_NAME }}
           install: true
 
+      - name: Set up Docker Buildx (Local QEMU fallback)
+        if: env.USE_BUILD_CLOUD != 'true'
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+          install: true
+          
       - name: Verify builder configuration
         run: |
           echo "🔍 Build configuration:"
           docker buildx ls
-          if [[ "${{ steps.setup.outputs.mode }}" == "cloud" ]]; then
-            echo "✅ Docker Build Cloud: ${{ steps.setup.outputs.endpoint }}"
-            echo "   Native ARM64 builds (up to 10x faster)"
+          if [[ "${{ env.USE_BUILD_CLOUD }}" == "true" ]]; then
+            echo "✅ Docker Build Cloud: ${{ env.DOCKER_ACCOUNT }}/${{ env.CLOUD_BUILDER_NAME }}"
           else
             echo "⚠️ Local QEMU emulation"
           fi
