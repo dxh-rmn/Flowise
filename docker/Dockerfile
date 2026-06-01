@@ -1,65 +1,56 @@
 # Stage 1: Build stage
-FROM node:20-alpine AS build
+FROM node:20-slim AS build
 
 USER root
 
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=true
-ENV npm_config_build_from_source=true
 
-RUN apk add --no-cache \
-    python3 make g++ build-base \
-    cairo-dev pango-dev \
-    pixman-dev \
-    libjpeg-turbo-dev \
-    giflib-dev \
-    librsvg-dev \
-    pkgconfig \
-    libc6-compat \
-    sqlite-dev \
-    sqlite \
-    linux-headers \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    make \
+    g++ \
+    build-essential \
+    libcairo2-dev \
+    libpango1.0-dev \
+    libjpeg-dev \
+    libgif-dev \
+    librsvg2-dev \
+    libpixman-1-dev \
+    pkg-config \
+    libsqlite3-dev \
     git \
     cmake \
-    bash \
-    curl
-
-# Fix better-sqlite3 on Alpine ARM64 by setting the build flags explicitly
-ENV CXXFLAGS="-DSQLITE_ENABLE_FTS5 -DSQLITE_ENABLE_JSON1"
-ENV npm_config_sqlite=/usr
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN npm --version && \
     NODE_OPTIONS="--max-old-space-size=4096" npm install -g flowise \
-    --fetch-timeout=600000 \
-    --ignore-scripts=false
+    --fetch-timeout=600000
 
 # Stage 2: Runtime stage
-FROM node:20-alpine
+FROM node:20-slim
 
-USER root
-
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium \
     git \
     python3 \
-    py3-pip \
+    python3-pip \
     make \
     g++ \
-    build-base \
-    cairo-dev \
-    pango-dev \
-    pixman-dev \
-    libjpeg-turbo-dev \
-    giflib-dev \
-    librsvg-dev \
+    build-essential \
+    libcairo2-dev \
+    libpango1.0-dev \
+    libjpeg-dev \
+    libgif-dev \
+    librsvg2-dev \
+    libpixman-1-dev \
+    libsqlite3-dev \
     curl \
-    libc6-compat \
-    sqlite-dev \
-    sqlite \
     cmake \
-    bash
+    && rm -rf /var/lib/apt/lists/*
 
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=true
 ENV NODE_OPTIONS="--max-old-space-size=4096"
