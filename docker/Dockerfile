@@ -5,8 +5,8 @@ USER root
 
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=true
+ENV npm_config_build_from_source=true
 
-# Add ALL native build dependencies upfront
 RUN apk add --no-cache \
     python3 make g++ build-base \
     cairo-dev pango-dev \
@@ -15,12 +15,13 @@ RUN apk add --no-cache \
     giflib-dev \
     librsvg-dev \
     pkgconfig \
-    libc6-compat
+    libc6-compat \
+    sqlite-dev \
+    sqlite \
+    linux-headers
 
-# Increase npm timeout + memory for heavy ARM64 compilation
 RUN node --max-old-space-size=4096 $(which npm) install -g flowise \
-    --fetch-timeout=600000 \
-    --prefer-online
+    --fetch-timeout=600000
 
 # Stage 2: Runtime stage
 FROM node:20-alpine
@@ -35,7 +36,9 @@ RUN apk add --no-cache \
     giflib-dev \
     librsvg-dev \
     curl \
-    libc6-compat
+    libc6-compat \
+    sqlite-dev \
+    sqlite
 
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 ENV PUPPETEER_SKIP_DOWNLOAD=true
