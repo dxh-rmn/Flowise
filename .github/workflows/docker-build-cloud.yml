@@ -24,6 +24,7 @@ env:
   # Docker Build Cloud configuration
   DOCKER_ACCOUNT: ${{ vars.DOCKER_ACCOUNT || 'dxhltd' }}
   CLOUD_BUILDER_NAME: ${{ vars.CLOUD_BUILDER_NAME || 'devxhub' }}
+  USE_BUILD_CLOUD: ${{ github.event_name == 'workflow_dispatch' && inputs.use_build_cloud == false && 'false' || 'true' }}
 
   # Base image versions
   NODE_VERSION: ${{ vars.NODE_VERSION || '20' }}
@@ -99,25 +100,24 @@ jobs:
         with:
           platforms: arm64
 
-      # Cloud buildx — default for all push events and workflow_dispatch unless opted out
-      - name: Set up Docker Buildx (Cloud)
-        if: inputs.use_build_cloud != false
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
-          driver: cloud
-          endpoint: ${{ env.DOCKER_ACCOUNT }}/${{ env.CLOUD_BUILDER_NAME }}
-
-      # Local fallback — only when explicitly opted out
-      - name: Set up Docker Buildx (Local)
-        if: inputs.use_build_cloud == false
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
+          driver: ${{ steps.setup.outputs.mode == 'cloud' && 'cloud' || 'docker-container' }}
+          endpoint: ${{ steps.setup.outputs.mode == 'cloud' && steps.setup.outputs.endpoint || '' }}
+          install: true
 
       - name: Verify builder configuration
         run: |
-          echo "🔍 Active builder:"
+          echo "🔍 Build configuration:"
           docker buildx ls
+          if [[ "${{ steps.setup.outputs.mode }}" == "cloud" ]]; then
+            echo "✅ Docker Build Cloud: ${{ steps.setup.outputs.endpoint }}"
+            echo "   Native ARM64 builds (up to 10x faster)"
+          else
+            echo "⚠️ Local QEMU emulation"
+          fi
+
 
       - name: Build and push ARM64 image
         id: build
