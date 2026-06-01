@@ -5,6 +5,7 @@ USER root
 
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=true
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 ENV npm_config_build_from_source=true
 
 RUN apk add --no-cache \
@@ -20,17 +21,23 @@ RUN apk add --no-cache \
     sqlite \
     linux-headers
 
-RUN node --max-old-space-size=4096 $(which npm) install -g flowise \
-    --fetch-timeout=600000
+RUN npm install -g flowise --fetch-timeout=600000
 
 # Stage 2: Runtime stage
 FROM node:20-alpine
 
+USER root
+
 RUN apk add --no-cache \
-    chromium git \
-    python3 py3-pip \
-    make g++ build-base \
-    cairo-dev pango-dev \
+    chromium \
+    git \
+    python3 \
+    py3-pip \
+    make \
+    g++ \
+    build-base \
+    cairo-dev \
+    pango-dev \
     pixman-dev \
     libjpeg-turbo-dev \
     giflib-dev \
@@ -43,8 +50,11 @@ RUN apk add --no-cache \
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=true
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 
 COPY --from=build /usr/local/lib/node_modules /usr/local/lib/node_modules
 COPY --from=build /usr/local/bin /usr/local/bin
+
+EXPOSE 3000
 
 ENTRYPOINT ["flowise", "start"]
