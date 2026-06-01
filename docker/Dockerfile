@@ -24,8 +24,14 @@ RUN apk add --no-cache \
     bash \
     curl
 
+# Fix better-sqlite3 on Alpine ARM64 by setting the build flags explicitly
+ENV CXXFLAGS="-DSQLITE_ENABLE_FTS5 -DSQLITE_ENABLE_JSON1"
+ENV npm_config_sqlite=/usr
+
 RUN npm --version && \
-    NODE_OPTIONS="--max-old-space-size=4096" npm install -g flowise --fetch-timeout=600000
+    NODE_OPTIONS="--max-old-space-size=4096" npm install -g flowise \
+    --fetch-timeout=600000 \
+    --ignore-scripts=false
 
 # Stage 2: Runtime stage
 FROM node:20-alpine
