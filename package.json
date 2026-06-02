@@ -73,8 +73,7 @@
         "@langchain/core": "1.1.20",
         "@qdrant/openapi-typescript-fetch": "1.2.6",
         "openai": "6.19.0",
-        "protobufjs": "7.4.0",
-        "uuid": "^10.0.0"
+        "protobufjs": "7.4.0"
     },
     "eslintIgnore": [
         "**/dist",
