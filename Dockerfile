@@ -21,6 +21,9 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json .npmrc ./
 COPY packages/server ./packages/server
 COPY packages/components ./packages/components
 
+# Disable Cypress download in build context to avoid DNS/network failures
+ENV CYPRESS_INSTALL_BINARY=0
+
 # Install all dependencies
 RUN pnpm install
 
