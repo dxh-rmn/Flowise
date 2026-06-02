@@ -1,6 +1,7 @@
-FROM node:20-alpine
+# Stage 1: Build stage
+FROM node:20-alpine AS builder
 
-# Install system dependencies and build tools
+# Install system build dependencies
 RUN apk update && \
     apk add --no-cache \
         libc6-compat \
@@ -11,26 +12,45 @@ RUN apk update && \
         curl && \
     npm install -g pnpm
 
-# Increase memory limit for TypeScript build
-ENV NODE_OPTIONS=--max-old-space-size=4096
-
 WORKDIR /usr/src/flowise
 
-# Copy workspace configuration and root config files
+# Copy workspace and root configurations
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json .npmrc ./
 
-# Copy only the backend and component logic
+# Copy backend and component packages
 COPY packages/server ./packages/server
 COPY packages/components ./packages/components
 
-# Install dependencies
+# Install all dependencies
 RUN pnpm install
 
-# Build the backend packages
+# Build backend and components
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN pnpm build
 
-# Give the node user ownership
-RUN chown -R node:node .
+# Stage 2: Runtime stage
+FROM node:20-alpine
+
+# Install runtime dependencies (e.g. chromium for scraper/puppeteer tools)
+RUN apk update && \
+    apk add --no-cache \
+        chromium \
+        git \
+        curl && \
+    npm install -g pnpm
+
+# Set environment variables for Puppeteer/Playwright
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=true
+
+WORKDIR /usr/src/flowise
+
+# Copy built workspace from builder stage
+COPY --from=builder /usr/src/flowise /usr/src/flowise
+
+# Set correct ownership
+RUN chown -R node:node /usr/src/flowise
 
 USER node
 
