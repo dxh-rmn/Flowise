@@ -57,7 +57,7 @@ function getArizeTracer(options: ArizeTracerOptions): Tracer | undefined {
         metadata.set('space_id', options.spaceId)
         const traceExporter = new GrpcOTLPTraceExporter({
             url: `${options.baseUrl}/v1`,
-            metadata
+            metadata: metadata as any
         })
         const tracerProvider = new NodeTracerProvider({
             resource: new Resource({
