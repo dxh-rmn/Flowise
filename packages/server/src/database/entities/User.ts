@@ -29,13 +29,13 @@ export class User {
     @Column({ name: 'is_phone_verified', type: 'boolean', default: false })
     isPhoneVerified?: boolean
 
-    @Column({ name: 'last_login', type: 'timestamp', nullable: true })
+    @Column({ name: 'last_login', nullable: true })
     lastLogin?: Date
 
     @Column({ type: 'varchar', length: 50, nullable: true })
     status?: string
 
-    @Column({ name: 'last_active_at', type: 'timestamp', nullable: true })
+    @Column({ name: 'last_active_at', nullable: true })
     lastActiveAt?: Date
 
     @Column({ name: 'is_online', type: 'boolean', default: false })
@@ -50,19 +50,19 @@ export class User {
     @Column({ name: 'created_by_id', type: 'int', nullable: true })
     createdById?: number
 
-    @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
+    @CreateDateColumn({ name: 'created_at' })
     createdDate?: Date
 
     @Column({ name: 'updated_by_id', type: 'int', nullable: true })
     updatedById?: number
 
-    @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
+    @UpdateDateColumn({ name: 'updated_at' })
     updatedDate?: Date
 
     @Column({ name: 'deleted_by_id', type: 'int', nullable: true })
     deletedById?: number
 
-    @Column({ name: 'deleted_at', type: 'timestamp', nullable: true })
+    @Column({ name: 'deleted_at', nullable: true })
     deletedAt?: Date
 
     @Column({ name: 'is_deleted', type: 'boolean', default: false })

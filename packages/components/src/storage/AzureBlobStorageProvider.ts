@@ -12,6 +12,10 @@ import { FileInfo, StorageResult, StorageSizeResult } from './IStorageProvider'
  * only sets file.blobName. This subclass bridges that gap.
  */
 class MulterAzureStorageWithPath extends MulterAzureStorage {
+    constructor(config: any) {
+        super(config)
+    }
+
     _handleFile(req: any, file: any, cb: (error?: any, info?: any) => void): Promise<void> {
         return super._handleFile(req, file, (err: any, info: any) => {
             if (!err && info) {
@@ -19,6 +23,14 @@ class MulterAzureStorageWithPath extends MulterAzureStorage {
             }
             cb(err, info)
         })
+    }
+
+    _removeFile(req: any, file: any, cb: (error: Error | null) => void): void {
+        if (super._removeFile) {
+            super._removeFile(req, file, cb)
+        } else {
+            cb(null)
+        }
     }
 }
 

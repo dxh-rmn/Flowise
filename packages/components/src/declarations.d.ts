@@ -1,0 +1,8 @@
+declare module 'multer-azure-blob-storage'
+declare module 'winston-azure-blob'
+declare module 'multer-cloud-storage'
+declare module 'multer-s3'
+declare module '@opentelemetry/instrumentation'
+declare module '@opentelemetry/sdk-trace-node'
+declare module '@google-cloud/logging-winston'
+declare module 'winston-daily-rotate-file'

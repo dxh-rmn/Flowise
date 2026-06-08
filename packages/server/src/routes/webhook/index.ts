@@ -1,7 +1,7 @@
-import express from 'express'
+import express, { Router } from 'express'
 import webhookController from '../../controllers/webhook'
 
-const router = express.Router()
+const router: Router = express.Router()
 
 // Unauthenticated at route level — API key validation happens downstream in utilBuildChatflow.
 router.all('/:id', webhookController.getRateLimiterMiddleware, webhookController.createWebhook)

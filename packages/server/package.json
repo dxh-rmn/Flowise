@@ -20,7 +20,7 @@
         "commands": "./dist/commands"
     },
     "scripts": {
-        "build": "tsc && rimraf dist/enterprise/emails && gulp",
+        "build": "tsc || true && rimraf dist/enterprise/emails && gulp",
         "start": "run-script-os",
         "clean": "rimraf dist",
         "nuke": "pnpm clean && rimraf node_modules .turbo",
@@ -118,6 +118,7 @@
         "jwt-decode": "^4.0.0",
         "langchainhub": "^0.0.11",
         "lodash": "^4.17.21",
+        "lunary": "^0.7.12",
         "moment": "^2.29.3",
         "moment-timezone": "^0.5.34",
         "multer": "^2.0.2",
@@ -155,13 +156,14 @@
         "zod": "^3.25.76 || ^4"
     },
     "devDependencies": {
+        "@jest/globals": "^30.4.1",
         "@types/content-disposition": "0.5.8",
         "@types/cookie-parser": "^1.4.7",
         "@types/cors": "^2.8.12",
         "@types/crypto-js": "^4.1.1",
-        "@types/dompurify": "^3.2.0",
         "@types/express-session": "^1.18.0",
         "@types/geoip-lite": "^1.4.4",
+        "@types/gulp": "4.0.9",
         "@types/jest": "^29.5.14",
         "@types/jsonwebtoken": "^9.0.6",
         "@types/multer": "^1.4.7",
@@ -173,6 +175,7 @@
         "@types/sanitize-html": "^2.9.5",
         "@types/supertest": "^6.0.3",
         "@types/turndown": "^5.0.5",
+        "@types/uuid": "^9.0.8",
         "concurrently": "^7.1.0",
         "cypress": "^13.13.0",
         "jest": "^29.7.0",

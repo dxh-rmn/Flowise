@@ -54,7 +54,7 @@ const getAllCredentials = async (paramCredentialName: any, userId: string) => {
                     const name = paramCredentialName[i] as string
                     const searchOptions = {
                         credentialName: name,
-                        ...{}
+                        ...(userId ? { userId } : {})
                     }
                     const credentials = await appServer.AppDataSource.getRepository(Credential).findBy(searchOptions)
                     dbResponse.push(...credentials.map((c) => omit(c, ['encryptedData'])))
@@ -62,7 +62,7 @@ const getAllCredentials = async (paramCredentialName: any, userId: string) => {
             } else {
                 const searchOptions = {
                     credentialName: paramCredentialName,
-                    ...{}
+                    ...(userId ? { userId } : {})
                 }
                 const credentials = await appServer.AppDataSource.getRepository(Credential).findBy(searchOptions)
                 dbResponse = credentials.map((c) => omit(c, ['encryptedData']))
@@ -93,7 +93,10 @@ const getAllCredentials = async (paramCredentialName: any, userId: string) => {
                 }
             }
         } else {
-            const credentials = await appServer.AppDataSource.getRepository(Credential).findBy({})
+            const searchOptions = {
+                ...(userId ? { userId } : {})
+            }
+            const credentials = await appServer.AppDataSource.getRepository(Credential).findBy(searchOptions)
             for (const credential of credentials) {
                 dbResponse.push(omit(credential, ['encryptedData']))
             }
