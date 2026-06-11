@@ -123,7 +123,7 @@ class Cheerio_DocumentLoaders implements INode {
         const selectedLinks = nodeData.inputs?.selectedLinks as string[]
         let limit = parseInt(nodeData.inputs?.limit as string)
         const output = nodeData.outputs?.output as string
-        const orgId = options.orgId
+        const orgId = options.orgId || options.userId
 
         const _omitMetadataKeys = nodeData.inputs?.omitMetadataKeys as string
 

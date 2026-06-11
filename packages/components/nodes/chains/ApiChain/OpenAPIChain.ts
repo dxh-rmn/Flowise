@@ -116,7 +116,7 @@ const initChain = async (nodeData: INodeData, options: ICommonObject) => {
     } else {
         if (yamlFileBase64.startsWith('FILE-STORAGE::')) {
             const file = yamlFileBase64.replace('FILE-STORAGE::', '')
-            const orgId = options.orgId
+            const orgId = options.orgId || options.userId
             const chatflowid = options.chatflowid
             const fileData = await getFileFromStorage(file, orgId, chatflowid)
             yamlString = fileData.toString()

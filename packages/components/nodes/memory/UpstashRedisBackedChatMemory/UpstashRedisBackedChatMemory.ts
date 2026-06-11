@@ -100,7 +100,7 @@ const initalizeUpstashRedis = async (nodeData: INodeData, options: ICommonObject
         sessionTTL,
         client
     })
-    const orgId = options.orgId as string
+    const orgId = options.orgId || (options.userId as string)
     const memory = new BufferMemoryExtended({
         memoryKey: memoryKey ?? 'chat_history',
         chatHistory: redisChatMessageHistory,

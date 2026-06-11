@@ -147,7 +147,7 @@ class API_DocumentLoaders implements INode {
             let file = caFileBase64.replace('FILE-STORAGE::', '')
             file = file.replace('[', '')
             file = file.replace(']', '')
-            const orgId = options.orgId
+            const orgId = options.orgId || options.userId
             const chatflowid = options.chatflowid
             const fileData = await getFileFromStorage(file, orgId, chatflowid)
             apiLoaderParam.ca = fileData.toString()

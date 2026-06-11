@@ -88,7 +88,7 @@ const initializeRedis = async (nodeData: INodeData, options: ICommonObject): Pro
 
     const credentialData = await getCredentialData(nodeData.credential ?? '', options)
     const redisUrl = getCredentialParam('redisUrl', credentialData, nodeData)
-    const orgId = options.orgId as string
+    const orgId = options.orgId || (options.userId as string)
 
     const redisOptions = redisUrl
         ? redisUrl

@@ -61,7 +61,7 @@ class BufferMemory_Memory implements INode {
         const appDataSource = options.appDataSource as DataSource
         const databaseEntities = options.databaseEntities as IDatabaseEntity
         const chatflowid = options.chatflowid as string
-        const orgId = options.orgId as string
+        const orgId = options.orgId || (options.userId as string)
 
         return new BufferMemoryExtended({
             returnMessages: true,

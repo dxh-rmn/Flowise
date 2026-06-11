@@ -157,7 +157,7 @@ class Mem0_Memory implements INode {
 const initializeMem0 = async (nodeData: INodeData, input: string, options: ICommonObject): Promise<BaseMem0Memory> => {
     const initialUserId = nodeData.inputs?.user_id as string
     const useFlowiseChatId = nodeData.inputs?.useFlowiseChatId as boolean
-    const orgId = options.orgId as string
+    const orgId = options.orgId || (options.userId as string)
 
     if (!useFlowiseChatId && !initialUserId) {
         throw new Error('User ID field cannot be empty when "Use Flowise Chat ID" is OFF.')

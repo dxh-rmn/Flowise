@@ -312,7 +312,7 @@ class OpenAPIToolkit_Tools implements INode {
                 if (openApiFile.startsWith('FILE-STORAGE::')) {
                     const file = openApiFile.replace('FILE-STORAGE::', '')
                     fileName = file
-                    const orgId = options.orgId
+                    const orgId = options.orgId || options.userId
                     const chatflowid = options.chatflowid
                     const fileData = await getFileFromStorage(file, orgId, chatflowid)
                     utf8String = fileData.toString('utf-8')

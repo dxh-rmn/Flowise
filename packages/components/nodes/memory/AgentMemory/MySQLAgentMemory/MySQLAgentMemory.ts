@@ -65,7 +65,7 @@ class MySQLAgentMemory_Memory implements INode {
         const databaseEntities = options.databaseEntities as IDatabaseEntity
         const chatflowid = options.chatflowid as string
         const appDataSource = options.appDataSource as DataSource
-        const orgId = options.orgId as string
+        const orgId = options.orgId || (options.userId as string)
 
         let additionalConfiguration = {}
         if (additionalConfig) {

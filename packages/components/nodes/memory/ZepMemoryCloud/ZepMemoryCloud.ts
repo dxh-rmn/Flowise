@@ -125,7 +125,7 @@ const initializeZep = async (nodeData: INodeData, options: ICommonObject): Promi
 
     const credentialData = await getCredentialData(nodeData.credential ?? '', options)
     const apiKey = getCredentialParam('apiKey', credentialData, nodeData)
-    const orgId = options.orgId as string
+    const orgId = options.orgId || (options.userId as string)
     const obj: ZepCloudMemoryInput & ZepMemoryExtendedInput = {
         apiKey,
         aiPrefix,

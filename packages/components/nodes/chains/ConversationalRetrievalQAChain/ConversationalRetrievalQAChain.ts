@@ -184,7 +184,7 @@ class ConversationalRetrievalQAChain_Chains implements INode {
         const shouldStreamResponse = options.shouldStreamResponse
         const sseStreamer: IServerSideEventStreamer = options.sseStreamer as IServerSideEventStreamer
         const chatId = options.chatId
-        const orgId = options.orgId
+        const orgId = options.orgId || options.userId
 
         let customResponsePrompt = responsePrompt
         // If the deprecated systemMessagePrompt is still exists

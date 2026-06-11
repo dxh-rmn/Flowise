@@ -115,7 +115,7 @@ class Arxiv_Tools implements INode {
         const legacyBuild = nodeData.inputs?.legacyBuild as boolean
 
         let logger
-        const orgId = options.orgId
+        const orgId = options.orgId || options.userId
         if (process.env.DEBUG === 'true') {
             logger = options.logger
         }

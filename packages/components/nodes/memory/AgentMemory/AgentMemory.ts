@@ -108,7 +108,7 @@ class AgentMemory_Memory implements INode {
         const databaseType = nodeData.inputs?.databaseType as string
         const databaseEntities = options.databaseEntities as IDatabaseEntity
         const chatflowid = options.chatflowid as string
-        const orgId = options.orgId as string
+        const orgId = options.orgId || (options.userId as string)
         const appDataSource = options.appDataSource as DataSource
 
         let additionalConfiguration = {}

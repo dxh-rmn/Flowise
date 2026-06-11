@@ -126,7 +126,7 @@ class Csv_DocumentLoaders implements INode {
 
         let docs: IDocument[] = []
 
-        const orgId = options.orgId
+        const orgId = options.orgId || options.userId
         const chatflowid = options.chatflowid
 
         const { files, fromStorage } = this.getFiles(nodeData)

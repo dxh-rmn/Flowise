@@ -125,7 +125,7 @@ const initializeDynamoDB = async (nodeData: INodeData, options: ICommonObject): 
         config
     })
 
-    const orgId = options.orgId as string
+    const orgId = options.orgId || (options.userId as string)
 
     const memory = new BufferMemoryExtended({
         memoryKey: memoryKey ?? 'chat_history',

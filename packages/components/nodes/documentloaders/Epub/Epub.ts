@@ -118,7 +118,7 @@ class Epub_DocumentLoaders implements INode {
                 files = fileName.startsWith('[') && fileName.endsWith(']') ? JSON.parse(fileName) : [fileName]
 
                 const chatflowid = options.chatflowid
-                const orgId = options.orgId
+                const orgId = options.orgId || options.userId
 
                 for (const file of files) {
                     if (!file) continue

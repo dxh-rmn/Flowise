@@ -138,7 +138,7 @@ class OpenAIAssistant_Agents implements INode {
         const selectedAssistantId = nodeData.inputs?.selectedAssistant as string
         const appDataSource = options.appDataSource as DataSource
         const databaseEntities = options.databaseEntities as IDatabaseEntity
-        const orgId = options.orgId
+        const orgId = options.orgId || options.userId
 
         const assistant = await appDataSource.getRepository(databaseEntities['Assistant']).findOneBy({
             id: selectedAssistantId

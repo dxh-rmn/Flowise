@@ -147,7 +147,7 @@ class File_DocumentLoaders implements INode {
             } else {
                 files = [fileName]
             }
-            const orgId = options.orgId
+            const orgId = options.orgId || options.userId
             const chatflowid = options.chatflowid
 
             // specific to createAttachment to get files from chatId

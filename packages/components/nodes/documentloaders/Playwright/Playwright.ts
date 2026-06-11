@@ -174,7 +174,7 @@ class Playwright_DocumentLoaders implements INode {
         const cssSelector = nodeData.inputs?.cssSelector as string
         const _omitMetadataKeys = nodeData.inputs?.omitMetadataKeys as string
         const output = nodeData.outputs?.output as string
-        const orgId = options.orgId
+        const orgId = options.orgId || options.userId
 
         let omitMetadataKeys: string[] = []
         if (_omitMetadataKeys) {

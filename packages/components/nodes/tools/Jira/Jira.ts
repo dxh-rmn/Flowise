@@ -418,7 +418,7 @@ class Jira_Tools implements INode {
             if (caFileBase64.startsWith('FILE-STORAGE::')) {
                 let file = caFileBase64.replace('FILE-STORAGE::', '')
                 file = file.replace('[', '').replace(']', '')
-                const orgId = options.orgId
+                const orgId = options.orgId || options.userId
                 const chatflowid = options.chatflowid
                 const fileData = await getFileFromStorage(file, orgId, chatflowid)
                 sslCertificate = fileData.toString()

@@ -192,7 +192,7 @@ class Vectara_VectorStores implements INode {
                 } else {
                     files = [fileName]
                 }
-                const orgId = options.orgId
+                const orgId = options.orgId || options.userId
                 const chatflowid = options.chatflowid
 
                 for (const file of files) {
