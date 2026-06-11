@@ -83,14 +83,14 @@ export class LocalStorageProvider extends BaseStorageProvider {
 
     async getFileFromStorage(file: string, ...paths: string[]): Promise<Buffer> {
         const sanitizedFilename = this.sanitizeFilename(file)
-        const fileInStorage = this.buildPath(...paths.map((p) => this.sanitizeFilename(p)), sanitizedFilename)
+        const fileInStorage = this.buildPath(...paths, sanitizedFilename)
         try {
             return fs.readFileSync(fileInStorage)
         } catch (error) {
             // Fallback: Check if file exists without the first path element (likely orgId)
             if (paths.length > 1) {
                 const fallbackPaths = paths.slice(1)
-                const fallbackPath = this.buildPath(...fallbackPaths.map((p) => this.sanitizeFilename(p)), sanitizedFilename)
+                const fallbackPath = this.buildPath(...fallbackPaths, sanitizedFilename)
 
                 if (fs.existsSync(fallbackPath)) {
                     // Create directory if it doesn't exist
@@ -108,7 +108,7 @@ export class LocalStorageProvider extends BaseStorageProvider {
 
                     // Clean up empty directories recursively
                     if (fallbackPaths.length > 0) {
-                        this.cleanEmptyLocalFolders(this.buildPath(...fallbackPaths.map((p) => this.sanitizeFilename(p)).slice(0, -1)))
+                        this.cleanEmptyLocalFolders(this.buildPath(...fallbackPaths.slice(0, -1)))
                     }
 
                     return fs.readFileSync(targetPath)
@@ -229,7 +229,7 @@ export class LocalStorageProvider extends BaseStorageProvider {
     }
 
     async removeFilesFromStorage(...paths: string[]): Promise<StorageSizeResult> {
-        const directory = this.buildPath(...paths.map((p) => this.sanitizeFilename(p)))
+        const directory = this.buildPath(...paths)
         await this.deleteLocalFolderRecursive(directory)
 
         const totalSize = await this.getStorageSize(paths[0])
@@ -248,7 +248,7 @@ export class LocalStorageProvider extends BaseStorageProvider {
             const sanitizedFilename = this.sanitizeFilename(fileName)
             paths.push(sanitizedFilename)
         }
-        const file = this.buildPath(...paths.map((p) => this.sanitizeFilename(p)))
+        const file = this.buildPath(...paths)
 
         // check if file exists, if not skip delete
         const stat = fs.statSync(file, { throwIfNoEntry: false })
@@ -261,7 +261,7 @@ export class LocalStorageProvider extends BaseStorageProvider {
     }
 
     async removeFolderFromStorage(...paths: string[]): Promise<StorageSizeResult> {
-        const directory = this.buildPath(...paths.map((p) => this.sanitizeFilename(p)))
+        const directory = this.buildPath(...paths)
         await this.deleteLocalFolderRecursive(directory, true)
 
         const totalSize = await this.getStorageSize(paths[0])
