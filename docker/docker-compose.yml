@@ -16,3 +16,5 @@ services:
             - DATABASE_HOST=${DATABASE_HOST}
         extra_hosts:
             - 'host.docker.internal:host-gateway'
+        volumes:
+            - ~/.flowise:/home/node/.flowise

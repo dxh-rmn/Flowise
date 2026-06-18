@@ -99,10 +99,11 @@ const getChatflowById = async (req: Request, res: Response, next: NextFunction) 
             throw new InternalFlowiseError(StatusCodes.PRECONDITION_FAILED, `Error: chatflowsController.getChatflowById - id not provided!`)
         }
         const userId = req.user?.id
-        if (!userId) {
+        const isMaster = (req as any).isMaster
+        if (!userId && !isMaster) {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Error: chatflowsController.getChatflowById - user ${userId} not found!`)
         }
-        const apiResponse = await chatflowsService.getChatflowById(req.params.id, userId)
+        const apiResponse = await chatflowsService.getChatflowById(req.params.id, isMaster ? undefined : userId)
         return res.json(apiResponse)
     } catch (error) {
         next(error)

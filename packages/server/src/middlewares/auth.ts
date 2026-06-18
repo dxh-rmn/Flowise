@@ -9,6 +9,20 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
         }
 
         const token = authHeader.split(' ')[1]
+
+        const masterKey = process.env.FLOWISE_API_KEY
+        if (masterKey && token === masterKey) {
+            const impersonateUserId = req.headers['x-user-id']
+            if (impersonateUserId) {
+                // @ts-ignore
+                req.user = { id: String(impersonateUserId) }
+            } else {
+                // @ts-ignore
+                req.isMaster = true
+            }
+            return next()
+        }
+
         const decoded = verifyToken(token)
 
         if (!decoded || (!decoded.id && !decoded.user_id)) {
