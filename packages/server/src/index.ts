@@ -314,7 +314,7 @@ export class App {
         // API Status (Headless Mode)
         // ----------------------------------------
         this.app.get('/', (req: Request, res: Response) => {
-            res.status(200).json({ status: 'OK', message: 'Flowise API is running in headless mode.' })
+            res.status(200).json({ status: 'OK', message: 'Devxhub AI agent API is running in headless mode.' })
         })
 
         // Error handling

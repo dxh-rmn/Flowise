@@ -122,3 +122,5 @@ apps/*/
 .claude/settings.local.json
 .claude/agent-memory/*
 
+# Antigravity chat archives
+chat_archives/
