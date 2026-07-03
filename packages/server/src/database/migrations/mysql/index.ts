@@ -48,6 +48,7 @@ import { AddWebhookSecretToChatFlow1776240000002 } from './1776240000002-AddWebh
 import { AddCustomMcpServer1766000000000 } from './1766000000000-AddCustomMcpServer'
 import { AddMcpServerConfigToChatFlow1767000000000 } from './1767000000000-AddMcpServerConfigToChatFlow'
 import { AddScheduleEntities1772000000000 } from './1772000000000-AddScheduleEntities'
+import { FixExecutionConstraints1777000000000 } from './1777000000000-FixExecutionConstraints'
 
 export const mysqlMigrations = [
     Init1693840429259,
@@ -99,5 +100,6 @@ export const mysqlMigrations = [
     AddWebhookSecretToChatFlow1776240000002,
     AddCustomMcpServer1766000000000,
     AddMcpServerConfigToChatFlow1767000000000,
-    AddScheduleEntities1772000000000
+    AddScheduleEntities1772000000000,
+    FixExecutionConstraints1777000000000
 ]
