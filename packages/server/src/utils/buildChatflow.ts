@@ -474,7 +474,18 @@ export const executeFlow = async ({
         }
     }
 
-    const isAgentFlowV2 = chatflow.type === 'AGENTFLOW'
+    // Detect Agent Flow v2: either by explicit type OR by inspecting flowData for agentflow nodes.
+    // This handles cases where the chatflow was created before the AGENTFLOW type was properly set.
+    let isAgentFlowV2 = chatflow.type === 'AGENTFLOW'
+    if (!isAgentFlowV2) {
+        try {
+            const parsedFlow: IReactFlowObject = JSON.parse(chatflow.flowData)
+            const flowNodes = parsedFlow.nodes || []
+            isAgentFlowV2 = flowNodes.some((node) => node.data?.category === 'Agent Flows')
+        } catch {
+            // If flowData can't be parsed, fall through to regular chatflow path
+        }
+    }
     if (isAgentFlowV2) {
         return executeAgentFlow({
             componentNodes,

@@ -35,7 +35,7 @@ export class Execution implements IExecution {
     @UpdateDateColumn()
     updatedDate: Date
 
-    @Column()
+    @Column({ nullable: true })
     stoppedDate: Date
 
     @ManyToOne(() => ChatFlow)
