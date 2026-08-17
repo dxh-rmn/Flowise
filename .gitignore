@@ -1,6 +1,7 @@
 # editor
 .idea
 .vscode
+chat_archives/
 
 # dependencies
 **/node_modules
