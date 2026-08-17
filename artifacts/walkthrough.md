@@ -27,7 +27,7 @@ Implemented **Option A (`flow-native`) WhatsApp Cloud API Integration** in Flowi
 
 -   **[NEW] [`whatsapp_agentic_flow.json`](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/artifacts/whatsapp_agentic_flow.json)**:
     -   Importable sample Agentflow template wiring Webhook Trigger Start Node $\rightarrow$ `WhatsAppSend` Node.
-    -   **Echo mode** (runnable with zero credentials): Start's `webhookDefaultInput` is the inbound WhatsApp text, and `WhatsAppSend.messageText` is `{{ startAgentflow_0.output.content }}` — every received message is replied back to the sender.
+    -   **Echo mode** (runnable with zero credentials): Start's `webhookDefaultInput` is the inbound WhatsApp text, and `WhatsAppSend.messageText` is `{{ startAgentflow_0.output.question }}` — every received message is replied back to the sender.
     -   Per-sender memory: `webhooksSessionId` = `{{ $webhook.body.entry[0].changes[0].value.messages[0].from }}` (wa_id).
     -   `webhookEnableAuth: false` — Meta webhook POSTs carry no signature header, so signature verification must stay off; the GET `hub.challenge` handshake still succeeds.
     -   `webhookResponseMode: async` — returns 202 immediately, flow runs fire-and-forget (no callback URL needed since replies go out via the WhatsApp Cloud API).

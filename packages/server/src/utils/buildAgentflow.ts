@@ -619,9 +619,15 @@ export const resolveVariables = async (
 
         // Original logic for direct acceptVariable params (maintains backward compatibility)
         // Example: Direct params like agentUserMessage with acceptVariable: true
+        // Falls back to the node class definition (componentNodes) when the saved flow
+        // does not carry inputParams metadata (e.g. flows created via API).
+        const nodeParamDefs =
+            reactFlowNodeData.inputParams?.length > 0
+                ? reactFlowNodeData.inputParams
+                : (componentNodes[reactFlowNodeData.name]?.inputs as any[]) ?? []
         for (const key in paramsObj) {
             const paramValue = paramsObj[key]
-            const isAcceptVariable = reactFlowNodeData.inputParams.find((param) => param.name === key)?.acceptVariable ?? false
+            const isAcceptVariable = nodeParamDefs.find((param) => param.name === key)?.acceptVariable ?? false
             if (isAcceptVariable) {
                 paramsObj[key] = await resolveNodeReference(paramValue)
             }
