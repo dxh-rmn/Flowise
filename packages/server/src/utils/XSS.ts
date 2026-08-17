@@ -26,7 +26,11 @@ export function getAllowedCorsOrigins(): string {
 }
 
 export function getAllowCredentials(): boolean {
-    return process.env.CORS_ALLOW_CREDENTIALS === 'true'
+    if (process.env.CORS_ALLOW_CREDENTIALS != null) {
+        return process.env.CORS_ALLOW_CREDENTIALS === 'true'
+    }
+    // Best Practice: Default to true in dev for smooth local DX; default to false in production for zero-trust security
+    return process.env.NODE_ENV !== 'production'
 }
 
 export function getAllowedAuthCorsOrigins(): string[] {

@@ -94,12 +94,21 @@ class WhatsAppSend_Agentflow implements INode {
             }
         }
 
-        const response = await axios.post(url, payload, {
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-                'Content-Type': 'application/json'
-            }
-        })
+        let response: any
+        try {
+            response = await axios.post(url, payload, {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+        } catch (error: any) {
+            throw new Error(
+                `WhatsApp send failed: ${
+                    JSON.stringify(error?.response?.data) || error?.message
+                } | url=${url} to=${recipient} msg=${messageText}`
+            )
+        }
 
         const state = options.agentflowRuntime?.state as ICommonObject
 

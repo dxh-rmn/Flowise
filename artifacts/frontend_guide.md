@@ -44,7 +44,7 @@ These exist in the v3.1.4 UI on `main`:
 4. Credentials page → create **WhatsApp Cloud API** credential (accessToken + phoneNumberId), attach to the WhatsAppSend node.
 5. Meta Developer Console → WhatsApp → Configuration → paste Callback URL + a Verify Token → **Verify and Save** (server echoes `hub.challenge` — verified: 200).
 6. Open the Webhook Listener drawer, send a WhatsApp message → watch it flow through.
-7. Echo mode: `messageText` = `{{ startAgentflow_0.output.content }}` → the message is echoed back via Graph API.
+7. Echo mode: `messageText` = `{{ startAgentflow_0.output.question }}` → the message is echoed back via Graph API.
 
 ### C. Auth caveat (important)
 
