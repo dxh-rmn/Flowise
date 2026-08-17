@@ -255,6 +255,19 @@ class Start_Agentflow implements INode {
                 }
             },
             {
+                label: 'Session ID Expression',
+                name: 'webhooksSessionId',
+                type: 'string',
+                placeholder: 'e.g. {{ $webhook.body.entry[0].changes[0].value.messages[0].from }}',
+                description:
+                    'Dynamic expression to set the conversation Session ID for memory tracking. For WhatsApp, set to the sender phone number.',
+                optional: true,
+                acceptVariable: true,
+                show: {
+                    startInputType: 'webhookTrigger'
+                }
+            },
+            {
                 label: 'Verify request signature',
                 name: 'webhookEnableAuth',
                 type: 'boolean',

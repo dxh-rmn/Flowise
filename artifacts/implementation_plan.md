@@ -1,201 +1,94 @@
-# Native Messaging Channels Integration System in Flowise
+# Flow-Native WhatsApp Integration (Option A Implementation Plan)
 
 ## Goal
 
-Build a native, production-grade **Messaging Channel Integration System** inside Flowise (supporting **WhatsApp Business**, **Facebook Messenger**, **Slack**, **Gmail**, and **Reddit**). This allows users to connect their communication channels directly to any Chatflow or Agentflow without needing external middleware or bridges, automatically routing inbound messages to AI flows and delivering synthesized responses back to the original platform.
+Implement a **Flow-Native WhatsApp Integration** for Flowise Agentflows & Chatflows. This uses a self-contained component node pattern (`WhatsAppCloudApi` credential + `WhatsAppSend` node + `GET hub.challenge` webhook handshake) without modifying core server database schemas.
 
 ---
 
-## User Review Required
+## User Design Choices Confirmed
 
-> [!IMPORTANT] > **Disk Space Status:** The `/home` partition currently has **6.0 GB available** (healthy). All artifacts, files, and builds can now be written and executed without disk space errors.
-
-> [!IMPORTANT] > **Recommended Phased Rollout:**
->
-> 1. **Phase 1 & 2 First (Recommended)**: Implement the core channel architecture + **WhatsApp Business Cloud API** adapter + UI management page first.
-> 2. **Subsequent Phases**: Expand to Facebook Messenger, Slack Events, Gmail API, and Reddit.
-
----
-
-## Architecture Overview
-
-```mermaid
-flowchart TD
-    subgraph EP["External Platforms"]
-        WA["WhatsApp Cloud API"]
-        FB["Facebook Messenger"]
-        SL["Slack Events API"]
-        GM["Gmail Pub/Sub API"]
-        RD["Reddit Poller"]
-    end
-
-    subgraph CL["Flowise Channel Layer"]
-        WH["Channel Webhook Router"]
-        Registry["Channel Adapter Registry"]
-        Parser["Message Normalizer"]
-        Sender["Outbound Message Dispatcher"]
-    end
-
-    subgraph EE["Flowise Execution Engine"]
-        Runner["Flow Execution Service"]
-        State["Session and Memory Manager"]
-        RAG["Vector Store / Tools / LLMs"]
-    end
-
-    WA -->|Webhook POST| WH
-    FB -->|Webhook POST| WH
-    SL -->|Webhook POST| WH
-    GM -->|Push Notification| WH
-    RD -->|Polled Messages| Parser
-
-    WH --> Registry
-    Registry --> Parser
-    Parser -->|"Normalized Input (question, sessionId)"| Runner
-    Runner --> State
-    Runner --> RAG
-    RAG --> Runner
-    Runner -->|"AI Generated Response"| Sender
-    Sender --> Registry
-    Registry -->|API Reply| WA
-    Registry -->|API Reply| FB
-    Registry -->|API Reply| SL
-    Registry -->|API Reply| GM
-    Registry -->|API Reply| RD
-```
+| Choice                | Decision                                | Rationale                                                                         |
+| :-------------------- | :-------------------------------------- | :-------------------------------------------------------------------------------- |
+| **Architecture**      | **Option A (`flow-native`)**            | Fits standard Flowise & n8n node paradigm; zero DB migrations.                    |
+| **Reply Dispatch**    | **In-Flow Send Node**                   | Visible `WhatsAppSend` node on the canvas for full control & branching.           |
+| **Memory / Session**  | **Per-Sender Memory**                   | `sessionId = wa_id` (phone number) for persistent multi-turn AI context.          |
+| **Scope for v1**      | **Text-Only v1**                        | Fast delivery for text interactions; non-text messages return fallback notice.    |
+| **Meta Verification** | **GET Handshake in Webhook Controller** | Echoes `hub.challenge` automatically so Meta validates the webhook URL instantly. |
 
 ---
 
 ## Proposed Changes
 
-### 1. Backend Core & Channel Abstraction Layer
-
-#### [NEW] [IChannelAdapter.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/server/src/channels/IChannelAdapter.ts)
-
--   `INormalizedMessage`: Standard interface for all platforms:
-    ```typescript
-    export interface INormalizedMessage {
-        id: string
-        text: string
-        senderId: string // e.g. Phone number, Slack user ID, Email address
-        senderName?: string
-        conversationId: string // Unique session/thread ID
-        provider: ChannelProvider
-        channelId: string
-        rawPayload: any
-        attachments?: Array<{ type: string; url: string; mimeType: string }>
-    }
-    ```
--   `IChannelAdapter`: Unified lifecycle interface for channel adapters:
-    ```typescript
-    export interface IChannelAdapter {
-        provider: ChannelProvider
-        verifyWebhook?(req: Request, res: Response, channel: Channel): Promise<boolean | Response>
-        parseIncomingMessage(req: Request, channel: Channel): Promise<INormalizedMessage | null>
-        sendReply(message: string, context: IChannelReplyContext, channel: Channel): Promise<boolean>
-    }
-    ```
-
-#### [NEW] [ChannelRegistry.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/server/src/channels/ChannelRegistry.ts)
-
--   Singleton registry registering all active channel adapters (`whatsapp`, `facebook`, `slack`, `gmail`, `reddit`).
-
-#### [NEW] [Channel.ts Entity](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/server/src/database/entities/Channel.ts)
-
--   Database entity storing configured channels:
-    -   `id`: UUID
-    -   `name`: Human-readable channel name
-    -   `provider`: `'whatsapp' | 'facebook' | 'slack' | 'gmail' | 'reddit'`
-    -   `credentialId`: Reference to stored credentials (API tokens, OAuth tokens, secrets)
-    -   `chatflowId`: Linked Chatflow or Agentflow ID
-    -   `webhookPath`: Auto-generated unique webhook path / URL
-    -   `config`: Additional JSON config (verify token, phone number ID, bot user ID, auto-reply settings)
-    -   `enabled`: Boolean toggle
-    -   `createdDate`, `updatedDate`
-
-#### [NEW] [Channels Route, Controller & Service](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/server/src/routes/channels/index.ts)
-
--   `GET /api/v1/channels`: List channels
--   `POST /api/v1/channels`: Create a new channel
--   `PUT /api/v1/channels/:id`: Update channel config / status
--   `DELETE /api/v1/channels/:id`: Remove channel
--   `ALL /api/v1/channels/webhook/:provider/:channelId`: Public webhook receiver for incoming platform messages and verification handshakes.
-
----
-
-### 2. Platform Channel Adapters
-
-#### [NEW] [WhatsAppCloudAdapter.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/server/src/channels/adapters/WhatsAppCloudAdapter.ts)
-
--   Implements Meta `hub.challenge` verification for webhook setup.
--   Parses Meta WhatsApp message payloads (`entry[0].changes[0].value.messages[0]`).
--   Dispatches AI reply via `POST https://graph.facebook.com/v20.0/{phoneNumberId}/messages`.
+### Component Layer (`packages/components`)
 
 #### [NEW] [WhatsAppCloudApi.credential.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/credentials/WhatsAppCloudApi.credential.ts)
 
--   Credential definition for `WhatsApp Cloud API`:
-    -   `accessToken` (Permanent system user access token)
-    -   `phoneNumberId`
-    -   `businessAccountId`
-    -   `verifyToken`
+-   Defines credential fields required for Meta WhatsApp Cloud API:
+    -   `accessToken` (Meta Graph API Permanent/Temporary System User Access Token)
+    -   `phoneNumberId` (WhatsApp Business Phone Number ID)
 
-#### [NEW] [FacebookMessengerAdapter.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/server/src/channels/adapters/FacebookMessengerAdapter.ts)
+#### [NEW] [WhatsAppSend.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/WhatsAppSend/WhatsAppSend.ts)
 
--   Handles Meta Messenger webhook verification & message events.
--   Replies via Graph API `POST https://graph.facebook.com/v20.0/me/messages`.
-
-#### [NEW] [SlackEventsAdapter.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/server/src/channels/adapters/SlackEventsAdapter.ts)
-
--   Handles Slack `url_verification` challenge and `message` events.
--   Replies via Slack Web API `chat.postMessage`.
-
-#### [NEW] [GmailPubSubAdapter.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/server/src/channels/adapters/GmailPubSubAdapter.ts)
-
--   Handles Google Cloud Pub/Sub push webhooks for incoming customer emails.
--   Extracts email body & sender, replies via Gmail API `users.messages.send`.
-
----
-
-### 3. Agentflow / Chatflow Canvas Integration
+-   Canvas node that sends text responses back to the sender via Meta Graph API:
+    -   `inputs`:
+        -   `credential`: `WhatsAppCloudApi` credential
+        -   `recipient`: Default `{{ $webhook.body.entry[0].changes[0].value.messages[0].from }}`
+        -   `message`: Default `{{ <agentId>.output.content }}`
+    -   Sends HTTP POST request to `https://graph.facebook.com/v20.0/{phoneNumberId}/messages`
 
 #### [MODIFY] [Start.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/Start/Start.ts)
 
--   Add option to declare channel trigger inputs (`{{$channel.senderId}}`, `{{$channel.provider}}`, `{{$channel.raw}}`).
-
-#### [NEW] [ChannelReply.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/ChannelReply/ChannelReply.ts)
-
--   Dedicated node to explicitly format and deliver replies to the active inbound channel, supporting rich formatting, buttons, or custom templates.
+-   Add `webhooksSessionId` input field (`acceptVariable: true`) so users can configure `sessionId = {{ $webhook.body.entry[0].changes[0].value.messages[0].from }}`.
 
 ---
 
-### 4. Frontend UI: Channels Management
+### Backend Server Layer (`packages/server`)
 
-#### [NEW] [Channels View](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/ui/src/views/channels/index.jsx)
+#### [MODIFY] [webhook/index.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/server/src/controllers/webhook/index.ts)
 
--   Added to the primary sidebar navigation alongside **Chatflows**, **Agentflows**, **Marketplaces**, and **Credentials**.
--   Card grid showing active channels, provider badges, connected flow names, and live toggle switches.
--   **Add / Edit Channel Modal**:
-    -   Step 1: Select Channel Provider (WhatsApp, Facebook, Slack, Gmail, Reddit).
-    -   Step 2: Select or create required Credential.
-    -   Step 3: Select target Chatflow or Agentflow to execute.
-    -   Step 4: Display auto-generated Webhook URL & Verify Token with 1-click copy buttons.
-    -   Step 5: Test Connection / Send Test Inbound Payload.
+-   Add HTTP `GET` handler for Meta verification:
+    -   Validates `hub.mode === 'subscribe'` and `hub.verify_token === webhookSecret`.
+    -   Echoes back `hub.challenge` as plain text (`res.status(200).send(hub.challenge)`).
+-   Resolve `webhooksSessionId` from incoming JSON payload template so `req.body.sessionId` is set automatically to the sender's phone number (`wa_id`).
+
+#### [MODIFY] [buildAgentflow.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/server/src/utils/buildAgentflow.ts)
+
+-   Export `resolveWebhookRefs` helper to resolve dynamic `$webhook.body...` references during flow execution.
+
+---
+
+### Artifacts & Sample Flow
+
+#### [NEW] [whatsapp_agentic_flow.json](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/artifacts/whatsapp_agentic_flow.json)
+
+-   Sample importable Agentflow template connecting:
+    -   `Start Node` (Webhook trigger, `sessionId = wa_id`) $\rightarrow$ `Agent Node` $\rightarrow$ `WhatsAppSend Node`.
 
 ---
 
 ## Verification Plan
 
-### Automated Tests
+### Automated Build Verification
 
-1. **Adapter Unit Tests**:
-    - Test webhook challenge verifications (Meta `hub.challenge`, Slack `url_verification`).
-    - Test message normalization with mock payloads from WhatsApp, Facebook, Slack, Gmail.
-2. **Channel Controller Integration Tests**:
-    - `npm run test` on `packages/server`.
+```bash
+# Build component nodes
+cd packages/components && pnpm build
 
-### Manual Verification
+# Compile server TypeScript
+cd packages/server && pnpm build
+```
 
-1. **WhatsApp Webhook Simulation**:
-    - Trigger the Flowise Channel webhook with a mock WhatsApp Cloud API payload using `curl`.
-    - Verify Flowise extracts the question, queries the connected RAG flow with `sessionId = sender_phone_number`, and invokes the outbound reply handler.
-2. **UI Verification**:
-    - Create a WhatsApp Channel via the UI, connect a flow, copy the webhook URL, toggle channel on/off.
+### Manual & API Verification
+
+1. **GET Handshake Test**:
+    ```bash
+    curl -i "http://localhost:3000/api/v1/webhook/<flowId>?hub.mode=subscribe&hub.verify_token=<secret>&hub.challenge=123456789"
+    # Expect: HTTP 200 with body "123456789"
+    ```
+2. **Inbound Message Simulation**:
+    ```bash
+    curl -X POST "http://localhost:3000/api/v1/webhook/<flowId>" \
+      -H "Content-Type: application/json" \
+      -d '{"entry":[{"changes":[{"value":{"messages":[{"from":"15551234567","text":{"body":"Hello AI"}}]}}]}]}'
+    ```

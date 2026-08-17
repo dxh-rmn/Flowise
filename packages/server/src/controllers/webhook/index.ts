@@ -14,6 +14,8 @@ import { getErrorMessage } from '../../errors/utils'
 import { getRunningExpressApp } from '../../utils/getRunningExpressApp'
 import logger from '../../utils/logger'
 
+import { resolveWebhookRefs } from '../../utils/buildAgentflow'
+
 const createWebhook = async (req: Request, res: Response, next: NextFunction) => {
     try {
         if (typeof req.params === 'undefined' || !req.params.id) {
@@ -36,16 +38,22 @@ const createWebhook = async (req: Request, res: Response, next: NextFunction) =>
 
         const isResume = body?.humanInput != null
 
-        const { responseMode, callbackUrl, callbackSecret } = await webhookService.validateWebhookChatflow(
-            req.params.id,
-            userId,
-            body,
-            req.method,
-            req.headers,
-            req.query,
-            (req as any).rawBody,
-            isResume ? { skipFieldValidation: true } : undefined
-        )
+        const { responseMode, callbackUrl, callbackSecret, isHandshake, challenge, webhooksSessionId } =
+            await webhookService.validateWebhookChatflow(
+                req.params.id,
+                userId,
+                body,
+                req.method,
+                req.headers,
+                req.query,
+                (req as any).rawBody,
+                isResume ? { skipFieldValidation: true } : undefined
+            )
+
+        // Meta WhatsApp Webhook GET Verification Handshake
+        if (isHandshake && challenge != null) {
+            return res.status(200).send(challenge)
+        }
 
         // Namespace the webhook payload so $webhook.body.*, $webhook.headers.*, $webhook.query.* can coexist
         req.body = {
@@ -59,7 +67,15 @@ const createWebhook = async (req: Request, res: Response, next: NextFunction) =>
         const { humanInput, chatId: bodyChatId, sessionId } = body ?? {}
         if (humanInput != null) req.body.humanInput = humanInput
         if (bodyChatId != null) req.body.chatId = bodyChatId
-        if (sessionId != null) req.body.sessionId = sessionId
+
+        // Session ID resolution: explicit body.sessionId > dynamic webhooksSessionId template.
+        // Written into overrideConfig.sessionId because that is what executeAgentFlow and
+        // getMemorySessionId actually read (incomingInput.sessionId itself is never consumed).
+        const resolvedMemorySessionId =
+            sessionId != null ? String(sessionId) : webhooksSessionId ? resolveWebhookRefs(webhooksSessionId, req.body.webhook) : undefined
+        if (resolvedMemorySessionId && !resolvedMemorySessionId.includes('{{')) {
+            req.body.overrideConfig = { ...(req.body.overrideConfig ?? {}), sessionId: resolvedMemorySessionId }
+        }
 
         const executionChatId: string = (bodyChatId as string | undefined) ?? uuidv4()
         req.body.chatId = executionChatId

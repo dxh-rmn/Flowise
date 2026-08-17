@@ -103,7 +103,7 @@ interface IAgentFlowRuntime {
  * before any node runs, so the Start node's run() and downstream finalInput see the same value.
  * Unknown references are left as-is.
  */
-const resolveWebhookRefs = (template: string, webhook: Record<string, any> | undefined | null): string => {
+export const resolveWebhookRefs = (template: string, webhook: Record<string, any> | undefined | null): string => {
     if (!template) return ''
     if (!webhook) return template
     return template.replace(/{{(.*?)}}/g, (match, ref) => {
@@ -1586,7 +1586,7 @@ export const executeAgentFlow = async ({
     const { graph, nodeDependencies } = constructGraphs(nodes, edges)
     const { graph: reversedGraph } = constructGraphs(nodes, edges, { isReversed: true })
     const startNode = nodes.find((node) => node.data.name === 'startAgentflow')
-    const startInputType = startNode?.data.inputs?.startInputType as 'chatInput' | 'formInput' | 'webhookTrigger'
+    const startInputType = startNode?.data.inputs?.startInputType as 'chatInput' | 'formInput' | 'webhookTrigger' | 'scheduleInput'
     if (!startInputType && !isRecursive) {
         throw new Error('Start input type not found')
     }

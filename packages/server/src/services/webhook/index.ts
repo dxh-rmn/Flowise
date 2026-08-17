@@ -14,7 +14,14 @@ const validateWebhookChatflow = async (
     query?: Record<string, any>,
     rawBody?: Buffer,
     options?: { skipFieldValidation?: boolean }
-): Promise<{ responseMode: 'sync' | 'async' | 'stream'; callbackUrl?: string; callbackSecret?: string }> => {
+): Promise<{
+    responseMode: 'sync' | 'async' | 'stream'
+    callbackUrl?: string
+    callbackSecret?: string
+    isHandshake?: boolean
+    challenge?: string
+    webhooksSessionId?: string
+}> => {
     try {
         const chatflow = await chatflowsService.getChatflowById(chatflowId, userId)
         if (!chatflow) {
@@ -31,11 +38,35 @@ const validateWebhookChatflow = async (
 
         const enableAuth = startNode?.data?.inputs?.webhookEnableAuth === true
         const enableValidation = startNode?.data?.inputs?.webhookEnableValidation === true
+        const webhooksSessionId = startNode?.data?.inputs?.webhooksSessionId as string | undefined
         // 'sync' (default) returns JSON when the flow finishes, 'async' returns 202 + optional
         // callback POST, 'stream' returns an SSE stream of token/step events.
         const rawResponseMode = startNode?.data?.inputs?.webhookResponseMode as string | undefined
         const responseMode: 'sync' | 'async' | 'stream' =
             rawResponseMode === 'async' || rawResponseMode === 'stream' ? rawResponseMode : 'sync'
+
+        // Meta WhatsApp Webhook GET Verification Handshake (hub.challenge echo)
+        if (method?.toUpperCase() === 'GET' && query?.['hub.mode'] === 'subscribe' && query?.['hub.challenge']) {
+            if (enableAuth) {
+                const secret = await chatflowsService.getWebhookSecret(chatflowId, chatflow.userId)
+                if (!secret) {
+                    throw new InternalFlowiseError(
+                        StatusCodes.INTERNAL_SERVER_ERROR,
+                        'Webhook signature verification is enabled but no secret has been generated. Open the Start node and click Generate Secret.'
+                    )
+                }
+                const verifyToken = (query['hub.verify_token'] ?? '') as string
+                const valid = verifyPlainToken(secret, verifyToken)
+                if (!valid) {
+                    throw new InternalFlowiseError(StatusCodes.UNAUTHORIZED, 'Invalid verify_token for Meta webhook handshake')
+                }
+            }
+            return {
+                responseMode,
+                isHandshake: true,
+                challenge: String(query['hub.challenge'])
+            }
+        }
 
         // callbackUrl is only meaningful in async mode — when omitted there, the flow runs
         // fire-and-forget (202 returned, no callback delivered).
@@ -71,7 +102,7 @@ const validateWebhookChatflow = async (
             }
         }
 
-        if (options?.skipFieldValidation) return { responseMode, callbackUrl, callbackSecret }
+        if (options?.skipFieldValidation) return { responseMode, callbackUrl, callbackSecret, webhooksSessionId }
 
         // Method validation
         const webhookMethod = startNode?.data?.inputs?.webhookMethod
@@ -151,7 +182,7 @@ const validateWebhookChatflow = async (
             }
         }
 
-        return { responseMode, callbackUrl, callbackSecret }
+        return { responseMode, callbackUrl, callbackSecret, webhooksSessionId }
     } catch (error) {
         if (error instanceof InternalFlowiseError) throw error
         throw new InternalFlowiseError(
