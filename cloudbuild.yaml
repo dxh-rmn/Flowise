@@ -1,0 +1,66 @@
+steps:
+    - name: 'gcr.io/cloud-builders/docker'
+      id: 'setup-qemu'
+      args: ['run', '--rm', '--privileged', 'multiarch/qemu-user-static', '--reset', '-p', 'yes']
+
+    - name: 'gcr.io/cloud-builders/docker'
+      id: 'setup-buildx'
+      waitFor: ['setup-qemu']
+      args: ['buildx', 'create', '--name', 'multiarch-builder', '--driver', 'docker-container', '--use']
+
+    - name: 'gcr.io/cloud-builders/docker'
+      id: 'docker-login'
+      waitFor: ['setup-buildx']
+      entrypoint: 'bash'
+      args:
+          - '-c'
+          - |
+              echo "$$DOCKER_PASSWORD" | docker login -u "$$DOCKER_USERNAME" --password-stdin
+      secretEnv: ['DOCKER_USERNAME', 'DOCKER_PASSWORD']
+
+    - name: 'gcr.io/cloud-builders/docker'
+      id: 'build-and-push'
+      waitFor: ['docker-login']
+      entrypoint: 'bash'
+      args:
+          - '-c'
+          - |
+              # Read space-separated tags into an array
+              read -ra TAG_ARRAY <<< "$_IMAGE_TAGS"
+              TAG_ARGS=()
+              for tag in "${TAG_ARRAY[@]}"; do
+                TAG_ARGS+=("--tag" "$tag")
+              done
+
+              # Derive a dedicated cache tag from the primary tag (e.g., dxhltd/nudova-core:prod-buildcache)
+              CACHE_TAG="${TAG_ARRAY[0]}-buildcache"
+
+              docker buildx build \
+                --platform ${_TARGET_PLATFORMS:-linux/amd64} \
+                --push \
+                --file ${_DOCKERFILE_PATH} \
+                "${TAG_ARGS[@]}" \
+                --cache-from "type=registry,ref=$${CACHE_TAG}" \
+                --cache-to "type=registry,ref=$${CACHE_TAG},mode=max" \
+                --build-arg BUILD_VERSION=${_BUILD_VERSION} \
+                .
+      env:
+          - '_IMAGE_TAGS=${_IMAGE_TAGS}'
+          - '_DOCKERFILE_PATH=${_DOCKERFILE_PATH}'
+          - '_TARGET_PLATFORMS=${_TARGET_PLATFORMS}'
+
+availableSecrets:
+    secretManager:
+        - versionName: projects/$PROJECT_ID/secrets/dockerhub_username/versions/latest
+          env: 'DOCKER_USERNAME'
+        - versionName: projects/$PROJECT_ID/secrets/dockerhub_token/versions/latest
+          env: 'DOCKER_PASSWORD'
+
+substitutions:
+    _DOCKERFILE_PATH: './Dockerfile'
+    _TARGET_PLATFORMS: 'linux/amd64'
+    _IMAGE_TAGS: 'dxhltd/ai-agent-nodejs-backend:latest'
+    _BUILD_VERSION: 'gcp-fallback'
+
+options:
+    logging: CLOUD_LOGGING_ONLY
