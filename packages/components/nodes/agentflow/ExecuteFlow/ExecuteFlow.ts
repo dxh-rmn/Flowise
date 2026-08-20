@@ -174,6 +174,17 @@ class ExecuteFlow_Agentflow implements INode {
             }
         }
 
+        // Forward sessionId from the current execution context to the subflow to maintain conversation memory
+        const currentSessionId = options.sessionId
+            ? String(options.sessionId)
+                  .replace(/<[^>]*>/g, '')
+                  .trim()
+            : undefined
+        const mergedOverrideConfig = {
+            ...(typeof overrideConfig === 'object' && overrideConfig !== null ? overrideConfig : {}),
+            ...(currentSessionId ? { sessionId: (overrideConfig as any)?.sessionId || currentSessionId } : {})
+        }
+
         const state = options.agentflowRuntime?.state as ICommonObject
         const runtimeChatHistory = (options.agentflowRuntime?.chatHistory as BaseMessageLike[]) ?? []
         const isLastNode = options.isLastNode as boolean
@@ -199,7 +210,8 @@ class ExecuteFlow_Agentflow implements INode {
                 data: {
                     question: flowInput,
                     chatId: options.chatId,
-                    overrideConfig
+                    sessionId: currentSessionId,
+                    overrideConfig: mergedOverrideConfig
                 }
             }
 

@@ -1,5 +1,6 @@
-# Git Commit & Push Rule
+# Git Commit & Push Safety Rule
 
--   **Strict Requirement**: The agent MUST NOT execute `git commit`, `git push`, or any command that creates git commits or pushes to remote repositories unless the user explicitly requests or instructs a commit or push in their prompt.
--   **Editing & Testing**: Editing files, creating code, running tests, or building packages does NOT grant permission to commit or push code.
--   **Explicit User Command Only**: Always wait for direct user instructions such as "commit this", "push to origin", "switch branch and push", etc. before executing any git commit or push commands.
+-   **STRICT ABSOLUTE RULE**: The agent MUST NEVER execute `git commit`, `git push`, `git merge`, or any git command that creates commits or pushes code to remote repositories UNLESS the user explicitly instructs a commit or push in their prompt.
+-   **NO IMPLICIT PERMISSION**: Moving files, editing code, creating artifacts, running tests, or building packages DOES NOT grant permission to run `git commit` or `git push`.
+-   **EXPLICIT USER COMMAND ONLY**: Always wait for direct user commands like "commit these changes", "push to origin", "commit and push", etc. before executing any git commit or push commands.
+-   **NEVER STAGE/COMMIT FILE MOVES AUTOMATICALLY**: If files are moved or edited, describe the status to the user and ask for instructions rather than automatically committing or pushing.

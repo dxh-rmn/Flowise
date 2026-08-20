@@ -39,7 +39,7 @@ const validateWebhookChatflow = async (
         const enableAuth = startNode?.data?.inputs?.webhookEnableAuth === true
         const enableValidation = startNode?.data?.inputs?.webhookEnableValidation === true
         const webhooksSessionId = startNode?.data?.inputs?.webhooksSessionId as string | undefined
-        // 'sync' (default) returns JSON when the flow finishes, 'async' returns 202 + optional
+        // 'sync' (default) returns JSON when the flow finishes, 'async' returns 200 + optional
         // callback POST, 'stream' returns an SSE stream of token/step events.
         const rawResponseMode = startNode?.data?.inputs?.webhookResponseMode as string | undefined
         const responseMode: 'sync' | 'async' | 'stream' =
@@ -69,7 +69,7 @@ const validateWebhookChatflow = async (
         }
 
         // callbackUrl is only meaningful in async mode — when omitted there, the flow runs
-        // fire-and-forget (202 returned, no callback delivered).
+        // fire-and-forget (200 returned, no callback delivered).
         const callbackUrl = responseMode === 'async' ? (startNode?.data?.inputs?.callbackUrl as string | undefined) || undefined : undefined
         const callbackSecret =
             responseMode === 'async' ? (startNode?.data?.inputs?.callbackSecret as string | undefined) || undefined : undefined

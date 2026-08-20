@@ -10,6 +10,7 @@ Whenever any artifact (e.g. `implementation_plan.md`, `walkthrough.md`, guides, 
 
 ## 2. Strict Rule: No Unauthorized Git Commit or Push
 
--   **NEVER** run `git commit`, `git push`, or any command that creates a commit or pushes to a remote repository UNLESS the user explicitly instructs you to commit or push in their prompt.
--   Editing files, creating code, running tests, or building code does NOT grant permission to commit or push.
--   Always wait for an explicit user command (e.g. "commit these changes", "push to origin", etc.) before running any git commit or push commands.
+-   **NEVER** run `git commit`, `git push`, `git merge`, or any command that creates commits or pushes to a remote repository UNLESS the user explicitly instructs you to commit or push in their prompt.
+-   Editing files, moving files, creating code, running tests, or building code does NOT grant permission to commit or push.
+-   Always wait for an explicit user command (e.g. "commit these changes", "push to origin", "commit and push", etc.) before executing any git commit or push commands.
+-   When file changes or file moves occur, present the status to the user and wait for explicit instructions before running git commit/push.

@@ -2,7 +2,7 @@ name: Multi-arch Docker Build with Build Cloud
 
 on:
     push:
-        branches: [main, dev, backend-only]
+        branches: [backend-only]
         tags:
             - 'v*'
     workflow_dispatch:

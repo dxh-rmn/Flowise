@@ -1,0 +1,212 @@
+{
+    "nodes": [
+        {
+            "id": "startAgentflow_0",
+            "type": "agentFlow",
+            "position": {
+                "x": 100,
+                "y": 100
+            },
+            "data": {
+                "id": "startAgentflow_0",
+                "label": "Start",
+                "version": 1.4,
+                "name": "startAgentflow",
+                "type": "Start",
+                "color": "#7EE787",
+                "hideInput": true,
+                "baseClasses": ["Start"],
+                "category": "Agent Flows",
+                "description": "Starting point of the agentflow",
+                "inputParams": [],
+                "inputAnchors": [],
+                "inputs": {
+                    "startInputType": "webhookTrigger",
+                    "webhookMethod": "POST",
+                    "webhookContentType": "application/json",
+                    "webhookURL": "",
+                    "webhookInputMode": "text",
+                    "webhookDefaultInput": "{{ $webhook.body.entry[0].changes[0].value.messages[0].text.body }}",
+                    "webhooksSessionId": "{{ $webhook.body.entry[0].changes[0].value.messages[0].from }}",
+                    "webhookEnableAuth": false,
+                    "webhookResponseMode": "async",
+                    "webhookEnableValidation": false,
+                    "startEphemeralMemory": false,
+                    "startState": "",
+                    "startPersistState": false
+                },
+                "outputAnchors": [
+                    {
+                        "id": "startAgentflow_0-output-startAgentflow",
+                        "label": "Start",
+                        "name": "startAgentflow"
+                    }
+                ],
+                "outputs": {},
+                "selected": false,
+                "dragging": false
+            },
+            "width": 103,
+            "height": 66,
+            "selected": false,
+            "dragging": false,
+            "positionAbsolute": {
+                "x": 100,
+                "y": 100
+            }
+        },
+        {
+            "id": "agentAgentflow_0",
+            "type": "agentFlow",
+            "position": {
+                "x": 338,
+                "y": 71.75
+            },
+            "data": {
+                "id": "agentAgentflow_0",
+                "label": "Agent 0",
+                "version": 3.2,
+                "name": "agentAgentflow",
+                "type": "Agent",
+                "color": "#4DD0E1",
+                "baseClasses": ["Agent"],
+                "category": "Agent Flows",
+                "description": "Dynamically choose and utilize tools during runtime, enabling multi-step reasoning",
+                "inputParams": [],
+                "inputAnchors": [],
+                "inputs": {
+                    "agentModel": "chatGoogleGenerativeAI",
+                    "agentMessages": "",
+                    "agentToolsBuiltInGemini": "",
+                    "agentTools": [
+                        {
+                            "agentSelectedTool": "ChatflowTool",
+                            "agentSelectedToolRequiresHumanInput": false,
+                            "agentSelectedToolConfig": {
+                                "selectedChatflow": "e438f342-07b7-42c0-8483-58999030d7b8",
+                                "name": "test_55_knowledge_base",
+                                "description": "Use this tool to search the DevXHub knowledge base and answer user questions.",
+                                "returnDirect": "",
+                                "overrideConfig": "",
+                                "baseURL": "",
+                                "startNewSession": "",
+                                "useQuestionFromChat": "",
+                                "agentSelectedTool": "ChatflowTool"
+                            }
+                        }
+                    ],
+                    "agentKnowledgeDocumentStores": "",
+                    "agentKnowledgeVSEmbeddings": "",
+                    "agentEnableMemory": true,
+                    "agentMemoryType": "allMessages",
+                    "agentUserMessage": "",
+                    "agentReturnResponseAs": "userMessage",
+                    "agentStructuredOutput": "",
+                    "agentUpdateState": "",
+                    "agentModelConfig": {
+                        "cache": "",
+                        "modelName": "gemini-3-flash-preview",
+                        "customModelName": "",
+                        "temperature": 0.9,
+                        "streaming": true,
+                        "allowImageUploads": "",
+                        "thinkingLevel": "",
+                        "maxOutputTokens": "",
+                        "topP": "",
+                        "topK": "",
+                        "safetySettings": "",
+                        "baseUrl": "",
+                        "agentModel": "chatGoogleGenerativeAI"
+                    }
+                },
+                "outputAnchors": [
+                    {
+                        "id": "agentAgentflow_0-output-agentAgentflow",
+                        "label": "Agent",
+                        "name": "agentAgentflow"
+                    }
+                ],
+                "outputs": {},
+                "selected": false
+            },
+            "width": 237,
+            "height": 100,
+            "selected": false,
+            "dragging": false,
+            "positionAbsolute": {
+                "x": 338,
+                "y": 71.75
+            }
+        },
+        {
+            "id": "whatsAppSendAgentflow_0",
+            "type": "agentFlow",
+            "position": {
+                "x": 658,
+                "y": 109.25
+            },
+            "data": {
+                "id": "whatsAppSendAgentflow_0",
+                "label": "WhatsApp Send 0",
+                "version": 1,
+                "name": "whatsAppSendAgentflow",
+                "type": "WhatsAppSend",
+                "color": "#25D366",
+                "hideOutput": false,
+                "baseClasses": ["WhatsAppSend"],
+                "category": "Agent Flows",
+                "description": "Send a text reply to a WhatsApp recipient via Meta WhatsApp Business Cloud API",
+                "inputParams": [],
+                "inputAnchors": [],
+                "inputs": {
+                    "recipientPhoneNumber": "{{ $webhook.body.entry[0].changes[0].value.messages[0].from }}",
+                    "messageText": "{{ agentAgentflow_0.output.content }}"
+                },
+                "outputAnchors": [
+                    {
+                        "id": "whatsAppSendAgentflow_0-output-whatsAppSendAgentflow",
+                        "label": "WhatsApp Send",
+                        "name": "whatsAppSendAgentflow"
+                    }
+                ],
+                "outputs": {},
+                "selected": false
+            },
+            "width": 189,
+            "height": 66,
+            "positionAbsolute": {
+                "x": 658,
+                "y": 109.25
+            },
+            "selected": false
+        }
+    ],
+    "edges": [
+        {
+            "source": "startAgentflow_0",
+            "sourceHandle": "startAgentflow_0-output-startAgentflow",
+            "target": "agentAgentflow_0",
+            "targetHandle": "agentAgentflow_0",
+            "data": {
+                "sourceColor": "#7EE787",
+                "targetColor": "#4DD0E1",
+                "isHumanInput": false
+            },
+            "type": "agentFlow",
+            "id": "startAgentflow_0-startAgentflow_0-output-startAgentflow-agentAgentflow_0-agentAgentflow_0"
+        },
+        {
+            "source": "agentAgentflow_0",
+            "sourceHandle": "agentAgentflow_0-output-agentAgentflow",
+            "target": "whatsAppSendAgentflow_0",
+            "targetHandle": "whatsAppSendAgentflow_0",
+            "data": {
+                "sourceColor": "#4DD0E1",
+                "targetColor": "#25D366",
+                "isHumanInput": false
+            },
+            "type": "agentFlow",
+            "id": "agentAgentflow_0-agentAgentflow_0-output-agentAgentflow-whatsAppSendAgentflow_0-whatsAppSendAgentflow_0"
+        }
+    ]
+}

@@ -269,9 +269,78 @@ describe('createWebhook', () => {
         )
     })
 
+    // --- Meta WhatsApp event filtering ---
+
+    it('skips the flow and returns 200 for WhatsApp status events (no messages array)', async () => {
+        const req = mockReq({
+            body: {
+                object: 'whatsapp_business_account',
+                entry: [{ changes: [{ value: { statuses: [{ id: 'wamid.status' }] } }] }]
+            }
+        })
+        const res = mockRes()
+        const next = mockNext()
+
+        await webhookController.createWebhook(req, res, next)
+
+        expect(res.status).toHaveBeenCalledWith(200)
+        expect(res.json).toHaveBeenCalledWith({ received: true })
+        expect(mockValidateWebhookChatflow).not.toHaveBeenCalled()
+        expect(mockBuildChatflow).not.toHaveBeenCalled()
+    })
+
+    it('runs the flow for WhatsApp message events (messages array present)', async () => {
+        mockValidateWebhookChatflow.mockResolvedValue({ responseMode: 'async' as const })
+        mockBuildChatflow.mockResolvedValue({ text: 'done' })
+        jest.spyOn(global, 'setImmediate').mockImplementation((fn: any) => fn())
+
+        const req = mockReq({
+            body: {
+                object: 'whatsapp_business_account',
+                entry: [{ changes: [{ value: { messages: [{ from: '15551234567', text: { body: 'hello' } }] } }] }]
+            }
+        })
+        const res = mockRes()
+        const next = mockNext()
+
+        await webhookController.createWebhook(req, res, next)
+
+        expect(mockBuildChatflow).toHaveBeenCalled()
+    })
+
+    it('does not filter non-WhatsApp payloads (object field absent)', async () => {
+        mockBuildChatflow.mockResolvedValue({})
+
+        const req = mockReq({ body: { action: 'push', repository: { name: 'repo' } } })
+        const res = mockRes()
+        const next = mockNext()
+
+        await webhookController.createWebhook(req, res, next)
+
+        expect(mockBuildChatflow).toHaveBeenCalled()
+    })
+
+    it('does not filter WhatsApp payloads on resume calls (humanInput present)', async () => {
+        mockBuildChatflow.mockResolvedValue({})
+
+        const req = mockReq({
+            body: {
+                object: 'whatsapp_business_account',
+                entry: [{ changes: [{ value: {} }] }],
+                humanInput: { type: 'proceed', startNodeId: 'humanInputAgentflow_0' }
+            }
+        })
+        const res = mockRes()
+        const next = mockNext()
+
+        await webhookController.createWebhook(req, res, next)
+
+        expect(mockBuildChatflow).toHaveBeenCalled()
+    })
+
     // --- Async callback (FLOWISE-367) ---
 
-    it('returns 202 immediately when callbackUrl is configured on Start node', async () => {
+    it('returns 200 immediately when callbackUrl is configured on Start node', async () => {
         mockValidateWebhookChatflow.mockResolvedValue({ responseMode: 'async' as const, callbackUrl: 'https://cb.example.com' })
         mockBuildChatflow.mockResolvedValue({ text: 'done' })
         mockDispatchCallback.mockResolvedValue(undefined)
@@ -283,12 +352,12 @@ describe('createWebhook', () => {
 
         await webhookController.createWebhook(req, res, next)
 
-        expect(res.status).toHaveBeenCalledWith(202)
+        expect(res.status).toHaveBeenCalledWith(200)
         expect(res.json).toHaveBeenCalledWith({ chatId: expect.any(String), status: 'PROCESSING' })
         expect(mockBuildChatflow).toHaveBeenCalled()
     })
 
-    it('returns 202 with chatId from body when already provided', async () => {
+    it('returns 200 with chatId from body when already provided', async () => {
         mockValidateWebhookChatflow.mockResolvedValue({ responseMode: 'async' as const, callbackUrl: 'https://cb.example.com' })
         mockBuildChatflow.mockResolvedValue({ text: 'done' })
         mockDispatchCallback.mockResolvedValue(undefined)
@@ -413,7 +482,7 @@ describe('createWebhook', () => {
 
         await webhookController.createWebhook(req, res, mockNext())
 
-        expect(res.status).toHaveBeenCalledWith(202)
+        expect(res.status).toHaveBeenCalledWith(200)
         expect(mockDispatchCallback).toHaveBeenCalledWith('https://node-configured.example.com/cb', expect.any(Object), undefined)
     })
 
@@ -439,14 +508,14 @@ describe('createWebhook', () => {
 
         await webhookController.createWebhook(req, res, next)
 
-        expect(res.status).not.toHaveBeenCalledWith(202)
+        expect(res.status).not.toHaveBeenCalledWith(200)
         expect(res.json).toHaveBeenCalledWith(apiResult)
         expect(mockDispatchCallback).not.toHaveBeenCalled()
     })
 
     // --- Fire-and-forget mode (async on, no callback URL) ---
 
-    it('returns 202 immediately in fire-and-forget mode (async on, no callback URL)', async () => {
+    it('returns 200 immediately in fire-and-forget mode (async on, no callback URL)', async () => {
         mockValidateWebhookChatflow.mockResolvedValue({ responseMode: 'async' as const })
         mockBuildChatflow.mockResolvedValue({ text: 'done' })
 
@@ -456,7 +525,7 @@ describe('createWebhook', () => {
 
         await webhookController.createWebhook(req, res, next)
 
-        expect(res.status).toHaveBeenCalledWith(202)
+        expect(res.status).toHaveBeenCalledWith(200)
         expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ status: 'PROCESSING' }))
     })
 

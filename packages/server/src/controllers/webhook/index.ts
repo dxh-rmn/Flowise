@@ -38,6 +38,19 @@ const createWebhook = async (req: Request, res: Response, next: NextFunction) =>
 
         const isResume = body?.humanInput != null
 
+        // Meta WhatsApp sends status/echo events (sent, delivered, read) that carry a `statuses`
+        // array but no `messages`. Running the flow for those would burn LLM calls, fail at the
+        // WhatsApp Send node (recipient unresolved -> "000"), and Meta retries every non-200
+        // response — so acknowledge with 200 and skip them immediately. Only WhatsApp-style
+        // payloads are filtered; other webhook senders (GitHub, Stripe, etc.) are unaffected.
+        if (req.method?.toUpperCase() === 'POST' && !isResume && body?.object === 'whatsapp_business_account') {
+            const metaValue = body?.entry?.[0]?.changes?.[0]?.value
+            const hasWhatsAppMessages = Array.isArray(metaValue?.messages) && metaValue.messages.length > 0
+            if (!hasWhatsAppMessages) {
+                return res.status(200).json({ received: true })
+            }
+        }
+
         const { responseMode, callbackUrl, callbackSecret, isHandshake, challenge, webhooksSessionId } =
             await webhookService.validateWebhookChatflow(
                 req.params.id,
@@ -71,8 +84,9 @@ const createWebhook = async (req: Request, res: Response, next: NextFunction) =>
         // Session ID resolution: explicit body.sessionId > dynamic webhooksSessionId template.
         // Written into overrideConfig.sessionId because that is what executeAgentFlow and
         // getMemorySessionId actually read (incomingInput.sessionId itself is never consumed).
-        const resolvedMemorySessionId =
+        const rawResolvedMemorySessionId =
             sessionId != null ? String(sessionId) : webhooksSessionId ? resolveWebhookRefs(webhooksSessionId, req.body.webhook) : undefined
+        const resolvedMemorySessionId = rawResolvedMemorySessionId ? rawResolvedMemorySessionId.replace(/<[^>]*>/g, '').trim() : undefined
         if (resolvedMemorySessionId && !resolvedMemorySessionId.includes('{{')) {
             req.body.overrideConfig = { ...(req.body.overrideConfig ?? {}), sessionId: resolvedMemorySessionId }
         }
@@ -117,7 +131,7 @@ const createWebhook = async (req: Request, res: Response, next: NextFunction) =>
 
         if (responseMode === 'async') {
             // Validate the callback URL only when one was provided. Without a URL, the flow runs
-            // fire-and-forget — the 202 still goes out, but no callback is delivered when it finishes.
+            // fire-and-forget — the 200 still goes out, but no callback is delivered when it finishes.
             if (callbackUrl) {
                 try {
                     const parsed = new URL(callbackUrl)
@@ -127,10 +141,12 @@ const createWebhook = async (req: Request, res: Response, next: NextFunction) =>
                 }
             }
 
-            // 202 response and the background execution share the pre-assigned executionChatId
+            // Meta treats any non-200 webhook response as a delivery failure and retries the
+            // event with backoff for up to 7 days — so respond 200 while the flow runs
+            // fire-and-forget in the background.
             const chatId = executionChatId
 
-            res.status(202).json({ chatId, status: 'PROCESSING' })
+            res.status(200).json({ chatId, status: 'PROCESSING' })
 
             setImmediate(async () => {
                 try {

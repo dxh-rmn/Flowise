@@ -200,7 +200,7 @@ class ChatflowTool_Tools implements INode {
             toolInput = customInput
         }
 
-        let name = _name || 'chatflow_tool'
+        let name = (_name || 'chatflow_tool').replace(/[^a-zA-Z0-9_.-]/g, '_')
 
         return new ChatflowTool({
             name,
@@ -264,7 +264,7 @@ class ChatflowTool extends StructuredTool {
         overrideConfig?: object
     }) {
         super()
-        this.name = name
+        this.name = name ? name.replace(/[^a-zA-Z0-9_.-]/g, '_') : 'chatflow_tool'
         this.description = description
         this.input = input
         this.baseURL = baseURL

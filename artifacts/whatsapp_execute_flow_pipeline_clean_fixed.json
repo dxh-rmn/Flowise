@@ -1,0 +1,153 @@
+{
+    "nodes": [
+        {
+            "id": "startAgentflow_0",
+            "type": "agentFlow",
+            "position": {
+                "x": 100,
+                "y": 100
+            },
+            "data": {
+                "id": "startAgentflow_0",
+                "label": "Start",
+                "version": 1.4,
+                "name": "startAgentflow",
+                "type": "Start",
+                "color": "#7EE787",
+                "hideInput": true,
+                "baseClasses": ["Start"],
+                "category": "Agent Flows",
+                "description": "Starting point of the agentflow",
+                "inputParams": [],
+                "inputAnchors": [],
+                "inputs": {
+                    "startInputType": "webhookTrigger",
+                    "webhookMethod": "POST",
+                    "webhookContentType": "application/json",
+                    "webhookInputMode": "text",
+                    "webhookDefaultInput": "{{ $webhook.body.entry[0].changes[0].value.messages[0].text.body }}",
+                    "webhooksSessionId": "{{ $webhook.body.entry[0].changes[0].value.messages[0].from }}",
+                    "webhookEnableAuth": false,
+                    "webhookResponseMode": "async"
+                },
+                "outputAnchors": [
+                    {
+                        "id": "startAgentflow_0-output-startAgentflow",
+                        "label": "Start",
+                        "name": "startAgentflow"
+                    }
+                ],
+                "outputs": {},
+                "selected": false,
+                "dragging": false
+            },
+            "width": 103,
+            "height": 66
+        },
+        {
+            "id": "executeFlowAgentflow_0",
+            "type": "agentFlow",
+            "position": {
+                "x": 322.847581497721,
+                "y": 100.20951268434665
+            },
+            "data": {
+                "id": "executeFlowAgentflow_0",
+                "label": "Execute Flow 0",
+                "version": 1.2,
+                "name": "executeFlowAgentflow",
+                "type": "ExecuteFlow",
+                "color": "#a3b18a",
+                "baseClasses": ["ExecuteFlow"],
+                "category": "Agent Flows",
+                "description": "Execute another flow",
+                "inputParams": [],
+                "inputAnchors": [],
+                "inputs": {
+                    "executeFlowSelectedFlow": "e438f342-07b7-42c0-8483-58999030d7b8",
+                    "executeFlowInput": "{{ startAgentflow_0.output.question }}",
+                    "executeFlowOverrideConfig": "{\n  \"sessionId\": \"{{ $webhook.body.entry[0].changes[0].value.messages[0].from }}\"\n}",
+                    "executeFlowReturnResponseAs": "userMessage"
+                },
+                "outputAnchors": [
+                    {
+                        "id": "executeFlowAgentflow_0-output-executeFlowAgentflow",
+                        "label": "Execute Flow",
+                        "name": "executeFlowAgentflow"
+                    }
+                ],
+                "outputs": {},
+                "selected": false,
+                "dragging": false
+            },
+            "width": 171,
+            "height": 66
+        },
+        {
+            "id": "whatsAppSendAgentflow_0",
+            "type": "agentFlow",
+            "position": {
+                "x": 597.0542647221997,
+                "y": 101.83768084459183
+            },
+            "data": {
+                "id": "whatsAppSendAgentflow_0",
+                "label": "WhatsApp Send 0",
+                "version": 1,
+                "name": "whatsAppSendAgentflow",
+                "type": "WhatsAppSend",
+                "color": "#25D366",
+                "hideOutput": false,
+                "baseClasses": ["WhatsAppSend"],
+                "category": "Agent Flows",
+                "description": "Send a text reply to a WhatsApp recipient via Meta WhatsApp Business Cloud API",
+                "inputParams": [],
+                "inputAnchors": [],
+                "inputs": {
+                    "recipientPhoneNumber": "{{ $webhook.body.entry[0].changes[0].value.messages[0].from }}",
+                    "messageText": "{{ executeFlowAgentflow_0.output.content }}"
+                },
+                "outputAnchors": [
+                    {
+                        "id": "whatsAppSendAgentflow_0-output-whatsAppSendAgentflow",
+                        "label": "WhatsApp Send",
+                        "name": "whatsAppSendAgentflow"
+                    }
+                ],
+                "outputs": {},
+                "selected": false,
+                "dragging": false
+            },
+            "width": 189,
+            "height": 66
+        }
+    ],
+    "edges": [
+        {
+            "source": "startAgentflow_0",
+            "sourceHandle": "startAgentflow_0-output-startAgentflow",
+            "target": "executeFlowAgentflow_0",
+            "targetHandle": "executeFlowAgentflow_0",
+            "data": {
+                "sourceColor": "#7EE787",
+                "targetColor": "#a3b18a",
+                "isHumanInput": false
+            },
+            "type": "agentFlow",
+            "id": "startAgentflow_0-startAgentflow_0-output-startAgentflow-executeFlowAgentflow_0-executeFlowAgentflow_0"
+        },
+        {
+            "source": "executeFlowAgentflow_0",
+            "sourceHandle": "executeFlowAgentflow_0-output-executeFlowAgentflow",
+            "target": "whatsAppSendAgentflow_0",
+            "targetHandle": "whatsAppSendAgentflow_0",
+            "data": {
+                "sourceColor": "#a3b18a",
+                "targetColor": "#25D366",
+                "isHumanInput": false
+            },
+            "type": "agentFlow",
+            "id": "executeFlowAgentflow_0-executeFlowAgentflow_0-output-executeFlowAgentflow-whatsAppSendAgentflow_0-whatsAppSendAgentflow_0"
+        }
+    ]
+}

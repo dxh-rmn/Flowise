@@ -1,61 +1,92 @@
-# Flow-Native WhatsApp Integration Walkthrough
+# Walkthrough - FlowAgent Session ID Fix & Database Normalization
 
-## Summary of Changes
+## Overview of Changes
 
-Implemented **Option A (`flow-native`) WhatsApp Cloud API Integration** in Flowise.
+We identified and resolved two root causes for the session ID issues across FlowAgent, child flow execution, and the database:
 
-### 1. Component Layer (`packages/components`)
+1. **HTML Tag Corruption in Session ID**:
 
--   **[NEW] [`WhatsAppCloudApi.credential.ts`](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/credentials/WhatsAppCloudApi.credential.ts)**:
-    -   Added credential definition for Meta WhatsApp Business Cloud API `accessToken` and `phoneNumberId`.
--   **[NEW] [`WhatsAppSend.ts`](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/WhatsAppSend/WhatsAppSend.ts)**:
-    -   Added `WhatsAppSend` Agentflow node (`#25D366`) that sends text replies directly to recipient phone numbers via Meta Graph API `https://graph.facebook.com/v20.0/{phoneNumberId}/messages`.
--   **[MODIFY] [`Start.ts`](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/Start/Start.ts)**:
-    -   Added `webhooksSessionId` input field (`acceptVariable: true`) for dynamic session ID mapping (e.g. `{{ $webhook.body.entry[0].changes[0].value.messages[0].from }}`).
+    - The Start node's `webhooksSessionId` in `devxhub rag agent` had been stored with rich-text HTML wrapper tags (`<p></p><pre><code class="language-text">...</code></pre><p></p>`).
+    - Webhook controller now actively sanitizes `resolvedMemorySessionId` by stripping any HTML tags before setting `req.body.overrideConfig.sessionId`.
+    - The PostgreSQL database (`ai-agents`) `chat_flow`, `execution`, and `chat_message` records have been cleaned and normalized.
 
-### 2. Backend Server Layer (`packages/server`)
-
--   **[MODIFY] [`webhook/index.ts`](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/server/src/controllers/webhook/index.ts)**:
-    -   Handled Meta GET verification handshake (`hub.challenge` echo) for instant webhook activation in Meta Developer Console.
-    -   Dynamically evaluated `webhooksSessionId` expression against `$webhook` payload to populate `req.body.sessionId` with sender's phone number.
--   **[MODIFY] [`webhook/index.ts` (services)](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/server/src/services/webhook/index.ts)**:
-    -   Updated `validateWebhookChatflow` to process `GET` handshake requests with `hub.mode === 'subscribe'` and token validation.
--   **[MODIFY] [`buildAgentflow.ts`](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/server/src/utils/buildAgentflow.ts)**:
-    -   Exported `resolveWebhookRefs` helper function for dynamic expression evaluation.
-
-### 3. Artifacts & Templates
-
--   **[NEW] [`whatsapp_agentic_flow.json`](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/artifacts/whatsapp_agentic_flow.json)**:
-    -   Importable sample Agentflow template wiring Webhook Trigger Start Node $\rightarrow$ `WhatsAppSend` Node.
-    -   **Echo mode** (runnable with zero credentials): Start's `webhookDefaultInput` is the inbound WhatsApp text, and `WhatsAppSend.messageText` is `{{ startAgentflow_0.output.question }}` — every received message is replied back to the sender.
-    -   Per-sender memory: `webhooksSessionId` = `{{ $webhook.body.entry[0].changes[0].value.messages[0].from }}` (wa_id).
-    -   `webhookEnableAuth: false` — Meta webhook POSTs carry no signature header, so signature verification must stay off; the GET `hub.challenge` handshake still succeeds.
-    -   `webhookResponseMode: async` — returns 202 immediately, flow runs fire-and-forget (no callback URL needed since replies go out via the WhatsApp Cloud API).
+2. **Session ID Propagation Loss in `ExecuteFlow`**:
+    - When `devxhub rag agent` executed the subflow `devxhub knowledge local`, `ExecuteFlow` previously only sent `chatId: options.chatId` (a unique random UUID generated per request) without forwarding `sessionId`.
+    - Updated `ExecuteFlow` to forward `sessionId: currentSessionId` and merge `sessionId` into `overrideConfig.sessionId`, ensuring the child flow's memory (`BufferMemory` / QA Chain) correctly retains conversational history across turns for each WhatsApp user.
 
 ---
 
-## Verification & Build Results
+## Changes Made
 
-### Automated Build Verification
+### 1. Webhook Controller ([packages/server/src/controllers/webhook/index.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/server/src/controllers/webhook/index.ts))
 
-1. **Components Package Build**:
-    ```bash
-    cd packages/components && pnpm build
-    # Result: SUCCESS (0 errors, dist files generated)
+-   Added HTML tag sanitization and trimming to `resolvedMemorySessionId`:
+    ```ts
+    const rawResolvedMemorySessionId =
+        sessionId != null ? String(sessionId) : webhooksSessionId ? resolveWebhookRefs(webhooksSessionId, req.body.webhook) : undefined
+    const resolvedMemorySessionId = rawResolvedMemorySessionId ? rawResolvedMemorySessionId.replace(/<[^>]*>/g, '').trim() : undefined
+    if (resolvedMemorySessionId && !resolvedMemorySessionId.includes('{{')) {
+        req.body.overrideConfig = { ...(req.body.overrideConfig ?? {}), sessionId: resolvedMemorySessionId }
+    }
     ```
-2. **Server TypeScript Type Check**:
-    ```bash
-    cd packages/server && npx tsc --noEmit
-    # Result: SUCCESS (0 errors)
+
+### 2. ExecuteFlow Node ([packages/components/nodes/agentflow/ExecuteFlow/ExecuteFlow.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/ExecuteFlow/ExecuteFlow.ts))
+
+-   Added automatic session ID forwarding to child predictions:
+
+    ```ts
+    const currentSessionId = options.sessionId ? String(options.sessionId).replace(/<[^>]*>/g, '').trim() : undefined
+    const mergedOverrideConfig = {
+        ...(typeof overrideConfig === 'object' && overrideConfig !== null ? overrideConfig : {}),
+        ...(currentSessionId ? { sessionId: (overrideConfig as any)?.sessionId || currentSessionId } : {})
+    }
+
+    // Inside AxiosRequestConfig data:
+    data: {
+        question: flowInput,
+        chatId: options.chatId,
+        sessionId: currentSessionId,
+        overrideConfig: mergedOverrideConfig
+    }
     ```
+
+### 3. Database Data Cleanup & Normalization (`ai-agents` DB)
+
+-   **`chat_flow` table**:
+    -   Cleaned `webhooksSessionId` in `devxhub rag agent` (`7a0e6281-04f5-43b9-8ef3-f620b863f32b`) to `{{ $webhook.body.entry[0].changes[0].value.messages[0].from }}`.
+    -   Cleaned `recipientPhoneNumber` to `{{ $webhook.body.entry[0].changes[0].value.messages[0].from }}`.
+-   **`execution` table**:
+    -   Sanitized 16 records containing HTML wrapper tags, normalizing `sessionId` values to plain strings (e.g. `8801716814563`).
+-   **`chat_message` table**:
+    -   Sanitized 32 records containing HTML wrapper tags, normalizing `sessionId` values to plain strings.
 
 ---
 
-## Next Steps for User
+## Verification Results
 
-To test your new WhatsApp integration with a real Meta WhatsApp Business Account:
+1. **Database Sanitization Verification**:
 
-1. Copy your Webhook URL from Flowise UI: `https://<your-flowise-domain>/api/v1/webhook/<chatflowId>`
-2. Open **Meta Developer Console** $\rightarrow$ WhatsApp $\rightarrow$ Configuration.
-3. Paste the Webhook URL and Secret Token $\rightarrow$ Click **Verify and Save** (Meta GET handshake will return `200 OK` with `hub.challenge`).
-4. Send a WhatsApp message to your test number—the AI Agent will process it and respond!
+    - `SELECT COUNT(*) FROM chat_message WHERE "sessionId" LIKE '%<%' OR "sessionId" LIKE '%>%';` &rarr; **`0`**
+    - `SELECT COUNT(*) FROM execution WHERE "sessionId" LIKE '%<%' OR "sessionId" LIKE '%>%';` &rarr; **`0`**
+    - Distinct phone numbers in `chat_message`: `8801716814563`, `8801303340936`.
+
+2. **Automated Logic & Propagation Test**:
+
+    - Ran test suite validating dirty HTML template sanitization (`<p><pre><code>...</code></pre></p>` &rarr; `'8801716814563'`) and `ExecuteFlow` payload creation with `overrideConfig.sessionId`:
+        ```
+        Result of sanitized dirty template: 8801716814563
+        Result of clean template: 8801716814563
+        ExecuteFlow Data Payload: {
+          "question": "dhakay ki office ache?",
+          "chatId": "mock-uuid-chat-id",
+          "sessionId": "8801716814563",
+          "overrideConfig": {
+            "sessionId": "8801716814563"
+          }
+        }
+        All session ID sanitization & propagation assertions PASSED!
+        ```
+
+3. **Build Verification**:
+    - `flowise-components` built successfully.
+    - `flowise` (server) built successfully.

@@ -1,0 +1,153 @@
+{
+    "name": "WhatsApp RAG Knowledge Agent",
+    "description": "WhatsApp Webhook Trigger -> Execute Flow (test 55 RAG Knowledge Base) -> WhatsApp Send Reply",
+    "nodes": [
+        {
+            "id": "startAgentflow_0",
+            "type": "agentFlow",
+            "position": { "x": 100, "y": 200 },
+            "width": 103,
+            "height": 66,
+            "selected": false,
+            "positionAbsolute": { "x": 100, "y": 200 },
+            "dragging": false,
+            "data": {
+                "id": "startAgentflow_0",
+                "label": "Start",
+                "version": 1.4,
+                "name": "startAgentflow",
+                "type": "Start",
+                "color": "#7EE787",
+                "hideInput": true,
+                "baseClasses": ["Start"],
+                "category": "Agent Flows",
+                "description": "Starting point of the agentflow",
+                "inputParams": [],
+                "inputAnchors": [],
+                "inputs": {
+                    "startInputType": "webhookTrigger",
+                    "webhookMethod": "POST",
+                    "webhookContentType": "application/json",
+                    "webhookInputMode": "text",
+                    "webhookDefaultInput": "{{ $webhook.body.entry[0].changes[0].value.messages[0].text.body }}",
+                    "webhooksSessionId": "{{ $webhook.body.entry[0].changes[0].value.messages[0].from }}",
+                    "webhookEnableAuth": false,
+                    "webhookResponseMode": "async"
+                },
+                "outputAnchors": [
+                    {
+                        "id": "startAgentflow_0-output-startAgentflow",
+                        "label": "Start",
+                        "name": "startAgentflow"
+                    }
+                ],
+                "outputs": {},
+                "selected": false
+            }
+        },
+        {
+            "id": "executeFlowAgentflow_0",
+            "type": "agentFlow",
+            "position": { "x": 350, "y": 200 },
+            "width": 130,
+            "height": 66,
+            "selected": false,
+            "positionAbsolute": { "x": 350, "y": 200 },
+            "dragging": false,
+            "data": {
+                "id": "executeFlowAgentflow_0",
+                "label": "Execute RAG Flow",
+                "version": 1.2,
+                "name": "executeFlowAgentflow",
+                "type": "ExecuteFlow",
+                "color": "#a3b18a",
+                "hideInput": false,
+                "baseClasses": ["ExecuteFlow"],
+                "category": "Agent Flows",
+                "description": "Execute the RAG Knowledge Chatflow ('test 55')",
+                "inputParams": [],
+                "inputAnchors": [],
+                "inputs": {
+                    "executeFlowSelectedFlow": "e438f342-07b7-42c0-8483-58999030d7b8",
+                    "executeFlowInput": "{{ startAgentflow_0.output.question }}",
+                    "executeFlowOverrideConfig": "{\n  \"sessionId\": \"{{ $webhook.body.entry[0].changes[0].value.messages[0].from }}\"\n}",
+                    "executeFlowReturnResponseAs": "userMessage"
+                },
+                "outputAnchors": [
+                    {
+                        "id": "executeFlowAgentflow_0-output-executeFlowAgentflow",
+                        "label": "Execute Flow",
+                        "name": "executeFlowAgentflow"
+                    }
+                ],
+                "outputs": {},
+                "selected": false
+            }
+        },
+        {
+            "id": "whatsAppSendAgentflow_0",
+            "type": "agentFlow",
+            "position": { "x": 650, "y": 200 },
+            "width": 130,
+            "height": 66,
+            "selected": false,
+            "positionAbsolute": { "x": 650, "y": 200 },
+            "dragging": false,
+            "data": {
+                "id": "whatsAppSendAgentflow_0",
+                "label": "WhatsApp Send",
+                "version": 1.0,
+                "name": "whatsAppSendAgentflow",
+                "type": "WhatsAppSend",
+                "color": "#25D366",
+                "hideInput": false,
+                "baseClasses": ["WhatsAppSend"],
+                "category": "Agent Flows",
+                "description": "Send reply to WhatsApp recipient via Meta Cloud API",
+                "inputParams": [],
+                "inputAnchors": [],
+                "inputs": {
+                    "recipientPhoneNumber": "{{ $webhook.body.entry[0].changes[0].value.messages[0].from }}",
+                    "messageText": "{{ executeFlowAgentflow_0.output.content }}"
+                },
+                "outputAnchors": [
+                    {
+                        "id": "whatsAppSendAgentflow_0-output-whatsAppSendAgentflow",
+                        "label": "WhatsApp Send",
+                        "name": "whatsAppSendAgentflow"
+                    }
+                ],
+                "outputs": {},
+                "selected": false
+            }
+        }
+    ],
+    "edges": [
+        {
+            "source": "startAgentflow_0",
+            "sourceHandle": "startAgentflow_0-output-startAgentflow",
+            "target": "executeFlowAgentflow_0",
+            "targetHandle": "executeFlowAgentflow_0",
+            "data": {
+                "sourceColor": "#7EE787",
+                "targetColor": "#a3b18a",
+                "isHumanInput": false
+            },
+            "type": "agentFlow",
+            "id": "startAgentflow_0-startAgentflow_0-output-startAgentflow-executeFlowAgentflow_0-executeFlowAgentflow_0"
+        },
+        {
+            "source": "executeFlowAgentflow_0",
+            "sourceHandle": "executeFlowAgentflow_0-output-executeFlowAgentflow",
+            "target": "whatsAppSendAgentflow_0",
+            "targetHandle": "whatsAppSendAgentflow_0",
+            "data": {
+                "sourceColor": "#a3b18a",
+                "targetColor": "#25D366",
+                "isHumanInput": false
+            },
+            "type": "agentFlow",
+            "id": "executeFlowAgentflow_0-executeFlowAgentflow_0-output-executeFlowAgentflow-whatsAppSendAgentflow_0-whatsAppSendAgentflow_0"
+        }
+    ]
+}

@@ -42,18 +42,22 @@ RUN apk update && \
         curl && \
     npm install -g pnpm
 
-# Set environment variables for Puppeteer/Playwright
+# Set environment variables for Puppeteer/Playwright and security/encryption defaults
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=true
+ENV HTTP_SECURITY_CHECK=false
+ENV FLOWISE_SECRETKEY_OVERWRITE=devxhub_permanent_secret_key_2026_xyz
 
 WORKDIR /usr/src/flowise
 
 # Copy built workspace from builder stage
 COPY --from=builder /usr/src/flowise /usr/src/flowise
 
-# Set correct ownership
-RUN chown -R node:node /usr/src/flowise
+# Create data directory and set correct ownership
+RUN mkdir -p /home/node/.flowise && chown -R node:node /usr/src/flowise /home/node/.flowise
+
+VOLUME ["/home/node/.flowise"]
 
 USER node
 

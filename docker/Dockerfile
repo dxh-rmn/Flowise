@@ -72,6 +72,8 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=true
 ENV NODE_OPTIONS="--max-old-space-size=4096"
+ENV HTTP_SECURITY_CHECK=false
+ENV FLOWISE_SECRETKEY_OVERWRITE=devxhub_permanent_secret_key_2026_xyz
 
 # Install pnpm globally in runtime stage as well
 RUN npm install -g pnpm
@@ -81,8 +83,10 @@ WORKDIR /usr/src/flowise
 # Copy built workspace from Stage 1
 COPY --from=build /usr/src/flowise /usr/src/flowise
 
-# Change ownership of the folder
-RUN chown -R node:node /usr/src/flowise
+# Create data directory and set correct ownership
+RUN mkdir -p /home/node/.flowise && chown -R node:node /usr/src/flowise /home/node/.flowise
+
+VOLUME ["/home/node/.flowise"]
 
 USER node
 
