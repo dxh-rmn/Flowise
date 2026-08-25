@@ -51,6 +51,20 @@ const createWebhook = async (req: Request, res: Response, next: NextFunction) =>
             }
         }
 
+        // Meta Facebook Messenger sends delivery, read, and echo receipts (delivery, read, standby)
+        // that carry no incoming user message or have is_echo: true. Running the flow for those would
+        // burn LLM calls, fail at the Facebook Send node, and Meta retries every non-200 response —
+        // so acknowledge with 200 and skip them immediately.
+        if (req.method?.toUpperCase() === 'POST' && !isResume && body?.object === 'page') {
+            const messagingList = body?.entry?.[0]?.messaging
+            const hasFacebookMessage =
+                Array.isArray(messagingList) &&
+                messagingList.some((item: any) => item?.message != null && !item?.message?.is_echo)
+            if (!hasFacebookMessage) {
+                return res.status(200).json({ received: true })
+            }
+        }
+
         const { responseMode, callbackUrl, callbackSecret, isHandshake, challenge, webhooksSessionId } =
             await webhookService.validateWebhookChatflow(
                 req.params.id,

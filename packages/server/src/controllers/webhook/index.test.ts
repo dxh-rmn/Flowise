@@ -338,6 +338,78 @@ describe('createWebhook', () => {
         expect(mockBuildChatflow).toHaveBeenCalled()
     })
 
+    // --- Meta Facebook event filtering ---
+
+    it('skips the flow and returns 200 for Facebook delivery/read receipt events (no message object)', async () => {
+        const req = mockReq({
+            body: {
+                object: 'page',
+                entry: [
+                    {
+                        id: 'page_123',
+                        messaging: [{ sender: { id: 'user_456' }, delivery: { watermark: 123456789 } }]
+                    }
+                ]
+            }
+        })
+        const res = mockRes()
+        const next = mockNext()
+
+        await webhookController.createWebhook(req, res, next)
+
+        expect(res.status).toHaveBeenCalledWith(200)
+        expect(res.json).toHaveBeenCalledWith({ received: true })
+        expect(mockValidateWebhookChatflow).not.toHaveBeenCalled()
+        expect(mockBuildChatflow).not.toHaveBeenCalled()
+    })
+
+    it('skips the flow and returns 200 for Facebook echo events (message.is_echo is true)', async () => {
+        const req = mockReq({
+            body: {
+                object: 'page',
+                entry: [
+                    {
+                        id: 'page_123',
+                        messaging: [{ sender: { id: 'page_123' }, message: { is_echo: true, mid: 'mid.123', text: 'sent by page' } }]
+                    }
+                ]
+            }
+        })
+        const res = mockRes()
+        const next = mockNext()
+
+        await webhookController.createWebhook(req, res, next)
+
+        expect(res.status).toHaveBeenCalledWith(200)
+        expect(res.json).toHaveBeenCalledWith({ received: true })
+        expect(mockValidateWebhookChatflow).not.toHaveBeenCalled()
+        expect(mockBuildChatflow).not.toHaveBeenCalled()
+    })
+
+    it('runs the flow for Facebook message events (incoming user message present)', async () => {
+        mockValidateWebhookChatflow.mockResolvedValue({ responseMode: 'async' as const })
+        mockBuildChatflow.mockResolvedValue({ text: 'done' })
+        jest.spyOn(global, 'setImmediate').mockImplementation((fn: any) => fn())
+
+        const req = mockReq({
+            body: {
+                object: 'page',
+                entry: [
+                    {
+                        id: 'page_123',
+                        messaging: [{ sender: { id: 'user_456' }, message: { mid: 'mid.123', text: 'Hello Facebook' } }]
+                    }
+                ]
+            }
+        })
+        const res = mockRes()
+        const next = mockNext()
+
+        await webhookController.createWebhook(req, res, next)
+
+        expect(mockBuildChatflow).toHaveBeenCalled()
+    })
+
     // --- Async callback (FLOWISE-367) ---
 
     it('returns 200 immediately when callbackUrl is configured on Start node', async () => {
