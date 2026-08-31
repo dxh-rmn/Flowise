@@ -84,22 +84,21 @@
       "selected": false
     },
     {
-      "id": "facebookSendAgentflow_0",
+      "id": "facebookMessengerSendAgentflow_0",
       "position": {
         "x": 860,
         "y": 200
       },
       "type": "agentflowNode",
       "data": {
-        "id": "facebookSendAgentflow_0",
-        "label": "Facebook Send",
+        "id": "facebookMessengerSendAgentflow_0",
+        "label": "Facebook Messenger Send",
         "version": 1,
-        "name": "facebookSendAgentflow",
-        "type": "FacebookSend",
+        "name": "facebookMessengerSendAgentflow",
+        "type": "FacebookMessengerSend",
         "category": "Agent Flows",
-        "color": "#1877F2",
+        "color": "#0084FF",
         "inputs": {
-          "actionType": "sendMessengerMessage",
           "recipientId": "{{ $webhook.body.entry[0].messaging[0].sender.id }}",
           "messageText": "{{ $node['llmAgentflow_0'].output }}",
           "continueOnFail": true
@@ -107,18 +106,18 @@
         "inputParams": [],
         "inputAnchors": [
           {
-            "id": "facebookSendAgentflow_0-input-facebookSend-FacebookSend",
-            "name": "facebookSend",
-            "label": "Facebook Send",
-            "type": "FacebookSend"
+            "id": "facebookMessengerSendAgentflow_0-input-facebookMessengerSend-FacebookMessengerSend",
+            "name": "facebookMessengerSend",
+            "label": "Facebook Messenger Send",
+            "type": "FacebookMessengerSend"
           }
         ],
         "outputAnchors": [
           {
-            "id": "facebookSendAgentflow_0-output-facebookSend-FacebookSend",
-            "name": "facebookSend",
-            "label": "Facebook Send",
-            "type": "FacebookSend"
+            "id": "facebookMessengerSendAgentflow_0-output-facebookMessengerSend-FacebookMessengerSend",
+            "name": "facebookMessengerSend",
+            "label": "Facebook Messenger Send",
+            "type": "FacebookMessengerSend"
           }
         ],
         "outputs": {},
@@ -141,10 +140,10 @@
     {
       "source": "llmAgentflow_0",
       "sourceHandle": "llmAgentflow_0-output-llm-LLM",
-      "target": "facebookSendAgentflow_0",
-      "targetHandle": "facebookSendAgentflow_0-input-facebookSend-FacebookSend",
+      "target": "facebookMessengerSendAgentflow_0",
+      "targetHandle": "facebookMessengerSendAgentflow_0-input-facebookMessengerSend-FacebookMessengerSend",
       "type": "buttonEdge",
-      "id": "llmAgentflow_0-llmAgentflow_0-output-llm-LLM-facebookSendAgentflow_0-facebookSendAgentflow_0-input-facebookSend-FacebookSend"
+      "id": "llmAgentflow_0-llmAgentflow_0-output-llm-LLM-facebookMessengerSendAgentflow_0-facebookMessengerSendAgentflow_0-input-facebookMessengerSend-FacebookMessengerSend"
     }
   ],
   "type": "AGENTFLOW"
