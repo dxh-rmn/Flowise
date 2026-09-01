@@ -1,0 +1,18 @@
+diff --git a/binding.gyp b/binding.gyp
+index a8fccd0c46f9a88caf7a503c82338a35e16fa82e..2496326b25d4dabebba3d2c44a18b04a4913c7b4 100644
+--- a/binding.gyp
++++ b/binding.gyp	
+@@ -18,11 +18,11 @@
+         "VCCLCompilerTool": { "ExceptionHandling": 1 },
+       },
+       "include_dirs": [
+-        "<!@(node -p \"require('node-addon-api').include\")"],
++        "<!(node -p \"require('node-addon-api').include_dir\")"],
+       "conditions": [
+         ["sqlite != 'internal'", {
+             "include_dirs": [
+-              "<!@(node -p \"require('node-addon-api').include\")", "<(sqlite)/include" ],
++              "<!(node -p \"require('node-addon-api').include_dir\")", "<(sqlite)/include" ],
+             "libraries": [
+                "-l<(sqlite_libname)"
+             ],

@@ -1,0 +1,357 @@
+{
+    "name": "Facebook Page Post Agent",
+    "description": "Interactive Agentflow that creates an engaging Facebook post using AI and publishes it directly to a Facebook Page feed via Meta Graph API.",
+    "nodes": [
+        {
+            "id": "startAgentflow_0",
+            "position": {
+                "x": 100,
+                "y": 150
+            },
+            "type": "agentFlow",
+            "data": {
+                "id": "startAgentflow_0",
+                "label": "Start",
+                "version": 1.4,
+                "name": "startAgentflow",
+                "type": "Start",
+                "color": "#7EE787",
+                "hideInput": true,
+                "baseClasses": ["Start"],
+                "category": "Agent Flows",
+                "description": "Starting point of the agentflow",
+                "inputParams": [
+                    {
+                        "label": "Input Type",
+                        "name": "startInputType",
+                        "type": "options",
+                        "options": [
+                            {
+                                "label": "Chat Input",
+                                "name": "chatInput",
+                                "description": "Start the conversation with chat input"
+                            },
+                            {
+                                "label": "Form Input",
+                                "name": "formInput",
+                                "description": "Start the workflow with form inputs",
+                                "client": ["agentflowv2"]
+                            },
+                            {
+                                "label": "Webhook Trigger",
+                                "name": "webhookTrigger",
+                                "description": "Trigger the workflow via an external webhook",
+                                "client": ["agentflowv2"]
+                            },
+                            {
+                                "label": "Schedule Input",
+                                "name": "scheduleInput",
+                                "description": "Start the workflow on a recurring schedule (cron)",
+                                "client": ["agentflowv2"]
+                            }
+                        ],
+                        "default": "chatInput",
+                        "id": "startAgentflow_0-input-startInputType-options",
+                        "display": true
+                    }
+                ],
+                "inputAnchors": [],
+                "inputs": {
+                    "startInputType": "chatInput"
+                },
+                "outputAnchors": [
+                    {
+                        "id": "startAgentflow_0-output-startAgentflow",
+                        "label": "Start",
+                        "name": "startAgentflow"
+                    }
+                ],
+                "outputs": {},
+                "selected": false
+            },
+            "width": 120,
+            "height": 70,
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "llmAgentflow_0",
+            "position": {
+                "x": 360,
+                "y": 150
+            },
+            "type": "agentFlow",
+            "data": {
+                "id": "llmAgentflow_0",
+                "label": "Facebook Copywriter (LLM)",
+                "version": 1.1,
+                "name": "llmAgentflow",
+                "type": "LLM",
+                "color": "#64B5F6",
+                "baseClasses": ["LLM"],
+                "category": "Agent Flows",
+                "description": "Generates an engaging, high-converting Facebook post or passes verbatim text",
+                "credential": "5f10b331-b450-4466-80b1-531ce877e45d",
+                "inputParams": [
+                    {
+                        "label": "Connect Credential",
+                        "name": "credential",
+                        "type": "credential",
+                        "credentialNames": ["googleGenerativeAI"],
+                        "id": "llmAgentflow_0-input-credential-credential",
+                        "display": true
+                    },
+                    {
+                        "label": "Model",
+                        "name": "llmModel",
+                        "type": "asyncOptions",
+                        "loadMethod": "listModels",
+                        "id": "llmAgentflow_0-input-llmModel-asyncOptions",
+                        "display": true
+                    },
+                    {
+                        "label": "Messages",
+                        "name": "llmMessages",
+                        "type": "array",
+                        "acceptVariable": true,
+                        "id": "llmAgentflow_0-input-llmMessages-array",
+                        "display": true
+                    },
+                    {
+                        "label": "Enable Memory",
+                        "name": "llmEnableMemory",
+                        "type": "boolean",
+                        "default": false,
+                        "id": "llmAgentflow_0-input-llmEnableMemory-boolean",
+                        "display": true
+                    },
+                    {
+                        "label": "Return Response As",
+                        "name": "llmReturnResponseAs",
+                        "type": "options",
+                        "options": [
+                            {
+                                "label": "User Message",
+                                "name": "userMessage"
+                            },
+                            {
+                                "label": "Assistant Message",
+                                "name": "assistantMessage"
+                            }
+                        ],
+                        "default": "userMessage",
+                        "id": "llmAgentflow_0-input-llmReturnResponseAs-options",
+                        "display": true
+                    }
+                ],
+                "inputAnchors": [],
+                "inputs": {
+                    "llmModel": "chatGoogleGenerativeAI",
+                    "llmMessages": [
+                        {
+                            "role": "system",
+                            "content": "You are an expert Social Media Manager and Copywriter for Facebook.\n\nInstructions:\n1. If the user explicitly asks to 'Post verbatim:' or 'Post this exact text:', output ONLY that exact text without modifications.\n2. Otherwise, craft an engaging, high-converting Facebook Page post based on the user's prompt or topic:\n   - Write a catchy, scroll-stopping hook on the first line.\n   - Provide concise, structured body copy with line breaks and bullet points where helpful.\n   - Include a clear call-to-action (CTA).\n   - Include tasteful, contextually relevant emojis.\n   - Include 3 to 5 relevant hashtags at the bottom.\n\nCRITICAL: Return ONLY the final post text to be published. Do NOT include greetings, intro notes, or surrounding quotes."
+                        },
+                        {
+                            "role": "user",
+                            "content": "{{startAgentflow_0.output.question}}"
+                        }
+                    ],
+                    "llmEnableMemory": false,
+                    "llmReturnResponseAs": "userMessage"
+                },
+                "outputAnchors": [
+                    {
+                        "id": "llmAgentflow_0-output-llmAgentflow",
+                        "label": "LLM",
+                        "name": "llmAgentflow"
+                    }
+                ],
+                "outputs": {},
+                "selected": false
+            },
+            "width": 200,
+            "height": 70,
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "facebookPagePostAgentflow_0",
+            "position": {
+                "x": 680,
+                "y": 150
+            },
+            "type": "agentFlow",
+            "data": {
+                "id": "facebookPagePostAgentflow_0",
+                "label": "Facebook Page Post",
+                "version": 1.0,
+                "name": "facebookPagePostAgentflow",
+                "type": "FacebookPagePost",
+                "color": "#1877F2",
+                "hideOutput": false,
+                "baseClasses": ["FacebookPagePost"],
+                "category": "Agent Flows",
+                "description": "Publish a status update, post, or link to a Facebook Page feed via Meta Graph API",
+                "inputParams": [
+                    {
+                        "label": "Connect Credential",
+                        "name": "credential",
+                        "type": "credential",
+                        "credentialNames": ["facebookPageApi"],
+                        "optional": true,
+                        "id": "facebookPagePostAgentflow_0-input-credential-credential",
+                        "display": true
+                    },
+                    {
+                        "label": "Page ID",
+                        "name": "pageId",
+                        "type": "string",
+                        "placeholder": "e.g. 109876543210987 or leave blank to use Page ID from credential/me",
+                        "description": "Facebook Page ID. Defaults to Page ID from credential or 'me' if left blank.",
+                        "optional": true,
+                        "acceptVariable": true,
+                        "id": "facebookPagePostAgentflow_0-input-pageId-string",
+                        "display": true
+                    },
+                    {
+                        "label": "Post Content",
+                        "name": "messageText",
+                        "type": "string",
+                        "rows": 4,
+                        "placeholder": "Type post content or select dynamic output from previous agent node",
+                        "description": "Text message or update to publish on the Facebook Page feed.",
+                        "acceptVariable": true,
+                        "id": "facebookPagePostAgentflow_0-input-messageText-string",
+                        "display": true
+                    },
+                    {
+                        "label": "Link URL",
+                        "name": "linkUrl",
+                        "type": "string",
+                        "placeholder": "e.g. https://yourdomain.com/blog/article-1",
+                        "description": "Optional URL link to attach to the Facebook Page post.",
+                        "optional": true,
+                        "acceptVariable": true,
+                        "id": "facebookPagePostAgentflow_0-input-linkUrl-string",
+                        "display": true
+                    },
+                    {
+                        "label": "Continue on Fail",
+                        "name": "continueOnFail",
+                        "type": "boolean",
+                        "description": "If enabled, the flow will not terminate if Meta Graph API returns an error, but return the error in output instead.",
+                        "optional": true,
+                        "default": false,
+                        "id": "facebookPagePostAgentflow_0-input-continueOnFail-boolean",
+                        "display": true
+                    }
+                ],
+                "inputAnchors": [],
+                "inputs": {
+                    "pageId": "me",
+                    "messageText": "{{llmAgentflow_0.output.content}}",
+                    "linkUrl": "",
+                    "continueOnFail": true
+                },
+                "outputAnchors": [
+                    {
+                        "id": "facebookPagePostAgentflow_0-output-facebookPagePostAgentflow",
+                        "label": "Facebook Page Post",
+                        "name": "facebookPagePostAgentflow"
+                    }
+                ],
+                "outputs": {},
+                "selected": false
+            },
+            "width": 190,
+            "height": 70,
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "directReplyAgentflow_0",
+            "position": {
+                "x": 980,
+                "y": 150
+            },
+            "type": "agentFlow",
+            "data": {
+                "id": "directReplyAgentflow_0",
+                "label": "Direct Reply",
+                "version": 1.0,
+                "name": "directReplyAgentflow",
+                "type": "DirectReply",
+                "color": "#4DDBBB",
+                "hideOutput": true,
+                "baseClasses": ["DirectReply"],
+                "category": "Agent Flows",
+                "description": "Directly reply to the user with a message",
+                "inputParams": [
+                    {
+                        "label": "Message",
+                        "name": "directReplyMessage",
+                        "type": "string",
+                        "rows": 4,
+                        "acceptVariable": true,
+                        "id": "directReplyAgentflow_0-input-directReplyMessage-string",
+                        "display": true
+                    }
+                ],
+                "inputAnchors": [],
+                "inputs": {
+                    "directReplyMessage": "🎉 **Post published to Facebook Page successfully!**\n\n📌 **Post Content:**\n{{facebookPagePostAgentflow_0.input.payload.message}}\n\n🆔 **Facebook Post ID:** `{{facebookPagePostAgentflow_0.output.content.id}}`"
+                },
+                "outputAnchors": [],
+                "outputs": {},
+                "selected": false
+            },
+            "width": 180,
+            "height": 70,
+            "selected": false,
+            "dragging": false
+        }
+    ],
+    "edges": [
+        {
+            "id": "startAgentflow_0-startAgentflow_0-output-startAgentflow-llmAgentflow_0-llmAgentflow_0",
+            "source": "startAgentflow_0",
+            "sourceHandle": "startAgentflow_0-output-startAgentflow",
+            "target": "llmAgentflow_0",
+            "targetHandle": "llmAgentflow_0",
+            "type": "agentFlow",
+            "data": {
+                "sourceColor": "#7EE787",
+                "targetColor": "#64B5F6",
+                "isHumanInput": false
+            }
+        },
+        {
+            "id": "llmAgentflow_0-llmAgentflow_0-output-llmAgentflow-facebookPagePostAgentflow_0-facebookPagePostAgentflow_0",
+            "source": "llmAgentflow_0",
+            "sourceHandle": "llmAgentflow_0-output-llmAgentflow",
+            "target": "facebookPagePostAgentflow_0",
+            "targetHandle": "facebookPagePostAgentflow_0",
+            "type": "agentFlow",
+            "data": {
+                "sourceColor": "#64B5F6",
+                "targetColor": "#1877F2",
+                "isHumanInput": false
+            }
+        },
+        {
+            "id": "facebookPagePostAgentflow_0-facebookPagePostAgentflow_0-output-facebookPagePostAgentflow-directReplyAgentflow_0-directReplyAgentflow_0",
+            "source": "facebookPagePostAgentflow_0",
+            "sourceHandle": "facebookPagePostAgentflow_0-output-facebookPagePostAgentflow",
+            "target": "directReplyAgentflow_0",
+            "targetHandle": "directReplyAgentflow_0",
+            "type": "agentFlow",
+            "data": {
+                "sourceColor": "#1877F2",
+                "targetColor": "#4DDBBB",
+                "isHumanInput": false
+            }
+        }
+    ],
+    "type": "AGENTFLOW"
+}

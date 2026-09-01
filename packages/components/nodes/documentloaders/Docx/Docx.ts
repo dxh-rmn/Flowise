@@ -89,6 +89,10 @@ class Docx_DocumentLoaders implements INode {
         let docs: IDocument[] = []
         let files: string[] = []
 
+        if (!docxFileBase64) {
+            throw new Error('Docx file is missing. Please upload a .docx file to the Docx File node.')
+        }
+
         if (docxFileBase64.startsWith('FILE-STORAGE::')) {
             const fileName = docxFileBase64.replace('FILE-STORAGE::', '')
             if (fileName.startsWith('[') && fileName.endsWith(']')) {
