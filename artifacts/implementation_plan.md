@@ -1,90 +1,53 @@
-# Split Facebook Nodes: Messenger Send & Page Post
+# Restore Combined Facebook Send Node
 
-Separate the monolithic `FacebookSend` node into two specialized nodes in Flowise Agent Flows:
-1. **`FacebookMessengerSend`**: Dedicated to sending direct replies to Facebook Messenger users using Page-Scoped IDs (PSID).
-2. **`FacebookPagePost`**: Dedicated to publishing updates, posts, and links to the Facebook Page feed / timeline.
-
-Both nodes will share the existing [`FacebookPageApi.credential.ts`](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/credentials/FacebookPageApi.credential.ts) credential and support dynamic token resolution via `overrideConfig`.
-
----
+The user requested to bring back the combined **Facebook Send** (`facebookSendAgentflow`) node which combines **Send Messenger Message** and **Publish Page Post** in a single node via an `actionType` toggle, while keeping the dedicated nodes (`FacebookMessengerSend` and `FacebookPagePost`) available as well.
 
 ## User Review Required
 
 > [!NOTE]
-> The single `FacebookSend` node will be replaced by two distinct nodes: `Facebook Messenger Send` and `Facebook Page Post`.
-> Any existing chatflow templates using `FacebookSend` (such as [`facebook_messenger_agentflow.json`](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/chatflows/facebook_messenger_agentflow.json)) will be updated to use the new `FacebookMessengerSend` node type.
-
----
+> We will maintain backward compatibility so both options are available:
+>
+> 1. Combined node: **Facebook Send** (`FacebookSend` / `facebookSendAgentflow`) with `actionType` selection (Messenger reply or Page feed post).
+> 2. Dedicated individual nodes: **Facebook Messenger Send** and **Facebook Page Post** for cleaner single-purpose workflows.
 
 ## Proposed Changes
 
-### Packages / Components Layer (`packages/components`)
+### Components (`packages/components`)
 
-#### [NEW] [FacebookMessengerSend.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/FacebookMessengerSend/FacebookMessengerSend.ts)
-- **Node Label**: `Facebook Messenger Send`
-- **Node Name**: `facebookMessengerSendAgentflow`
-- **Type**: `FacebookMessengerSend`
-- **Category**: `Agent Flows`
-- **Color**: `#0084FF` (Messenger Blue)
-- **Icon**: `messenger.svg`
-- **Credential**: `facebookPageApi` (optional, supports dynamic tokens)
-- **Inputs**:
-  - `recipientId`: Recipient PSID (default: `{{ $webhook.body.entry[0].messaging[0].sender.id }}`)
-  - `messageText`: Message Text
-  - `continueOnFail`: Continue on API error (default: `false`)
-- **Execution (`run`)**:
-  - Dispatches POST to `https://graph.facebook.com/v20.0/me/messages`
-  - Payload: `{ recipient: { id: recipient }, messaging_type: 'RESPONSE', message: { text: messageText } }`
+#### [NEW] [`FacebookSend.ts`](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/FacebookSend/FacebookSend.ts)
 
-#### [NEW] [messenger.svg](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/FacebookMessengerSend/messenger.svg)
-- Vector icon for Facebook Messenger.
+Restore the combined node class supporting:
 
----
+-   Action Type: `Send Messenger Message` or `Publish Page Post`
+-   Credential: `facebookPageApi`
+-   Inputs dynamically shown based on action type (`recipientId`, `pageId`, `messageText`, `linkUrl`, `continueOnFail`)
+-   Dynamic OAuth token resolution (`overrideConfig.vars.userFacebookToken`, etc.)
 
-#### [NEW] [FacebookPagePost.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/FacebookPagePost/FacebookPagePost.ts)
-- **Node Label**: `Facebook Page Post`
-- **Node Name**: `facebookPagePostAgentflow`
-- **Type**: `FacebookPagePost`
-- **Category**: `Agent Flows`
-- **Color**: `#1877F2` (Facebook Blue)
-- **Icon**: `facebook.svg`
-- **Credential**: `facebookPageApi`
-- **Inputs**:
-  - `pageId`: Facebook Page ID (optional, defaults to Page ID from credential or `me`)
-  - `messageText`: Post Content
-  - `linkUrl`: Optional link URL attached to the post
-  - `continueOnFail`: Continue on API error (default: `false`)
-- **Execution (`run`)**:
-  - Dispatches POST to `https://graph.facebook.com/v20.0/${pageId}/feed`
-  - Payload: `{ message: messageText, ...(linkUrl ? { link: linkUrl } : {}) }`
+#### [NEW] [`FacebookSend.test.ts`](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/FacebookSend/FacebookSend.test.ts)
 
-#### [NEW] [facebook.svg](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/FacebookPagePost/facebook.svg)
-- Vector icon for Facebook Page.
+Add comprehensive unit tests covering:
 
----
+-   Node metadata verification
+-   Messenger send execution
+-   Page feed post execution
+-   Validation errors (missing recipient, missing message)
+-   `continueOnFail` error handling
 
-#### [DELETE] [FacebookSend/](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/FacebookSend/)
-- Remove the deprecated unified node directory.
+#### [NEW] [`facebook.svg`](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/FacebookSend/facebook.svg)
 
----
-
-### Templates & Documentation
-
-#### [MODIFY] [facebook_messenger_agentflow.json](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/chatflows/facebook_messenger_agentflow.json)
-- Update the sample flow to reference `FacebookMessengerSend` node type, anchors, and inputs.
+Add the Facebook icon for the node.
 
 ---
 
 ## Verification Plan
 
-### Automated Verification
-1. **TypeScript Compilation**:
-   ```bash
-   pnpm --filter @flowiseai/components build
-   ```
-2. **Unit Test / Execution Verification**:
-   - Run tests to ensure node definitions load and execute properly.
+### Automated Tests
+
+-   Run `pnpm test` on `packages/components/nodes/agentflow/FacebookSend/FacebookSend.test.ts`
+-   Run `pnpm test` on `packages/components/nodes/agentflow/FacebookMessengerSend/FacebookMessengerSend.test.ts`
+-   Run `pnpm test` on `packages/components/nodes/agentflow/FacebookPagePost/FacebookPagePost.test.ts`
+-   Run `pnpm build` in `packages/components` to ensure TypeScript compilation passes.
 
 ### Manual Verification
-- Verify both `Facebook Messenger Send` and `Facebook Page Post` appear under **Agent Flows** in Flowise visual palette.
-- Verify clean, focused parameter inputs on each node.
+
+-   Verify that Flowise recognizes `facebookSendAgentflow` as an available node under `Agent Flows`.
