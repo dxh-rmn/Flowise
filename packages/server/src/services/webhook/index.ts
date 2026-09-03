@@ -68,6 +68,16 @@ const validateWebhookChatflow = async (
             }
         }
 
+        // LinkedIn Webhook GET Verification Handshake (challenge echo)
+        if (method?.toUpperCase() === 'GET' && (query?.['challenge'] || query?.['challengeCode'])) {
+            const challengeVal = query['challenge'] || query['challengeCode']
+            return {
+                responseMode,
+                isHandshake: true,
+                challenge: String(challengeVal)
+            }
+        }
+
         // callbackUrl is only meaningful in async mode — when omitted there, the flow runs
         // fire-and-forget (200 returned, no callback delivered).
         const callbackUrl = responseMode === 'async' ? (startNode?.data?.inputs?.callbackUrl as string | undefined) || undefined : undefined

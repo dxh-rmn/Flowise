@@ -1,102 +1,88 @@
-# Walkthrough: Dedicated Telegram Bot Integration
+# Walkthrough: LinkedIn Post & Organization Comment Integration in Flowise Agentflow
 
-Added a dedicated **Telegram Send** (`TelegramSend` / `telegramSendAgentflow`) node and a **Telegram Bot API** credential (`TelegramApi` / `telegramApi`) into Flowise, allowing Agentflows to receive messages via Telegram webhooks and send replies directly to Telegram chats, groups, and channels.
+We expanded the **LinkedIn integration** on the `linkedin-integration` branch with both post publishing and organization comment automation capabilities:
+
+1. **`LinkedInPost`**: Publish updates, articles, and thought leadership to Company Pages and Personal Profiles.
+2. **`LinkedInComment`**: Post top-level comments or reply to threaded comments on posts as a LinkedIn Company / Organization Page.
 
 ---
 
-## What Was Added
+## What Was Implemented
 
-### 1. Telegram Bot API Credential
+### 1. `LinkedInApi` Credential
 
--   **File**: [TelegramApi.credential.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/credentials/TelegramApi.credential.ts)
--   **Credential Name**: `telegramApi`
+-   **File**: [`LinkedInApi.credential.ts`](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/credentials/LinkedInApi.credential.ts)
+-   **Credential Name**: `linkedInApi`
 -   **Fields**:
-    -   `botToken` (password, required): Bot Token from `@BotFather`.
-    -   `baseUrl` (string, optional, default: `https://api.telegram.org`): Base URL for standard or self-hosted Bot API servers.
+    -   `accessToken`: LinkedIn OAuth 2.0 Bearer access token (`w_organization_social`, `w_member_social`).
+    -   `authorType`: Defaults to `Company / Organization Page` or `Personal Profile`.
+    -   `organizationId`: Numeric Organization ID (e.g. `12345678`).
+    -   `personUrn`: Optional personal Member URN.
 
-### 2. Dedicated Telegram Send Node
+### 2. `LinkedInPost` Agentflow Node
 
--   **File**: [TelegramSend.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/TelegramSend/TelegramSend.ts)
--   **Node Type**: `TelegramSend` (`telegramSendAgentflow`)
+-   **File**: [`LinkedInPost.ts`](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/LinkedInPost/LinkedInPost.ts)
+-   **Node Identifier**: `linkedInPostAgentflow`
 -   **Category**: `Agent Flows`
--   **Color**: `#229ED9` (Telegram Blue)
--   **Icon**: [telegram.svg](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/TelegramSend/telegram.svg)
--   **Inputs**:
-    -   `chatId`: Unique identifier for the target chat or username (`acceptVariable: true`, default `{{ $webhook.body.message.chat.id }}`).
-    -   `messageText`: Text content to send (`acceptVariable: true`).
-    -   `parseMode`: Formatting mode (`none`, `Markdown`, `MarkdownV2`, `HTML`).
-    -   `replyToMessageId`: Optional message ID to reply directly to (`acceptVariable: true`).
-    -   `disableWebPagePreview`: Toggle link previews.
-    -   `continueOnFail`: Prevents flow termination if Telegram API encounters an error.
--   **Dynamic Token Resolution**: Supports tenant-specific override tokens via `overrideConfig.vars.userTelegramToken` or `overrideConfig.vars.telegramBotToken`.
+-   **Color**: `#0A66C2`
+-   **Icon**: [`linkedin.svg`](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/LinkedInPost/linkedin.svg)
+-   **Capabilities**:
+    -   Publish to Company Pages (`urn:li:organization:...`) or Personal Profiles (`urn:li:person:...`).
+    -   Article / link card previews with optional custom title and description.
+    -   Auto-resolves personal Member URN via `/v2/userinfo`.
+    -   Visibility control (`PUBLIC` vs `CONNECTIONS`).
 
-### 3. Comprehensive Unit Tests
+### 3. `LinkedInComment` Agentflow Node (NEW)
 
--   **File**: [TelegramSend.test.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/TelegramSend/TelegramSend.test.ts)
--   Verified 8 test cases:
-    1. Node metadata (label, name, category, icon, color).
-    2. Message dispatch with minimal inputs (`chatId`, `messageText`).
-    3. Message dispatch with optional parameters (`parseMode`, `replyToMessageId`, `disableWebPagePreview`).
-    4. Dynamic token override from `overrideConfig.vars`.
-    5. Validation when `chatId` is missing.
-    6. Validation when `messageText` is missing.
-    7. API failure handling when `continueOnFail` is false (throws formatted error).
-    8. API failure handling when `continueOnFail` is true (returns failure in output without crashing flow).
+-   **File**: [`LinkedInComment.ts`](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/LinkedInComment/LinkedInComment.ts)
+-   **Node Identifier**: `linkedInCommentAgentflow`
+-   **Category**: `Agent Flows`
+-   **Color**: `#0A66C2`
+-   **Icon**: [`linkedin.svg`](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/LinkedInComment/linkedin.svg)
+-   **Capabilities**:
+    -   **Organization Commenting**: Post comments representing your Company / Organization Page (`actor: urn:li:organization:{id}`).
+    -   **Top-Level Post Comments**: Comment directly on any LinkedIn post URN or post URL (`POST /rest/socialActions/{targetUrn}/comments`).
+    -   **Threaded Comment Replies**: Reply directly to specific user comments via `parentCommentUrn`.
+    -   **Smart Target Parsing**: Automatically converts post URLs (e.g. `https://www.linkedin.com/feed/update/urn:li:activity:1234...`) or raw IDs into valid, encoded target URNs.
+    -   **Resilient Execution**: `continueOnFail` flag to handle permission or API errors without crashing workflows.
 
-### 4. Agentflow Templates
+### 4. Automated Unit Test Suites
 
--   **File**: [telegram_chatflow_agentflow.json](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/chatflows/telegram_chatflow_agentflow.json)
-    -   Connects your existing Chatflow brain (`DevXHub Chatflow Brain` via `ExecuteFlow`) to Telegram:
-        1. **Start Node**: Receives Telegram webhook, extracts `{{ $webhook.body.message.text }}`, maintains session memory via `{{ $webhook.body.message.chat.id }}`.
-        2. **ExecuteFlow Node**: Executes your existing Chatflow (`7c10083e-62ca-4632-badc-5760aeaaddde`) with the user's message.
-        3. **Telegram Send Node**: Dispatches the answer directly back to the user's Telegram chat.
-        4. **Direct Reply Node**: Echoes execution confirmation and JSON response.
--   **File**: [telegram_bot_agentflow.json](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/chatflows/telegram_bot_agentflow.json)
-    -   Minimal general template connecting a Webhook Start node, an AI node, and Telegram Send.
+-   **LinkedInPost Tests**: [`LinkedInPost.test.ts`](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/LinkedInPost/LinkedInPost.test.ts) (7 / 7 tests passed)
+-   **LinkedInComment Tests**: [`LinkedInComment.test.ts`](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/LinkedInComment/LinkedInComment.test.ts) (8 / 8 tests passed)
+
+### 5. Chatflow Templates & Guides
+
+-   **Post Template**: [`chatflows/linkedin_post_agentflow.json`](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/chatflows/linkedin_post_agentflow.json)
+-   **Org Comment Template**: [`chatflows/linkedin_org_comment_agentflow.json`](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/chatflows/linkedin_org_comment_agentflow.json)
+-   **Setup Guide**: [`artifacts/linkedin_integration_guide.md`](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/artifacts/linkedin_integration_guide.md)
 
 ---
 
 ## Verification Results
 
-### Automated Unit Tests
+### 1. Automated Jest Unit Tests
 
 ```bash
-PASS nodes/agentflow/TelegramSend/TelegramSend.test.ts
-  TelegramSend Node
-    ✓ should have correct node metadata
-    ✓ should dispatch Telegram message using chat ID and text
-    ✓ should include parseMode, replyToMessageId, and disableWebPagePreview when provided
-    ✓ should support dynamic bot token resolution from overrideConfig.vars
-    ✓ should throw error when chat ID is missing
-    ✓ should throw error when message text is missing
-    ✓ should throw error when Telegram API fails and continueOnFail is false
-    ✓ should return error in output without throwing when continueOnFail is true
-
-Test Suites: 1 passed, 1 total
-Tests:       8 passed, 8 total
-Snapshots:   0 total
+NODE_OPTIONS="--max-old-space-size=4096" pnpm --filter flowise-components exec jest \
+  nodes/agentflow/LinkedInPost \
+  nodes/agentflow/LinkedInComment
 ```
 
-### Build & Compilation
+**Result**:
 
--   `pnpm build` completed with zero errors for Telegram components.
--   Output compiled into:
-    -   `dist/nodes/agentflow/TelegramSend/TelegramSend.js`
-    -   `dist/nodes/agentflow/TelegramSend/telegram.svg`
-    -   `dist/credentials/TelegramApi.credential.js`
+-   `PASS nodes/agentflow/LinkedInPost/LinkedInPost.test.ts` (7 / 7 passed)
+-   `PASS nodes/agentflow/LinkedInComment/LinkedInComment.test.ts` (8 / 8 passed)
+-   **15 / 15 tests passed (100% pass rate)**.
 
----
+### 2. Build Compilation
 
-## How to Import & Use
+```bash
+pnpm --filter flowise-components build
+```
 
-1. **Import the Flow**:
-    - In Flowise UI, go to **Agentflows** -> Click **Load / Import** -> Select [telegram_chatflow_agentflow.json](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/chatflows/telegram_chatflow_agentflow.json).
-2. **Configure Credential & Webhook**:
-    - Add your **Telegram Bot API** credential with your bot token from `@BotFather`.
-    - On the `Telegram Send` node, select your credential.
-    - Point Telegram's webhook to your Flowise Webhook URL:
-        ```bash
-        curl -F "url=https://<your-flowise-domain>/api/v1/webhook/<NEW_AGENTFLOW_ID>" \
-          https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook
-        ```
-3. Test by sending a message to your bot in Telegram!
+**Result**:
+
+-   Compiled `packages/components/dist/nodes/agentflow/LinkedInPost/`
+-   Compiled `packages/components/dist/nodes/agentflow/LinkedInComment/`
+-   Compiled `packages/components/dist/credentials/LinkedInApi.credential.js`
