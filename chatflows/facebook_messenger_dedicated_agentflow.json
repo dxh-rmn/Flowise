@@ -1,0 +1,385 @@
+{
+    "name": "Facebook Messenger Agentflow (Dedicated Messenger Node + Chatflow)",
+    "nodes": [
+        {
+            "id": "startAgentflow_0",
+            "position": {
+                "x": 100,
+                "y": 150
+            },
+            "type": "agentFlow",
+            "data": {
+                "id": "startAgentflow_0",
+                "label": "Start",
+                "version": 1.4,
+                "name": "startAgentflow",
+                "type": "Start",
+                "color": "#7EE787",
+                "hideInput": true,
+                "baseClasses": ["Start"],
+                "category": "Agent Flows",
+                "description": "Starting point of the agentflow",
+                "inputParams": [
+                    {
+                        "label": "Input Type",
+                        "name": "startInputType",
+                        "type": "options",
+                        "options": [
+                            {
+                                "label": "Chat Input",
+                                "name": "chatInput",
+                                "description": "Start the conversation with chat input"
+                            },
+                            {
+                                "label": "Webhook Trigger",
+                                "name": "webhookTrigger",
+                                "description": "Trigger the workflow via an external webhook",
+                                "client": ["agentflowv2"]
+                            }
+                        ],
+                        "default": "webhookTrigger",
+                        "id": "startAgentflow_0-input-startInputType-options",
+                        "display": true
+                    },
+                    {
+                        "label": "Input Mode",
+                        "name": "webhookInputMode",
+                        "type": "options",
+                        "options": [
+                            {
+                                "label": "Custom Text",
+                                "name": "text"
+                            }
+                        ],
+                        "default": "text",
+                        "show": {
+                            "startInputType": "webhookTrigger"
+                        },
+                        "id": "startAgentflow_0-input-webhookInputMode-options",
+                        "display": true
+                    },
+                    {
+                        "label": "Custom Text",
+                        "name": "webhookDefaultInput",
+                        "type": "string",
+                        "default": "{{ $webhook.body.entry[0].messaging[0].message.text }}",
+                        "show": {
+                            "startInputType": "webhookTrigger"
+                        },
+                        "id": "startAgentflow_0-input-webhookDefaultInput-string",
+                        "display": true
+                    },
+                    {
+                        "label": "Session ID Expression",
+                        "name": "webhooksSessionId",
+                        "type": "string",
+                        "default": "{{ $webhook.body.entry[0].messaging[0].sender.id }}",
+                        "show": {
+                            "startInputType": "webhookTrigger"
+                        },
+                        "id": "startAgentflow_0-input-webhooksSessionId-string",
+                        "display": true
+                    }
+                ],
+                "inputAnchors": [],
+                "inputs": {
+                    "startInputType": "webhookTrigger",
+                    "webhookMethod": "POST",
+                    "webhookContentType": "application/json",
+                    "webhookInputMode": "text",
+                    "webhookDefaultInput": "{{ $webhook.body.entry[0].messaging[0].message.text }}",
+                    "webhooksSessionId": "{{ $webhook.body.entry[0].messaging[0].sender.id }}",
+                    "webhookResponseMode": "sync"
+                },
+                "outputAnchors": [
+                    {
+                        "id": "startAgentflow_0-output-startAgentflow",
+                        "label": "Start",
+                        "name": "startAgentflow"
+                    }
+                ],
+                "outputs": {},
+                "selected": false
+            },
+            "width": 110,
+            "height": 66,
+            "selected": false,
+            "dragging": false,
+            "positionAbsolute": {
+                "x": 100,
+                "y": 150
+            }
+        },
+        {
+            "id": "executeFlowAgentflow_0",
+            "position": {
+                "x": 350,
+                "y": 150
+            },
+            "type": "agentFlow",
+            "data": {
+                "id": "executeFlowAgentflow_0",
+                "label": "DevXHub Chatflow Brain",
+                "version": 1.2,
+                "name": "executeFlowAgentflow",
+                "type": "ExecuteFlow",
+                "color": "#a3b18a",
+                "baseClasses": ["ExecuteFlow"],
+                "category": "Agent Flows",
+                "description": "Execute your existing Chatflow",
+                "inputParams": [
+                    {
+                        "label": "Connect Credential",
+                        "name": "credential",
+                        "type": "credential",
+                        "credentialNames": ["chatflowApi"],
+                        "optional": true,
+                        "id": "executeFlowAgentflow_0-input-credential-credential",
+                        "display": true
+                    },
+                    {
+                        "label": "Select Flow",
+                        "name": "executeFlowSelectedFlow",
+                        "type": "asyncOptions",
+                        "loadMethod": "listFlows",
+                        "id": "executeFlowAgentflow_0-input-executeFlowSelectedFlow-asyncOptions",
+                        "display": true
+                    },
+                    {
+                        "label": "Input",
+                        "name": "executeFlowInput",
+                        "type": "string",
+                        "rows": 4,
+                        "acceptVariable": true,
+                        "id": "executeFlowAgentflow_0-input-executeFlowInput-string",
+                        "display": true
+                    },
+                    {
+                        "label": "Base URL",
+                        "name": "executeFlowBaseURL",
+                        "type": "string",
+                        "placeholder": "http://localhost:3001",
+                        "optional": true,
+                        "id": "executeFlowAgentflow_0-input-executeFlowBaseURL-string",
+                        "display": true
+                    },
+                    {
+                        "label": "Return Response As",
+                        "name": "executeFlowReturnResponseAs",
+                        "type": "options",
+                        "options": [
+                            {
+                                "label": "User Message",
+                                "name": "userMessage"
+                            },
+                            {
+                                "label": "Assistant Message",
+                                "name": "assistantMessage"
+                            }
+                        ],
+                        "default": "userMessage",
+                        "id": "executeFlowAgentflow_0-input-executeFlowReturnResponseAs-options",
+                        "display": true
+                    }
+                ],
+                "inputAnchors": [],
+                "inputs": {
+                    "executeFlowSelectedFlow": "7c10083e-62ca-4632-badc-5760aeaaddde",
+                    "executeFlowInput": "{{startAgentflow_0.output.question}}",
+                    "executeFlowBaseURL": "",
+                    "executeFlowReturnResponseAs": "userMessage"
+                },
+                "outputAnchors": [
+                    {
+                        "id": "executeFlowAgentflow_0-output-executeFlowAgentflow",
+                        "label": "Execute Flow",
+                        "name": "executeFlowAgentflow"
+                    }
+                ],
+                "outputs": {},
+                "selected": false
+            },
+            "width": 232,
+            "height": 66,
+            "selected": false,
+            "dragging": false,
+            "positionAbsolute": {
+                "x": 350,
+                "y": 150
+            }
+        },
+        {
+            "id": "facebookMessengerSendAgentflow_0",
+            "position": {
+                "x": 680,
+                "y": 150
+            },
+            "type": "agentFlow",
+            "data": {
+                "id": "facebookMessengerSendAgentflow_0",
+                "label": "Facebook Messenger Send",
+                "version": 1,
+                "name": "facebookMessengerSendAgentflow",
+                "type": "FacebookMessengerSend",
+                "color": "#0084FF",
+                "hideOutput": false,
+                "baseClasses": ["FacebookMessengerSend"],
+                "category": "Agent Flows",
+                "description": "Send a direct message reply to a Facebook Messenger recipient via Meta Graph API",
+                "inputParams": [
+                    {
+                        "label": "Connect Credential",
+                        "name": "credential",
+                        "type": "credential",
+                        "credentialNames": ["facebookPageApi"],
+                        "optional": true,
+                        "id": "facebookMessengerSendAgentflow_0-input-credential-credential",
+                        "display": true
+                    },
+                    {
+                        "label": "Recipient PSID",
+                        "name": "recipientId",
+                        "type": "string",
+                        "placeholder": "e.g. {{ $webhook.body.entry[0].messaging[0].sender.id }}",
+                        "description": "The recipient Page-Scoped ID (PSID) from the inbound Messenger webhook.",
+                        "default": "{{ $webhook.body.entry[0].messaging[0].sender.id }}",
+                        "acceptVariable": true,
+                        "id": "facebookMessengerSendAgentflow_0-input-recipientId-string",
+                        "display": true
+                    },
+                    {
+                        "label": "Message Text",
+                        "name": "messageText",
+                        "type": "string",
+                        "rows": 4,
+                        "placeholder": "Type message or select dynamic output from previous agent node",
+                        "description": "Text message content to send in Messenger.",
+                        "acceptVariable": true,
+                        "id": "facebookMessengerSendAgentflow_0-input-messageText-string",
+                        "display": true
+                    },
+                    {
+                        "label": "Continue on Fail",
+                        "name": "continueOnFail",
+                        "type": "boolean",
+                        "description": "If enabled, the flow will not terminate if Meta Graph API returns an error, but return the error in output instead.",
+                        "optional": true,
+                        "default": true,
+                        "id": "facebookMessengerSendAgentflow_0-input-continueOnFail-boolean",
+                        "display": true
+                    }
+                ],
+                "inputAnchors": [],
+                "inputs": {
+                    "recipientId": "{{ $webhook.body.entry[0].messaging[0].sender.id }}",
+                    "messageText": "{{executeFlowAgentflow_0.output.content}}",
+                    "continueOnFail": true
+                },
+                "outputAnchors": [
+                    {
+                        "id": "facebookMessengerSendAgentflow_0-output-facebookMessengerSendAgentflow",
+                        "label": "Facebook Messenger Send",
+                        "name": "facebookMessengerSendAgentflow"
+                    }
+                ],
+                "outputs": {},
+                "selected": false
+            },
+            "width": 240,
+            "height": 66,
+            "selected": false,
+            "dragging": false,
+            "positionAbsolute": {
+                "x": 680,
+                "y": 150
+            }
+        },
+        {
+            "id": "directReplyAgentflow_0",
+            "position": {
+                "x": 980,
+                "y": 150
+            },
+            "type": "agentFlow",
+            "data": {
+                "id": "directReplyAgentflow_0",
+                "label": "Direct Reply",
+                "version": 1,
+                "name": "directReplyAgentflow",
+                "type": "DirectReply",
+                "color": "#4DDBBB",
+                "hideOutput": true,
+                "baseClasses": ["DirectReply"],
+                "category": "Agent Flows",
+                "description": "Directly reply to the user with a message",
+                "inputParams": [
+                    {
+                        "label": "Message",
+                        "name": "directReplyMessage",
+                        "type": "string",
+                        "rows": 4,
+                        "acceptVariable": true,
+                        "id": "directReplyAgentflow_0-input-directReplyMessage-string",
+                        "display": true
+                    }
+                ],
+                "inputAnchors": [],
+                "inputs": {
+                    "directReplyMessage": "🎉 **Messenger Reply Sent!**\n\n📌 **Reply Content:**\n{{executeFlowAgentflow_0.output.content}}\n\n🆔 **Facebook Result:**\n```json\n{{facebookMessengerSendAgentflow_0.output.content}}\n```"
+                },
+                "outputAnchors": [],
+                "outputs": {},
+                "selected": false
+            },
+            "width": 151,
+            "height": 66,
+            "selected": false,
+            "dragging": false,
+            "positionAbsolute": {
+                "x": 980,
+                "y": 150
+            }
+        }
+    ],
+    "edges": [
+        {
+            "id": "startAgentflow_0-startAgentflow_0-output-startAgentflow-executeFlowAgentflow_0-executeFlowAgentflow_0",
+            "source": "startAgentflow_0",
+            "sourceHandle": "startAgentflow_0-output-startAgentflow",
+            "target": "executeFlowAgentflow_0",
+            "targetHandle": "executeFlowAgentflow_0",
+            "type": "agentFlow",
+            "data": {
+                "sourceColor": "#7EE787",
+                "targetColor": "#a3b18a",
+                "isHumanInput": false
+            }
+        },
+        {
+            "id": "executeFlowAgentflow_0-executeFlowAgentflow_0-output-executeFlowAgentflow-facebookMessengerSendAgentflow_0-facebookMessengerSendAgentflow_0",
+            "source": "executeFlowAgentflow_0",
+            "sourceHandle": "executeFlowAgentflow_0-output-executeFlowAgentflow",
+            "target": "facebookMessengerSendAgentflow_0",
+            "targetHandle": "facebookMessengerSendAgentflow_0",
+            "type": "agentFlow",
+            "data": {
+                "sourceColor": "#a3b18a",
+                "targetColor": "#0084FF",
+                "isHumanInput": false
+            }
+        },
+        {
+            "id": "facebookMessengerSendAgentflow_0-facebookMessengerSendAgentflow_0-output-facebookMessengerSendAgentflow-directReplyAgentflow_0-directReplyAgentflow_0",
+            "source": "facebookMessengerSendAgentflow_0",
+            "sourceHandle": "facebookMessengerSendAgentflow_0-output-facebookMessengerSendAgentflow",
+            "target": "directReplyAgentflow_0",
+            "targetHandle": "directReplyAgentflow_0",
+            "type": "agentFlow",
+            "data": {
+                "sourceColor": "#0084FF",
+                "targetColor": "#4DDBBB",
+                "isHumanInput": false
+            }
+        }
+    ]
+}

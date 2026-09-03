@@ -1,0 +1,312 @@
+{
+    "name": "Telegram Bot Agentflow (Webhook + Telegram Send)",
+    "nodes": [
+        {
+            "id": "startAgentflow_0",
+            "position": {
+                "x": 100,
+                "y": 150
+            },
+            "type": "agentFlow",
+            "data": {
+                "id": "startAgentflow_0",
+                "label": "Start",
+                "version": 1.4,
+                "name": "startAgentflow",
+                "type": "Start",
+                "color": "#7EE787",
+                "hideInput": true,
+                "baseClasses": ["Start"],
+                "category": "Agent Flows",
+                "description": "Starting point of the agentflow",
+                "inputParams": [
+                    {
+                        "label": "Input Type",
+                        "name": "startInputType",
+                        "type": "options",
+                        "options": [
+                            {
+                                "label": "Chat Input",
+                                "name": "chatInput",
+                                "description": "Start the conversation with chat input"
+                            },
+                            {
+                                "label": "Webhook Trigger",
+                                "name": "webhookTrigger",
+                                "description": "Trigger the workflow via an external webhook",
+                                "client": ["agentflowv2"]
+                            }
+                        ],
+                        "default": "webhookTrigger",
+                        "id": "startAgentflow_0-input-startInputType-options",
+                        "display": true
+                    },
+                    {
+                        "label": "Input Mode",
+                        "name": "webhookInputMode",
+                        "type": "options",
+                        "options": [
+                            {
+                                "label": "Custom Text",
+                                "name": "text"
+                            }
+                        ],
+                        "default": "text",
+                        "show": {
+                            "startInputType": "webhookTrigger"
+                        },
+                        "id": "startAgentflow_0-input-webhookInputMode-options",
+                        "display": true
+                    },
+                    {
+                        "label": "Custom Text",
+                        "name": "webhookDefaultInput",
+                        "type": "string",
+                        "default": "{{ $webhook.body.message.text }}",
+                        "show": {
+                            "startInputType": "webhookTrigger"
+                        },
+                        "id": "startAgentflow_0-input-webhookDefaultInput-string",
+                        "display": true
+                    },
+                    {
+                        "label": "Session ID Expression",
+                        "name": "webhooksSessionId",
+                        "type": "string",
+                        "default": "{{ $webhook.body.message.chat.id }}",
+                        "show": {
+                            "startInputType": "webhookTrigger"
+                        },
+                        "id": "startAgentflow_0-input-webhooksSessionId-string",
+                        "display": true
+                    }
+                ],
+                "inputAnchors": [],
+                "inputs": {
+                    "startInputType": "webhookTrigger",
+                    "webhookMethod": "POST",
+                    "webhookContentType": "application/json",
+                    "webhookInputMode": "text",
+                    "webhookDefaultInput": "{{ $webhook.body.message.text }}",
+                    "webhooksSessionId": "{{ $webhook.body.message.chat.id }}",
+                    "webhookResponseMode": "sync"
+                },
+                "outputAnchors": [
+                    {
+                        "id": "startAgentflow_0-output-startAgentflow",
+                        "label": "Start",
+                        "name": "startAgentflow"
+                    }
+                ],
+                "outputs": {},
+                "selected": false
+            },
+            "width": 110,
+            "height": 66,
+            "selected": false,
+            "dragging": false,
+            "positionAbsolute": {
+                "x": 100,
+                "y": 150
+            }
+        },
+        {
+            "id": "executeFlowAgentflow_0",
+            "position": {
+                "x": 380,
+                "y": 150
+            },
+            "type": "agentFlow",
+            "data": {
+                "id": "executeFlowAgentflow_0",
+                "label": "AI Brain",
+                "version": 1.2,
+                "name": "executeFlowAgentflow",
+                "type": "ExecuteFlow",
+                "color": "#a3b18a",
+                "baseClasses": ["ExecuteFlow"],
+                "category": "Agent Flows",
+                "description": "Execute your existing Chatflow or AI agent",
+                "inputParams": [
+                    {
+                        "label": "Connect Credential",
+                        "name": "credential",
+                        "type": "credential",
+                        "credentialNames": ["chatflowApi"],
+                        "optional": true,
+                        "id": "executeFlowAgentflow_0-input-credential-credential",
+                        "display": true
+                    },
+                    {
+                        "label": "Input",
+                        "name": "executeFlowInput",
+                        "type": "string",
+                        "rows": 4,
+                        "acceptVariable": true,
+                        "id": "executeFlowAgentflow_0-input-executeFlowInput-string",
+                        "display": true
+                    }
+                ],
+                "inputAnchors": [],
+                "inputs": {
+                    "executeFlowInput": "{{startAgentflow_0.output.question}}",
+                    "executeFlowReturnResponseAs": "userMessage"
+                },
+                "outputAnchors": [
+                    {
+                        "id": "executeFlowAgentflow_0-output-executeFlowAgentflow",
+                        "label": "Execute Flow",
+                        "name": "executeFlowAgentflow"
+                    }
+                ],
+                "outputs": {},
+                "selected": false
+            },
+            "width": 232,
+            "height": 66,
+            "selected": false,
+            "dragging": false,
+            "positionAbsolute": {
+                "x": 380,
+                "y": 150
+            }
+        },
+        {
+            "id": "telegramSendAgentflow_0",
+            "position": {
+                "x": 720,
+                "y": 150
+            },
+            "type": "agentFlow",
+            "data": {
+                "id": "telegramSendAgentflow_0",
+                "label": "Telegram Send",
+                "version": 1,
+                "name": "telegramSendAgentflow",
+                "type": "TelegramSend",
+                "color": "#229ED9",
+                "hideOutput": false,
+                "baseClasses": ["TelegramSend"],
+                "category": "Agent Flows",
+                "description": "Send a message or reply to a Telegram chat, group, or channel via Telegram Bot API",
+                "inputParams": [
+                    {
+                        "label": "Connect Credential",
+                        "name": "credential",
+                        "type": "credential",
+                        "credentialNames": ["telegramApi"],
+                        "optional": true,
+                        "id": "telegramSendAgentflow_0-input-credential-credential",
+                        "display": true
+                    },
+                    {
+                        "label": "Chat ID",
+                        "name": "chatId",
+                        "type": "string",
+                        "placeholder": "e.g. {{ $webhook.body.message.chat.id }}",
+                        "description": "Target chat ID or channel username from Telegram webhook.",
+                        "default": "{{ $webhook.body.message.chat.id }}",
+                        "acceptVariable": true,
+                        "id": "telegramSendAgentflow_0-input-chatId-string",
+                        "display": true
+                    },
+                    {
+                        "label": "Message Text",
+                        "name": "messageText",
+                        "type": "string",
+                        "rows": 4,
+                        "placeholder": "Type message or select dynamic output from previous agent node",
+                        "description": "Text message content to send.",
+                        "acceptVariable": true,
+                        "id": "telegramSendAgentflow_0-input-messageText-string",
+                        "display": true
+                    },
+                    {
+                        "label": "Parse Mode",
+                        "name": "parseMode",
+                        "type": "options",
+                        "options": [
+                            {
+                                "label": "None (Plain Text)",
+                                "name": "none"
+                            },
+                            {
+                                "label": "Markdown",
+                                "name": "Markdown"
+                            },
+                            {
+                                "label": "MarkdownV2",
+                                "name": "MarkdownV2"
+                            },
+                            {
+                                "label": "HTML",
+                                "name": "HTML"
+                            }
+                        ],
+                        "default": "none",
+                        "id": "telegramSendAgentflow_0-input-parseMode-options",
+                        "display": true
+                    },
+                    {
+                        "label": "Continue on Fail",
+                        "name": "continueOnFail",
+                        "type": "boolean",
+                        "description": "If enabled, the flow will not terminate if Telegram Bot API returns an error, but return the error in output instead.",
+                        "optional": true,
+                        "default": true,
+                        "id": "telegramSendAgentflow_0-input-continueOnFail-boolean",
+                        "display": true
+                    }
+                ],
+                "inputAnchors": [],
+                "inputs": {
+                    "chatId": "{{ $webhook.body.message.chat.id }}",
+                    "messageText": "{{executeFlowAgentflow_0.output.content}}",
+                    "parseMode": "none",
+                    "continueOnFail": true
+                },
+                "outputAnchors": [
+                    {
+                        "id": "telegramSendAgentflow_0-output-telegramSendAgentflow",
+                        "label": "Telegram Send",
+                        "name": "telegramSendAgentflow"
+                    }
+                ],
+                "outputs": {},
+                "selected": false
+            },
+            "width": 240,
+            "height": 66,
+            "selected": false,
+            "dragging": false,
+            "positionAbsolute": {
+                "x": 720,
+                "y": 150
+            }
+        }
+    ],
+    "edges": [
+        {
+            "source": "startAgentflow_0",
+            "sourceHandle": "startAgentflow_0-output-startAgentflow",
+            "target": "executeFlowAgentflow_0",
+            "targetHandle": "executeFlowAgentflow_0-input-startAgentflow",
+            "type": "buttonEdge",
+            "id": "startAgentflow_0-startAgentflow_0-output-startAgentflow-executeFlowAgentflow_0-executeFlowAgentflow_0-input-startAgentflow",
+            "data": {
+                "label": ""
+            }
+        },
+        {
+            "source": "executeFlowAgentflow_0",
+            "sourceHandle": "executeFlowAgentflow_0-output-executeFlowAgentflow",
+            "target": "telegramSendAgentflow_0",
+            "targetHandle": "telegramSendAgentflow_0-input-executeFlowAgentflow",
+            "type": "buttonEdge",
+            "id": "executeFlowAgentflow_0-executeFlowAgentflow_0-output-executeFlowAgentflow-telegramSendAgentflow_0-telegramSendAgentflow_0-input-executeFlowAgentflow",
+            "data": {
+                "label": ""
+            }
+        }
+    ]
+}
