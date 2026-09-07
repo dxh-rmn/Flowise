@@ -58,10 +58,29 @@ const createWebhook = async (req: Request, res: Response, next: NextFunction) =>
         if (req.method?.toUpperCase() === 'POST' && !isResume && body?.object === 'page') {
             const messagingList = body?.entry?.[0]?.messaging
             const hasFacebookMessage =
-                Array.isArray(messagingList) &&
-                messagingList.some((item: any) => item?.message != null && !item?.message?.is_echo)
+                Array.isArray(messagingList) && messagingList.some((item: any) => item?.message != null && !item?.message?.is_echo)
             if (!hasFacebookMessage) {
                 return res.status(200).json({ received: true })
+            }
+        }
+
+        // LinkedIn Comment Webhook: ignore self-authored comments / echoes where the organization
+        // itself was the commenter, preventing infinite AI auto-reply loops.
+        if (req.method?.toUpperCase() === 'POST' && !isResume) {
+            const isLinkedInCommentEvent =
+                body?.event === 'ORGANIZATION_SOCIAL_ACTION' ||
+                body?.notificationType?.includes('COMMENT') ||
+                body?.actionType === 'COMMENT'
+            if (isLinkedInCommentEvent) {
+                const orgUrn = body?.organization || body?.target || body?.targetUrn
+                const actorUrn = body?.actor || body?.actorUrn || body?.author
+                if (
+                    orgUrn &&
+                    actorUrn &&
+                    (orgUrn === actorUrn || String(actorUrn).includes(String(orgUrn).replace('urn:li:organization:', '')))
+                ) {
+                    return res.status(200).json({ received: true, ignored: 'self_comment_echo' })
+                }
             }
         }
 

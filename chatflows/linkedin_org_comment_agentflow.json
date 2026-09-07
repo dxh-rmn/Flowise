@@ -1,0 +1,374 @@
+{
+    "name": "LinkedIn Organization Comment Agent",
+    "description": "Agentflow that analyzes a LinkedIn post or comment and publishes an intelligent, professional reply as a LinkedIn Company / Organization Page via LinkedIn Community Management API.",
+    "nodes": [
+        {
+            "id": "startAgentflow_0",
+            "position": {
+                "x": 100,
+                "y": 150
+            },
+            "type": "agentFlow",
+            "data": {
+                "id": "startAgentflow_0",
+                "label": "Start",
+                "version": 1.4,
+                "name": "startAgentflow",
+                "type": "Start",
+                "color": "#7EE787",
+                "hideInput": true,
+                "baseClasses": ["Start"],
+                "category": "Agent Flows",
+                "description": "Starting point of the agentflow",
+                "inputParams": [
+                    {
+                        "label": "Input Type",
+                        "name": "startInputType",
+                        "type": "options",
+                        "options": [
+                            {
+                                "label": "Chat Input",
+                                "name": "chatInput",
+                                "description": "Start the conversation with chat input"
+                            },
+                            {
+                                "label": "Form Input",
+                                "name": "formInput",
+                                "description": "Start the workflow with form inputs",
+                                "client": ["agentflowv2"]
+                            },
+                            {
+                                "label": "Webhook Trigger",
+                                "name": "webhookTrigger",
+                                "description": "Trigger the workflow via an external webhook",
+                                "client": ["agentflowv2"]
+                            },
+                            {
+                                "label": "Schedule Input",
+                                "name": "scheduleInput",
+                                "description": "Start the workflow on a recurring schedule (cron)",
+                                "client": ["agentflowv2"]
+                            }
+                        ],
+                        "default": "chatInput",
+                        "id": "startAgentflow_0-input-startInputType-options",
+                        "display": true
+                    }
+                ],
+                "inputAnchors": [],
+                "inputs": {
+                    "startInputType": "chatInput"
+                },
+                "outputAnchors": [
+                    {
+                        "id": "startAgentflow_0-output-startAgentflow",
+                        "label": "Start",
+                        "name": "startAgentflow"
+                    }
+                ],
+                "outputs": {},
+                "selected": false
+            },
+            "width": 120,
+            "height": 70,
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "llmAgentflow_0",
+            "position": {
+                "x": 360,
+                "y": 150
+            },
+            "type": "agentFlow",
+            "data": {
+                "id": "llmAgentflow_0",
+                "label": "LinkedIn Comment Assistant (LLM)",
+                "version": 1.1,
+                "name": "llmAgentflow",
+                "type": "LLM",
+                "color": "#64B5F6",
+                "baseClasses": ["LLM"],
+                "category": "Agent Flows",
+                "description": "Generates a helpful, polite, and brand-aligned comment or reply for LinkedIn",
+                "credential": "",
+                "inputParams": [
+                    {
+                        "label": "Connect Credential",
+                        "name": "credential",
+                        "type": "credential",
+                        "credentialNames": ["googleGenerativeAI", "openAIApi", "groqApi", "anthropicApi"],
+                        "optional": true,
+                        "id": "llmAgentflow_0-input-credential-credential",
+                        "display": true
+                    },
+                    {
+                        "label": "Model Name",
+                        "name": "modelName",
+                        "type": "string",
+                        "default": "gemini-2.0-flash",
+                        "id": "llmAgentflow_0-input-modelName-string",
+                        "display": true
+                    },
+                    {
+                        "label": "System Message",
+                        "name": "systemMessagePrompt",
+                        "type": "string",
+                        "rows": 4,
+                        "default": "You are a professional LinkedIn Community Manager representing an enterprise brand. Your task is to draft thoughtful, engaging, and professional comments or replies to post discussions.\n\nGuidelines:\n- Keep comments concise (2-4 sentences max).\n- Be encouraging, courteous, and value-adding.\n- Do not use markdown fences. Output only the ready-to-post comment text.",
+                        "id": "llmAgentflow_0-input-systemMessagePrompt-string",
+                        "display": true
+                    },
+                    {
+                        "label": "Prompt",
+                        "name": "prompt",
+                        "type": "string",
+                        "rows": 4,
+                        "default": "{{question}}",
+                        "acceptVariable": true,
+                        "id": "llmAgentflow_0-input-prompt-string",
+                        "display": true
+                    }
+                ],
+                "inputAnchors": [],
+                "inputs": {
+                    "modelName": "gemini-2.0-flash",
+                    "prompt": "{{question}}"
+                },
+                "outputAnchors": [
+                    {
+                        "id": "llmAgentflow_0-output-llmAgentflow",
+                        "label": "LLM",
+                        "name": "llmAgentflow"
+                    }
+                ],
+                "outputs": {},
+                "selected": false
+            },
+            "width": 240,
+            "height": 70,
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "linkedInCommentAgentflow_0",
+            "position": {
+                "x": 680,
+                "y": 150
+            },
+            "type": "agentFlow",
+            "data": {
+                "id": "linkedInCommentAgentflow_0",
+                "label": "LinkedIn Comment",
+                "version": 1.0,
+                "name": "linkedInCommentAgentflow",
+                "type": "LinkedInComment",
+                "color": "#0A66C2",
+                "baseClasses": ["LinkedInComment"],
+                "category": "Agent Flows",
+                "description": "Post a comment or reply to an existing comment on a LinkedIn post on behalf of an Organization Page or Personal Profile",
+                "credential": "",
+                "inputParams": [
+                    {
+                        "label": "Connect Credential",
+                        "name": "credential",
+                        "type": "credential",
+                        "credentialNames": ["linkedInApi"],
+                        "optional": true,
+                        "id": "linkedInCommentAgentflow_0-input-credential-credential",
+                        "display": true
+                    },
+                    {
+                        "label": "Actor Type",
+                        "name": "actorType",
+                        "type": "options",
+                        "options": [
+                            {
+                                "label": "Company / Organization Page",
+                                "name": "organization"
+                            },
+                            {
+                                "label": "Personal Profile",
+                                "name": "person"
+                            }
+                        ],
+                        "default": "organization",
+                        "id": "linkedInCommentAgentflow_0-input-actorType-options",
+                        "display": true
+                    },
+                    {
+                        "label": "Organization ID",
+                        "name": "organizationId",
+                        "type": "string",
+                        "placeholder": "e.g. 12345678 or leave blank to use from credential",
+                        "optional": true,
+                        "acceptVariable": true,
+                        "id": "linkedInCommentAgentflow_0-input-organizationId-string",
+                        "display": true
+                    },
+                    {
+                        "label": "Target Post URN / URL",
+                        "name": "targetPostUrn",
+                        "type": "string",
+                        "placeholder": "e.g. urn:li:share:12345678 or {{ $webhook.body.targetUrn }}",
+                        "acceptVariable": true,
+                        "id": "linkedInCommentAgentflow_0-input-targetPostUrn-string",
+                        "display": true
+                    },
+                    {
+                        "label": "Comment Type",
+                        "name": "commentType",
+                        "type": "options",
+                        "options": [
+                            {
+                                "label": "Top-Level Comment on Post",
+                                "name": "comment"
+                            },
+                            {
+                                "label": "Reply to an Existing Comment",
+                                "name": "reply"
+                            }
+                        ],
+                        "default": "comment",
+                        "id": "linkedInCommentAgentflow_0-input-commentType-options",
+                        "display": true
+                    },
+                    {
+                        "label": "Parent Comment URN",
+                        "name": "parentCommentUrn",
+                        "type": "string",
+                        "placeholder": "e.g. urn:li:comment:(urn:li:share:12345678,987654321)",
+                        "optional": true,
+                        "acceptVariable": true,
+                        "id": "linkedInCommentAgentflow_0-input-parentCommentUrn-string",
+                        "display": true
+                    },
+                    {
+                        "label": "Comment Text",
+                        "name": "messageText",
+                        "type": "string",
+                        "rows": 4,
+                        "acceptVariable": true,
+                        "id": "linkedInCommentAgentflow_0-input-messageText-string",
+                        "display": true
+                    },
+                    {
+                        "label": "Continue on Fail",
+                        "name": "continueOnFail",
+                        "type": "boolean",
+                        "default": true,
+                        "id": "linkedInCommentAgentflow_0-input-continueOnFail-boolean",
+                        "display": true
+                    }
+                ],
+                "inputAnchors": [],
+                "inputs": {
+                    "actorType": "organization",
+                    "organizationId": "",
+                    "targetPostUrn": "",
+                    "commentType": "comment",
+                    "parentCommentUrn": "",
+                    "messageText": "{{llmAgentflow_0.output.content}}",
+                    "continueOnFail": true
+                },
+                "outputAnchors": [
+                    {
+                        "id": "linkedInCommentAgentflow_0-output-linkedInCommentAgentflow",
+                        "label": "LinkedIn Comment",
+                        "name": "linkedInCommentAgentflow"
+                    }
+                ],
+                "outputs": {},
+                "selected": false
+            },
+            "width": 200,
+            "height": 70,
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "directReplyAgentflow_0",
+            "position": {
+                "x": 980,
+                "y": 150
+            },
+            "type": "agentFlow",
+            "data": {
+                "id": "directReplyAgentflow_0",
+                "label": "Direct Reply",
+                "version": 1.0,
+                "name": "directReplyAgentflow",
+                "type": "DirectReply",
+                "color": "#4DDBBB",
+                "hideOutput": true,
+                "baseClasses": ["DirectReply"],
+                "category": "Agent Flows",
+                "description": "Directly reply to the user with a message",
+                "inputParams": [
+                    {
+                        "label": "Message",
+                        "name": "directReplyMessage",
+                        "type": "string",
+                        "rows": 4,
+                        "acceptVariable": true,
+                        "id": "directReplyAgentflow_0-input-directReplyMessage-string",
+                        "display": true
+                    }
+                ],
+                "inputAnchors": [],
+                "inputs": {
+                    "directReplyMessage": "💬 **Comment posted on LinkedIn as Organization successfully!**\n\n🏢 **Actor:** `{{linkedInCommentAgentflow_0.input.actor}}`\n📌 **Target Post:** `{{linkedInCommentAgentflow_0.input.targetUrn}}`\n📝 **Comment Content:**\n{{linkedInCommentAgentflow_0.input.payload.message.text}}\n\n🆔 **Comment URN:** `{{linkedInCommentAgentflow_0.output.commentId}}`"
+                },
+                "outputAnchors": [],
+                "outputs": {},
+                "selected": false
+            },
+            "width": 180,
+            "height": 70,
+            "selected": false,
+            "dragging": false
+        }
+    ],
+    "edges": [
+        {
+            "id": "startAgentflow_0-startAgentflow_0-output-startAgentflow-llmAgentflow_0-llmAgentflow_0",
+            "source": "startAgentflow_0",
+            "sourceHandle": "startAgentflow_0-output-startAgentflow",
+            "target": "llmAgentflow_0",
+            "targetHandle": "llmAgentflow_0",
+            "type": "agentFlow",
+            "data": {
+                "sourceColor": "#7EE787",
+                "targetColor": "#64B5F6",
+                "isHumanInput": false
+            }
+        },
+        {
+            "id": "llmAgentflow_0-llmAgentflow_0-output-llmAgentflow-linkedInCommentAgentflow_0-linkedInCommentAgentflow_0",
+            "source": "llmAgentflow_0",
+            "sourceHandle": "llmAgentflow_0-output-llmAgentflow",
+            "target": "linkedInCommentAgentflow_0",
+            "targetHandle": "linkedInCommentAgentflow_0",
+            "type": "agentFlow",
+            "data": {
+                "sourceColor": "#64B5F6",
+                "targetColor": "#0A66C2",
+                "isHumanInput": false
+            }
+        },
+        {
+            "id": "linkedInCommentAgentflow_0-linkedInCommentAgentflow_0-output-linkedInCommentAgentflow-directReplyAgentflow_0-directReplyAgentflow_0",
+            "source": "linkedInCommentAgentflow_0",
+            "sourceHandle": "linkedInCommentAgentflow_0-output-linkedInCommentAgentflow",
+            "target": "directReplyAgentflow_0",
+            "targetHandle": "directReplyAgentflow_0",
+            "type": "agentFlow",
+            "data": {
+                "sourceColor": "#0A66C2",
+                "targetColor": "#4DDBBB",
+                "isHumanInput": false
+            }
+        }
+    ],
+    "type": "AGENTFLOW"
+}

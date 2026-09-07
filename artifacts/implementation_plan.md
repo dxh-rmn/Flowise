@@ -1,76 +1,37 @@
-# Meta App Secret Proof (`appsecret_proof`) and Typing Indicator Support
+# Implementation Plan: Facebook Enhancements & LinkedIn Integration
 
-This plan implements cryptographic `appsecret_proof` generation and Meta Messenger **Typing Indicator / Sender Actions** (`typing_on`, `mark_seen`, `typing_off`) across the Facebook Agentflow nodes in Flowise.
-
----
-
-## User Review Required
-
-> [!NOTE]
->
-> 1. **`appsecret_proof`**: Automatically calculated via `crypto.createHmac('sha256', appSecret).update(accessToken).digest('hex')` and attached as a query param `?appsecret_proof=...` on all Meta Graph API requests when `appSecret` is provided (either via credential or `overrideConfig.vars.facebookAppSecret`). If `appSecret` is omitted, standard requests continue without breaking changes.
-> 2. **Typing Indicator Modes**:
->     - **Modular / Immediate mode**: Place a `FacebookMessengerSend` node set to `Action: Sender Action -> Typing On` right after the Webhook Start node. Messenger immediately displays the typing bubble while downstream LLM nodes think.
->     - **Inline simulation mode**: Enable `Simulate Typing Indicator` directly on the message-sending node with an optional duration delay (e.g. 1–3s) before the message is delivered.
->     - **Mark Seen**: Support `mark_seen` so user messages receive read receipts.
+This plan unifies the implementation details for both the **Facebook Enhancements** (typing indicators, sender actions, and `appsecret_proof`) and the **LinkedIn Social Integration** (`LinkedInPost`, `LinkedInComment`, and `LinkedInApi`).
 
 ---
 
-## Proposed Changes
+## 1. Facebook Enhancements
 
-### Components (`packages/components`)
+### Security & Messenger UX
 
-#### [MODIFY] [FacebookMessengerSend.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/FacebookMessengerSend/FacebookMessengerSend.ts)
-
--   **`appsecret_proof` Generation**:
-    -   Extract `appSecret` from `credentialData?.appSecret` or `options.overrideConfig?.vars?.appSecret` / `facebookAppSecret`.
-    -   If present, calculate HMAC-SHA256 hash and pass `params: { appsecret_proof }` to Axios.
--   **Action Type Selector**:
-    -   `actionType`: `sendTextMessage` (default) vs `sendSenderAction` ("Sender Action / Typing Indicator").
--   **Sender Action Parameters**:
-    -   `senderAction`: Options `typing_on` ("Typing Indicator On"), `mark_seen` ("Mark as Read"), `typing_off` ("Typing Indicator Off") when `actionType === 'sendSenderAction'`.
--   **Inline Typing Simulation**:
-    -   When `actionType === 'sendTextMessage'`:
-        -   `simulateTyping` (boolean, default `false`).
-        -   `typingDelay` (number, default `1` second, optional).
-        -   If enabled, calls `sender_action: "typing_on"` before dispatching the text message.
-
-#### [MODIFY] [FacebookSend.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/FacebookSend/FacebookSend.ts)
-
--   Add `sendMessengerSenderAction` to `actionType` options dropdown.
--   Add `senderAction` selector (`typing_on`, `mark_seen`, `typing_off`).
--   Add `simulateTyping` and `typingDelay` inputs for `sendMessengerMessage`.
--   Calculate and attach `appsecret_proof` to all Meta Graph API requests when `appSecret` is present.
-
-#### [MODIFY] [FacebookPagePost.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/FacebookPagePost/FacebookPagePost.ts)
-
--   Extract `appSecret` and calculate `appsecret_proof`.
--   Attach `params: { appsecret_proof }` to `POST https://graph.facebook.com/v20.0/{pageId}/feed`.
-
-#### [MODIFY] [FacebookMessengerSend.test.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/FacebookMessengerSend/FacebookMessengerSend.test.ts)
-
--   Add unit test: passes `appsecret_proof` in Axios request params when `appSecret` is set in credential.
--   Add unit test: dynamic `appSecret` override from `overrideConfig.vars`.
--   Add unit test: dispatches `sender_action: "typing_on"` payload without `message` body.
--   Add unit test: dispatches `sender_action: "mark_seen"`.
--   Add unit test: verifies `simulateTyping` triggers `typing_on` then message.
-
-#### [MODIFY] [FacebookPagePost.test.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/FacebookPagePost/FacebookPagePost.test.ts)
-
--   Add unit test: verifies `appsecret_proof` is sent with Page Post request.
-
-#### [MODIFY] [FacebookSend.test.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/FacebookSend/FacebookSend.test.ts)
-
--   Add unit test: tests `sendMessengerSenderAction` and `appsecret_proof` in combined node.
+1. **`appsecret_proof` Cryptographic Verification**:
+    - Automatically computed via HMAC-SHA256 (`crypto.createHmac('sha256', appSecret).update(accessToken).digest('hex')`) and passed as query parameter to Meta Graph API.
+    - Mitigates token hijacking risks on `FacebookMessengerSend`, `FacebookPagePost`, and `FacebookSend`.
+2. **Typing Indicators & Read Receipts**:
+    - `typing_on`: Displays typing bubbles in Messenger for immediate feedback while agents process requests.
+    - `mark_seen`: Marks incoming messages as read.
+    - `typing_off`: Explicitly dismisses typing bubbles.
+    - `simulateTyping` & `typingDelay`: Inline simulation option directly on message nodes.
 
 ---
 
-### Templates (`chatflows/`)
+## 2. LinkedIn Channel Integration
 
-#### [MODIFY] [facebook_messenger_combined_agentflow.json](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/chatflows/facebook_messenger_combined_agentflow.json)
+### Social Publishing & Company Commenting
 
--   Insert a `Facebook Messenger Send` node configured as `typing_on` directly after the Webhook Start node, demonstrating the best-practice architecture:
-    `Start (Webhook)` ➔ `Facebook Messenger (typing_on)` ➔ `ExecuteFlow / LLM` ➔ `Facebook Messenger Send (Reply)`.
+1. **`LinkedInApi` Credential**:
+    - `linkedInApi`: OAuth 2.0 Bearer access token (`w_member_social`, `w_organization_social`), Author Type (`Personal Profile` vs `Company / Organization Page`), and Organization ID.
+2. **`LinkedInPost` Node**:
+    - Publishes commentary and article preview cards to Personal Profiles or Company Pages via `POST /rest/posts`.
+    - Auto-resolves personal Member URN via `/v2/userinfo`.
+3. **`LinkedInComment` Node**:
+    - Publishes comments and replies to threaded discussions on posts as a LinkedIn Organization (`POST /rest/socialActions/{targetUrn}/comments`).
+4. **Server Webhook Integration**:
+    - Webhook controller filtering for LinkedIn challenge/echo events.
 
 ---
 
@@ -78,18 +39,20 @@ This plan implements cryptographic `appsecret_proof` generation and Meta Messeng
 
 ### Automated Tests
 
--   Run component tests:
+1. **Facebook Component Tests**:
     ```bash
-    pnpm --filter flowise-components test FacebookMessengerSend
-    pnpm --filter flowise-components test FacebookPagePost
-    pnpm --filter flowise-components test FacebookSend
+    NODE_OPTIONS="--max-old-space-size=4096" pnpm --filter flowise-components exec jest \
+      nodes/agentflow/FacebookMessengerSend \
+      nodes/agentflow/FacebookPagePost \
+      nodes/agentflow/FacebookSend
     ```
--   Run full components build:
+2. **LinkedIn Component Tests**:
+    ```bash
+    NODE_OPTIONS="--max-old-space-size=4096" pnpm --filter flowise-components exec jest \
+      nodes/agentflow/LinkedInPost \
+      nodes/agentflow/LinkedInComment
+    ```
+3. **Compilation**:
     ```bash
     pnpm --filter flowise-components build
     ```
-
-### Manual Verification
-
--   Confirm generated `dist` files contain `appsecret_proof` logic and `sender_action` handling.
--   Validate that the combined JSON template imports cleanly.
