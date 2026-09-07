@@ -1,13 +1,12 @@
 import axios from 'axios'
+import * as crypto from 'crypto'
 
 jest.mock('axios')
 const mockedAxios = axios as jest.Mocked<typeof axios>
 
+const mockGetCredentialData = jest.fn()
 jest.mock('../../../src/utils', () => ({
-    getCredentialData: jest.fn().mockResolvedValue({
-        accessToken: 'mock-page-access-token',
-        pageId: '123456789'
-    })
+    getCredentialData: (...args: any[]) => mockGetCredentialData(...args)
 }))
 
 const { nodeClass } = require('./FacebookSend')
@@ -18,6 +17,10 @@ describe('FacebookSend Node (Combined)', () => {
     beforeEach(() => {
         node = new nodeClass()
         jest.clearAllMocks()
+        mockGetCredentialData.mockResolvedValue({
+            accessToken: 'mock-page-access-token',
+            pageId: '123456789'
+        })
     })
 
     it('should have correct node metadata', () => {
@@ -53,12 +56,70 @@ describe('FacebookSend Node (Combined)', () => {
                 headers: {
                     Authorization: 'Bearer mock-page-access-token',
                     'Content-Type': 'application/json'
-                }
+                },
+                params: {}
             }
         )
 
         expect(result.output.success).toBe(true)
         expect(result.output.content).toEqual({ recipient_id: '12345', message_id: 'mid.123' })
+    })
+
+    it('should dispatch typing_on when actionType is sendMessengerSenderAction', async () => {
+        mockedAxios.post.mockResolvedValueOnce({ data: { recipient_id: '12345' } })
+
+        const nodeData = {
+            id: 'facebookSend_0',
+            inputs: {
+                actionType: 'sendMessengerSenderAction',
+                senderAction: 'typing_on',
+                recipientId: '12345'
+            }
+        }
+
+        const result = await node.run(nodeData, '', {})
+
+        expect(mockedAxios.post).toHaveBeenCalledWith(
+            'https://graph.facebook.com/v20.0/me/messages',
+            {
+                recipient: { id: '12345' },
+                sender_action: 'typing_on'
+            },
+            expect.any(Object)
+        )
+
+        expect(result.output.success).toBe(true)
+    })
+
+    it('should calculate and attach appsecret_proof when appSecret is provided', async () => {
+        mockGetCredentialData.mockResolvedValueOnce({
+            accessToken: 'token-combined',
+            appSecret: 'secret-combined'
+        })
+        mockedAxios.post.mockResolvedValueOnce({ data: { recipient_id: '12345' } })
+
+        const expectedProof = crypto.createHmac('sha256', 'secret-combined').update('token-combined').digest('hex')
+
+        const nodeData = {
+            id: 'facebookSend_0',
+            inputs: {
+                actionType: 'sendMessengerSenderAction',
+                senderAction: 'typing_on',
+                recipientId: '12345'
+            }
+        }
+
+        await node.run(nodeData, '', {})
+
+        expect(mockedAxios.post).toHaveBeenCalledWith(
+            'https://graph.facebook.com/v20.0/me/messages',
+            expect.any(Object),
+            expect.objectContaining({
+                params: {
+                    appsecret_proof: expectedProof
+                }
+            })
+        )
     })
 
     it('should publish post to Page feed when actionType is publishPagePost', async () => {
@@ -86,7 +147,8 @@ describe('FacebookSend Node (Combined)', () => {
                 headers: {
                     Authorization: 'Bearer mock-page-access-token',
                     'Content-Type': 'application/json'
-                }
+                },
+                params: {}
             }
         )
 
@@ -107,7 +169,7 @@ describe('FacebookSend Node (Combined)', () => {
         await expect(node.run(nodeData, '', {})).rejects.toThrow('Recipient PSID is empty or invalid.')
     })
 
-    it('should throw error when messageText is empty', async () => {
+    it('should throw error when messageText is empty in sendMessengerMessage', async () => {
         const nodeData = {
             id: 'facebookSend_0',
             inputs: {

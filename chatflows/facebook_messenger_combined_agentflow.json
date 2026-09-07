@@ -4,7 +4,7 @@
         {
             "id": "startAgentflow_0",
             "position": {
-                "x": 100,
+                "x": 50,
                 "y": 150
             },
             "type": "agentFlow",
@@ -106,14 +106,127 @@
             "selected": false,
             "dragging": false,
             "positionAbsolute": {
-                "x": 100,
+                "x": 50,
+                "y": 150
+            }
+        },
+        {
+            "id": "facebookMessengerSend_typing_0",
+            "position": {
+                "x": 260,
+                "y": 150
+            },
+            "type": "agentFlow",
+            "data": {
+                "id": "facebookMessengerSend_typing_0",
+                "label": "Facebook Typing Indicator",
+                "version": 1,
+                "name": "facebookMessengerSendAgentflow",
+                "type": "FacebookMessengerSend",
+                "color": "#0084FF",
+                "hideOutput": false,
+                "baseClasses": ["FacebookMessengerSend"],
+                "category": "Agent Flows",
+                "description": "Send a direct message reply or typing indicator to a Facebook Messenger recipient via Meta Graph API",
+                "inputParams": [
+                    {
+                        "label": "Connect Credential",
+                        "name": "credential",
+                        "type": "credential",
+                        "credentialNames": ["facebookPageApi"],
+                        "optional": true,
+                        "id": "facebookMessengerSend_typing_0-input-credential-credential",
+                        "display": true
+                    },
+                    {
+                        "label": "Action Type",
+                        "name": "actionType",
+                        "type": "options",
+                        "options": [
+                            {
+                                "label": "Send Text Message",
+                                "name": "sendTextMessage"
+                            },
+                            {
+                                "label": "Sender Action (Typing Indicator / Mark Seen)",
+                                "name": "sendSenderAction"
+                            }
+                        ],
+                        "default": "sendSenderAction",
+                        "id": "facebookMessengerSend_typing_0-input-actionType-options",
+                        "display": true
+                    },
+                    {
+                        "label": "Sender Action",
+                        "name": "senderAction",
+                        "type": "options",
+                        "options": [
+                            {
+                                "label": "Typing Indicator On (typing_on)",
+                                "name": "typing_on"
+                            },
+                            {
+                                "label": "Mark as Seen (mark_seen)",
+                                "name": "mark_seen"
+                            },
+                            {
+                                "label": "Typing Indicator Off (typing_off)",
+                                "name": "typing_off"
+                            }
+                        ],
+                        "default": "typing_on",
+                        "id": "facebookMessengerSend_typing_0-input-senderAction-options",
+                        "display": true
+                    },
+                    {
+                        "label": "Recipient PSID",
+                        "name": "recipientId",
+                        "type": "string",
+                        "default": "{{ $webhook.body.entry[0].messaging[0].sender.id }}",
+                        "acceptVariable": true,
+                        "id": "facebookMessengerSend_typing_0-input-recipientId-string",
+                        "display": true
+                    },
+                    {
+                        "label": "Continue on Fail",
+                        "name": "continueOnFail",
+                        "type": "boolean",
+                        "optional": true,
+                        "default": true,
+                        "id": "facebookMessengerSend_typing_0-input-continueOnFail-boolean",
+                        "display": true
+                    }
+                ],
+                "inputAnchors": [],
+                "inputs": {
+                    "actionType": "sendSenderAction",
+                    "senderAction": "typing_on",
+                    "recipientId": "{{ $webhook.body.entry[0].messaging[0].sender.id }}",
+                    "continueOnFail": true
+                },
+                "outputAnchors": [
+                    {
+                        "id": "facebookMessengerSend_typing_0-output-facebookMessengerSendAgentflow",
+                        "label": "Facebook Messenger Send",
+                        "name": "facebookMessengerSendAgentflow"
+                    }
+                ],
+                "outputs": {},
+                "selected": false
+            },
+            "width": 240,
+            "height": 66,
+            "selected": false,
+            "dragging": false,
+            "positionAbsolute": {
+                "x": 260,
                 "y": 150
             }
         },
         {
             "id": "executeFlowAgentflow_0",
             "position": {
-                "x": 350,
+                "x": 580,
                 "y": 150
             },
             "type": "agentFlow",
@@ -204,14 +317,14 @@
             "selected": false,
             "dragging": false,
             "positionAbsolute": {
-                "x": 350,
+                "x": 580,
                 "y": 150
             }
         },
         {
             "id": "facebookSendAgentflow_0",
             "position": {
-                "x": 680,
+                "x": 900,
                 "y": 150
             },
             "type": "agentFlow",
@@ -245,6 +358,11 @@
                                 "label": "Send Messenger Message",
                                 "name": "sendMessengerMessage",
                                 "description": "Send a direct reply to a Facebook Messenger user (using their PSID)"
+                            },
+                            {
+                                "label": "Send Messenger Sender Action",
+                                "name": "sendMessengerSenderAction",
+                                "description": "Send typing indicator or mark as seen"
                             },
                             {
                                 "label": "Publish Page Post",
@@ -328,14 +446,14 @@
             "selected": false,
             "dragging": false,
             "positionAbsolute": {
-                "x": 680,
+                "x": 900,
                 "y": 150
             }
         },
         {
             "id": "directReplyAgentflow_0",
             "position": {
-                "x": 980,
+                "x": 1220,
                 "y": 150
             },
             "type": "agentFlow",
@@ -374,21 +492,34 @@
             "selected": false,
             "dragging": false,
             "positionAbsolute": {
-                "x": 980,
+                "x": 1220,
                 "y": 150
             }
         }
     ],
     "edges": [
         {
-            "id": "startAgentflow_0-startAgentflow_0-output-startAgentflow-executeFlowAgentflow_0-executeFlowAgentflow_0",
+            "id": "startAgentflow_0-startAgentflow_0-output-startAgentflow-facebookMessengerSend_typing_0-facebookMessengerSend_typing_0",
             "source": "startAgentflow_0",
             "sourceHandle": "startAgentflow_0-output-startAgentflow",
+            "target": "facebookMessengerSend_typing_0",
+            "targetHandle": "facebookMessengerSend_typing_0",
+            "type": "agentFlow",
+            "data": {
+                "sourceColor": "#7EE787",
+                "targetColor": "#0084FF",
+                "isHumanInput": false
+            }
+        },
+        {
+            "id": "facebookMessengerSend_typing_0-facebookMessengerSend_typing_0-output-facebookMessengerSendAgentflow-executeFlowAgentflow_0-executeFlowAgentflow_0",
+            "source": "facebookMessengerSend_typing_0",
+            "sourceHandle": "facebookMessengerSend_typing_0-output-facebookMessengerSendAgentflow",
             "target": "executeFlowAgentflow_0",
             "targetHandle": "executeFlowAgentflow_0",
             "type": "agentFlow",
             "data": {
-                "sourceColor": "#7EE787",
+                "sourceColor": "#0084FF",
                 "targetColor": "#a3b18a",
                 "isHumanInput": false
             }

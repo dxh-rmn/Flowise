@@ -1,4 +1,5 @@
 import axios from 'axios'
+import * as crypto from 'crypto'
 import { getCredentialData } from '../../../src/utils'
 import { ICommonObject, INode, INodeData, INodeParams } from '../../../src/Interface'
 
@@ -68,7 +69,8 @@ class FacebookPagePost_Agentflow implements INode {
                 label: 'Continue on Fail',
                 name: 'continueOnFail',
                 type: 'boolean',
-                description: 'If enabled, the flow will not terminate if Meta Graph API returns an error, but return the error in output instead.',
+                description:
+                    'If enabled, the flow will not terminate if Meta Graph API returns an error, but return the error in output instead.',
                 optional: true,
                 default: false
             }
@@ -88,6 +90,16 @@ class FacebookPagePost_Agentflow implements INode {
 
         if (!accessToken) {
             throw new Error('Facebook Page Access Token is missing in credential or dynamic overrideConfig.')
+        }
+
+        const appSecret =
+            (credentialData?.appSecret as string) ||
+            (options.overrideConfig?.vars?.facebookAppSecret as string) ||
+            (options.overrideConfig?.vars?.appSecret as string)
+
+        const params: Record<string, string> = {}
+        if (appSecret) {
+            params.appsecret_proof = crypto.createHmac('sha256', appSecret).update(accessToken).digest('hex')
         }
 
         const pageId = (nodeData.inputs?.pageId as string) || (credentialData?.pageId as string) || 'me'
@@ -113,7 +125,8 @@ class FacebookPagePost_Agentflow implements INode {
                 headers: {
                     Authorization: `Bearer ${accessToken}`,
                     'Content-Type': 'application/json'
-                }
+                },
+                params
             })
             responseData = res.data
         } catch (error: any) {

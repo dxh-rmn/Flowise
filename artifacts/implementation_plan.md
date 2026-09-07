@@ -1,70 +1,76 @@
-# Dedicated Telegram Send Node & Credential
+# Meta App Secret Proof (`appsecret_proof`) and Typing Indicator Support
 
-Integrate a dedicated **Telegram Send** (`TelegramSend` / `telegramSendAgentflow`) node and a **Telegram Bot API** credential (`TelegramApi` / `telegramApi`) into Flowise, allowing Agentflows to receive messages via Telegram webhooks and send replies directly to Telegram chats, groups, and channels.
+This plan implements cryptographic `appsecret_proof` generation and Meta Messenger **Typing Indicator / Sender Actions** (`typing_on`, `mark_seen`, `typing_off`) across the Facebook Agentflow nodes in Flowise.
+
+---
 
 ## User Review Required
 
 > [!NOTE]
-> This node follows the exact pattern of the existing `WhatsAppSend` and `FacebookMessengerSend` nodes:
 >
-> 1. **Inbound**: Handled via Flowise's Start node in `webhookTrigger` mode with `{{ $webhook.body.message.text }}` and session tracking via `{{ $webhook.body.message.chat.id }}`.
-> 2. **Outbound**: Handled by the dedicated `TelegramSend` node which calls `POST https://api.telegram.org/bot<token>/sendMessage`.
-> 3. **Multi-tenant / Dynamic tokens**: Supports dynamic bot tokens passed via `overrideConfig.vars.userTelegramToken` or `overrideConfig.vars.telegramBotToken` in addition to stored Flowise credentials.
+> 1. **`appsecret_proof`**: Automatically calculated via `crypto.createHmac('sha256', appSecret).update(accessToken).digest('hex')` and attached as a query param `?appsecret_proof=...` on all Meta Graph API requests when `appSecret` is provided (either via credential or `overrideConfig.vars.facebookAppSecret`). If `appSecret` is omitted, standard requests continue without breaking changes.
+> 2. **Typing Indicator Modes**:
+>     - **Modular / Immediate mode**: Place a `FacebookMessengerSend` node set to `Action: Sender Action -> Typing On` right after the Webhook Start node. Messenger immediately displays the typing bubble while downstream LLM nodes think.
+>     - **Inline simulation mode**: Enable `Simulate Typing Indicator` directly on the message-sending node with an optional duration delay (e.g. 1–3s) before the message is delivered.
+>     - **Mark Seen**: Support `mark_seen` so user messages receive read receipts.
+
+---
 
 ## Proposed Changes
 
 ### Components (`packages/components`)
 
-#### [NEW] [`TelegramApi.credential.ts`](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/credentials/TelegramApi.credential.ts)
+#### [MODIFY] [FacebookMessengerSend.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/FacebookMessengerSend/FacebookMessengerSend.ts)
 
-Create the credential definition for Telegram:
+-   **`appsecret_proof` Generation**:
+    -   Extract `appSecret` from `credentialData?.appSecret` or `options.overrideConfig?.vars?.appSecret` / `facebookAppSecret`.
+    -   If present, calculate HMAC-SHA256 hash and pass `params: { appsecret_proof }` to Axios.
+-   **Action Type Selector**:
+    -   `actionType`: `sendTextMessage` (default) vs `sendSenderAction` ("Sender Action / Typing Indicator").
+-   **Sender Action Parameters**:
+    -   `senderAction`: Options `typing_on` ("Typing Indicator On"), `mark_seen` ("Mark as Read"), `typing_off` ("Typing Indicator Off") when `actionType === 'sendSenderAction'`.
+-   **Inline Typing Simulation**:
+    -   When `actionType === 'sendTextMessage'`:
+        -   `simulateTyping` (boolean, default `false`).
+        -   `typingDelay` (number, default `1` second, optional).
+        -   If enabled, calls `sender_action: "typing_on"` before dispatching the text message.
 
--   Name: `telegramApi`
--   Label: `Telegram Bot API`
--   Fields:
-    -   `botToken` (type: `password`, required): Telegram Bot Token from `@BotFather`.
-    -   `baseUrl` (type: `string`, optional, default: `https://api.telegram.org`): Customizable for local Telegram Bot API servers or proxies.
+#### [MODIFY] [FacebookSend.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/FacebookSend/FacebookSend.ts)
 
-#### [NEW] [`TelegramSend.ts`](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/TelegramSend/TelegramSend.ts)
+-   Add `sendMessengerSenderAction` to `actionType` options dropdown.
+-   Add `senderAction` selector (`typing_on`, `mark_seen`, `typing_off`).
+-   Add `simulateTyping` and `typingDelay` inputs for `sendMessengerMessage`.
+-   Calculate and attach `appsecret_proof` to all Meta Graph API requests when `appSecret` is present.
 
-Implement the node class `TelegramSend_Agentflow`:
+#### [MODIFY] [FacebookPagePost.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/FacebookPagePost/FacebookPagePost.ts)
 
--   Category: `Agent Flows`
--   Color: `#229ED9` (Telegram blue)
--   Icon: `telegram.svg`
--   Inputs:
-    -   `chatId`: Unique identifier for the target chat or username (`acceptVariable: true`, default `{{ $webhook.body.message.chat.id }}`)
-    -   `messageText`: Text message content (`acceptVariable: true`, rows: 4)
-    -   `parseMode`: Options (`None`, `Markdown`, `MarkdownV2`, `HTML`, default: `None`)
-    -   `replyToMessageId`: Optional message ID to reply to (`acceptVariable: true`)
-    -   `continueOnFail`: Boolean flag to prevent terminating flow on API error
--   Dynamic token resolution: supports `overrideConfig.vars.userTelegramToken` and credential data.
+-   Extract `appSecret` and calculate `appsecret_proof`.
+-   Attach `params: { appsecret_proof }` to `POST https://graph.facebook.com/v20.0/{pageId}/feed`.
 
-#### [NEW] [`telegram.svg`](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/TelegramSend/telegram.svg)
+#### [MODIFY] [FacebookMessengerSend.test.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/FacebookMessengerSend/FacebookMessengerSend.test.ts)
 
-Official Telegram paper-plane vector icon.
+-   Add unit test: passes `appsecret_proof` in Axios request params when `appSecret` is set in credential.
+-   Add unit test: dynamic `appSecret` override from `overrideConfig.vars`.
+-   Add unit test: dispatches `sender_action: "typing_on"` payload without `message` body.
+-   Add unit test: dispatches `sender_action: "mark_seen"`.
+-   Add unit test: verifies `simulateTyping` triggers `typing_on` then message.
 
-#### [NEW] [`TelegramSend.test.ts`](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/TelegramSend/TelegramSend.test.ts)
+#### [MODIFY] [FacebookPagePost.test.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/FacebookPagePost/FacebookPagePost.test.ts)
 
-Unit tests covering:
+-   Add unit test: verifies `appsecret_proof` is sent with Page Post request.
 
--   Metadata validation (label, name, category, icon, color)
--   Dispatching message to Telegram Bot API with correct headers, payload, and URL
--   Validation errors for missing token, chat ID, and message text
--   `continueOnFail` handling
--   Optional fields like `parseMode` and `replyToMessageId`
+#### [MODIFY] [FacebookSend.test.ts](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/packages/components/nodes/agentflow/FacebookSend/FacebookSend.test.ts)
+
+-   Add unit test: tests `sendMessengerSenderAction` and `appsecret_proof` in combined node.
 
 ---
 
-### Chatflow Templates (`chatflows/`)
+### Templates (`chatflows/`)
 
-#### [NEW] [`telegram_bot_agentflow.json`](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/chatflows/telegram_bot_agentflow.json)
+#### [MODIFY] [facebook_messenger_combined_agentflow.json](file:///media/rumon/PLANT/devxhub/workflow%20agent/Flowise/chatflows/facebook_messenger_combined_agentflow.json)
 
-A ready-to-import template showing an end-to-end Telegram bot flow:
-
--   Start node configured with `webhookTrigger`, extracting `message.text` and `message.chat.id`
--   Agent / LLM processing node
--   Telegram Send node dispatching the response back to the user
+-   Insert a `Facebook Messenger Send` node configured as `typing_on` directly after the Webhook Start node, demonstrating the best-practice architecture:
+    `Start (Webhook)` ➔ `Facebook Messenger (typing_on)` ➔ `ExecuteFlow / LLM` ➔ `Facebook Messenger Send (Reply)`.
 
 ---
 
@@ -72,10 +78,18 @@ A ready-to-import template showing an end-to-end Telegram bot flow:
 
 ### Automated Tests
 
--   Run `pnpm --filter flowise-components test TelegramSend`
--   Run `pnpm --filter flowise-components build` to confirm TypeScript compilation and icon bundling pass cleanly.
+-   Run component tests:
+    ```bash
+    pnpm --filter flowise-components test FacebookMessengerSend
+    pnpm --filter flowise-components test FacebookPagePost
+    pnpm --filter flowise-components test FacebookSend
+    ```
+-   Run full components build:
+    ```bash
+    pnpm --filter flowise-components build
+    ```
 
 ### Manual Verification
 
--   Verify the node is discovered in `NodesPool` under `Agent Flows`.
--   Verify the credential is recognized in `componentCredentials`.
+-   Confirm generated `dist` files contain `appsecret_proof` logic and `sender_action` handling.
+-   Validate that the combined JSON template imports cleanly.
