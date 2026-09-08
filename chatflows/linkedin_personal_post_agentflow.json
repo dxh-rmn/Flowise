@@ -1,0 +1,365 @@
+{
+    "name": "LinkedIn Personal Profile Post Agent",
+    "description": "Interactive Agentflow that creates an engaging LinkedIn post using AI and publishes it directly to your LinkedIn Personal Profile timeline via the LinkedIn REST API.",
+    "nodes": [
+        {
+            "id": "startAgentflow_0",
+            "position": {
+                "x": 100,
+                "y": 150
+            },
+            "type": "agentFlow",
+            "data": {
+                "id": "startAgentflow_0",
+                "label": "Start",
+                "version": 1.4,
+                "name": "startAgentflow",
+                "type": "Start",
+                "color": "#7EE787",
+                "hideInput": true,
+                "baseClasses": ["Start"],
+                "category": "Agent Flows",
+                "description": "Starting point of the agentflow",
+                "inputParams": [
+                    {
+                        "label": "Input Type",
+                        "name": "startInputType",
+                        "type": "options",
+                        "options": [
+                            {
+                                "label": "Chat Input",
+                                "name": "chatInput",
+                                "description": "Start the conversation with chat input"
+                            },
+                            {
+                                "label": "Form Input",
+                                "name": "formInput",
+                                "description": "Start the workflow with form inputs",
+                                "client": ["agentflowv2"]
+                            },
+                            {
+                                "label": "Webhook Trigger",
+                                "name": "webhookTrigger",
+                                "description": "Trigger the workflow via an external webhook",
+                                "client": ["agentflowv2"]
+                            },
+                            {
+                                "label": "Schedule Input",
+                                "name": "scheduleInput",
+                                "description": "Start the workflow on a recurring schedule (cron)",
+                                "client": ["agentflowv2"]
+                            }
+                        ],
+                        "default": "chatInput",
+                        "id": "startAgentflow_0-input-startInputType-options",
+                        "display": true
+                    }
+                ],
+                "inputAnchors": [],
+                "inputs": {
+                    "startInputType": "chatInput"
+                },
+                "outputAnchors": [
+                    {
+                        "id": "startAgentflow_0-output-startAgentflow",
+                        "label": "Start",
+                        "name": "startAgentflow"
+                    }
+                ],
+                "outputs": {},
+                "selected": false
+            },
+            "width": 120,
+            "height": 70,
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "llmAgentflow_0",
+            "position": {
+                "x": 360,
+                "y": 150
+            },
+            "type": "agentFlow",
+            "data": {
+                "id": "llmAgentflow_0",
+                "label": "LinkedIn Copywriter (LLM)",
+                "version": 1.1,
+                "name": "llmAgentflow",
+                "type": "LLM",
+                "color": "#64B5F6",
+                "baseClasses": ["LLM"],
+                "category": "Agent Flows",
+                "description": "Generates a professional, engaging LinkedIn thought-leadership post",
+                "credential": "",
+                "inputParams": [
+                    {
+                        "label": "Connect Credential",
+                        "name": "credential",
+                        "type": "credential",
+                        "credentialNames": ["googleGenerativeAI", "openAIApi", "groqApi", "anthropicApi"],
+                        "optional": true,
+                        "id": "llmAgentflow_0-input-credential-credential",
+                        "display": true
+                    },
+                    {
+                        "label": "Model Name",
+                        "name": "modelName",
+                        "type": "string",
+                        "placeholder": "gemini-2.0-flash or gpt-4o-mini",
+                        "default": "gemini-2.0-flash",
+                        "id": "llmAgentflow_0-input-modelName-string",
+                        "display": true
+                    },
+                    {
+                        "label": "System Message",
+                        "name": "systemMessagePrompt",
+                        "type": "string",
+                        "rows": 4,
+                        "default": "You are an expert LinkedIn content creator and personal brand strategist. Your goal is to draft high-engagement, genuine, professional personal LinkedIn posts based on the user's prompt.\n\nFormatting guidelines:\n1. Strong hook in the first 1-2 lines.\n2. Concise, scannable paragraphs (1-2 sentences each) with clean spacing and bullet points where helpful.\n3. Authentic personal tone (thought leadership, lesson learned, or industry insight).\n4. Clear takeaway or engaging question at the end.\n5. Include 3-4 relevant industry hashtags.\n6. Do NOT include markdown code fences (```). Output only the ready-to-post text.",
+                        "id": "llmAgentflow_0-input-systemMessagePrompt-string",
+                        "display": true
+                    },
+                    {
+                        "label": "Prompt",
+                        "name": "prompt",
+                        "type": "string",
+                        "rows": 4,
+                        "default": "{{question}}",
+                        "acceptVariable": true,
+                        "id": "llmAgentflow_0-input-prompt-string",
+                        "display": true
+                    }
+                ],
+                "inputAnchors": [],
+                "inputs": {
+                    "modelName": "gemini-2.0-flash",
+                    "prompt": "{{question}}"
+                },
+                "outputAnchors": [
+                    {
+                        "id": "llmAgentflow_0-output-llmAgentflow",
+                        "label": "LLM",
+                        "name": "llmAgentflow"
+                    }
+                ],
+                "outputs": {},
+                "selected": false
+            },
+            "width": 220,
+            "height": 70,
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "linkedInPostAgentflow_0",
+            "position": {
+                "x": 680,
+                "y": 150
+            },
+            "type": "agentFlow",
+            "data": {
+                "id": "linkedInPostAgentflow_0",
+                "label": "LinkedIn Post",
+                "version": 1.0,
+                "name": "linkedInPostAgentflow",
+                "type": "LinkedInPost",
+                "color": "#0A66C2",
+                "baseClasses": ["LinkedInPost"],
+                "category": "Agent Flows",
+                "description": "Publish a thought-leadership post to your personal LinkedIn profile",
+                "credential": "",
+                "inputParams": [
+                    {
+                        "label": "Connect Credential",
+                        "name": "credential",
+                        "type": "credential",
+                        "credentialNames": ["linkedInApi"],
+                        "optional": true,
+                        "id": "linkedInPostAgentflow_0-input-credential-credential",
+                        "display": true
+                    },
+                    {
+                        "label": "Target Type",
+                        "name": "targetType",
+                        "type": "options",
+                        "options": [
+                            {
+                                "label": "Company / Organization Page",
+                                "name": "organization"
+                            },
+                            {
+                                "label": "Personal Profile",
+                                "name": "person"
+                            }
+                        ],
+                        "default": "person",
+                        "id": "linkedInPostAgentflow_0-input-targetType-options",
+                        "display": true
+                    },
+                    {
+                        "label": "Person URN / Member ID",
+                        "name": "personUrn",
+                        "type": "string",
+                        "placeholder": "leave blank to auto-detect via /v2/userinfo",
+                        "optional": true,
+                        "acceptVariable": true,
+                        "id": "linkedInPostAgentflow_0-input-personUrn-string",
+                        "display": true
+                    },
+                    {
+                        "label": "Post Content",
+                        "name": "messageText",
+                        "type": "string",
+                        "rows": 4,
+                        "acceptVariable": true,
+                        "id": "linkedInPostAgentflow_0-input-messageText-string",
+                        "display": true
+                    },
+                    {
+                        "label": "Article / Link URL",
+                        "name": "linkUrl",
+                        "type": "string",
+                        "placeholder": "e.g. https://yourwebsite.com/article",
+                        "optional": true,
+                        "acceptVariable": true,
+                        "id": "linkedInPostAgentflow_0-input-linkUrl-string",
+                        "display": true
+                    },
+                    {
+                        "label": "Visibility",
+                        "name": "visibility",
+                        "type": "options",
+                        "options": [
+                            {
+                                "label": "Public (Anyone on LinkedIn)",
+                                "name": "PUBLIC"
+                            },
+                            {
+                                "label": "Connections Only",
+                                "name": "CONNECTIONS"
+                            }
+                        ],
+                        "default": "PUBLIC",
+                        "id": "linkedInPostAgentflow_0-input-visibility-options",
+                        "display": true
+                    },
+                    {
+                        "label": "Continue on Fail",
+                        "name": "continueOnFail",
+                        "type": "boolean",
+                        "default": true,
+                        "id": "linkedInPostAgentflow_0-input-continueOnFail-boolean",
+                        "display": true
+                    }
+                ],
+                "inputAnchors": [],
+                "inputs": {
+                    "targetType": "person",
+                    "personUrn": "",
+                    "messageText": "{{llmAgentflow_0.output.content}}",
+                    "linkUrl": "",
+                    "visibility": "PUBLIC",
+                    "continueOnFail": true
+                },
+                "outputAnchors": [
+                    {
+                        "id": "linkedInPostAgentflow_0-output-linkedInPostAgentflow",
+                        "label": "LinkedIn Post",
+                        "name": "linkedInPostAgentflow"
+                    }
+                ],
+                "outputs": {},
+                "selected": false
+            },
+            "width": 190,
+            "height": 70,
+            "selected": false,
+            "dragging": false
+        },
+        {
+            "id": "directReplyAgentflow_0",
+            "position": {
+                "x": 980,
+                "y": 150
+            },
+            "type": "agentFlow",
+            "data": {
+                "id": "directReplyAgentflow_0",
+                "label": "Direct Reply",
+                "version": 1.0,
+                "name": "directReplyAgentflow",
+                "type": "DirectReply",
+                "color": "#4DDBBB",
+                "hideOutput": true,
+                "baseClasses": ["DirectReply"],
+                "category": "Agent Flows",
+                "description": "Directly reply to the user with a confirmation message",
+                "inputParams": [
+                    {
+                        "label": "Message",
+                        "name": "directReplyMessage",
+                        "type": "string",
+                        "rows": 4,
+                        "acceptVariable": true,
+                        "id": "directReplyAgentflow_0-input-directReplyMessage-string",
+                        "display": true
+                    }
+                ],
+                "inputAnchors": [],
+                "inputs": {
+                    "directReplyMessage": "🚀 **Post published to your LinkedIn Profile!**\n\n👤 **Author:** `{{linkedInPostAgentflow_0.input.author}}`\n\n📝 **Content:**\n{{linkedInPostAgentflow_0.input.payload.commentary}}\n\n🆔 **Post ID:** `{{linkedInPostAgentflow_0.output.postId}}`"
+                },
+                "outputAnchors": [],
+                "outputs": {},
+                "selected": false
+            },
+            "width": 180,
+            "height": 70,
+            "selected": false,
+            "dragging": false
+        }
+    ],
+    "edges": [
+        {
+            "id": "startAgentflow_0-startAgentflow_0-output-startAgentflow-llmAgentflow_0-llmAgentflow_0",
+            "source": "startAgentflow_0",
+            "sourceHandle": "startAgentflow_0-output-startAgentflow",
+            "target": "llmAgentflow_0",
+            "targetHandle": "llmAgentflow_0",
+            "type": "agentFlow",
+            "data": {
+                "sourceColor": "#7EE787",
+                "targetColor": "#64B5F6",
+                "isHumanInput": false
+            }
+        },
+        {
+            "id": "llmAgentflow_0-llmAgentflow_0-output-llmAgentflow-linkedInPostAgentflow_0-linkedInPostAgentflow_0",
+            "source": "llmAgentflow_0",
+            "sourceHandle": "llmAgentflow_0-output-llmAgentflow",
+            "target": "linkedInPostAgentflow_0",
+            "targetHandle": "linkedInPostAgentflow_0",
+            "type": "agentFlow",
+            "data": {
+                "sourceColor": "#64B5F6",
+                "targetColor": "#0A66C2",
+                "isHumanInput": false
+            }
+        },
+        {
+            "id": "linkedInPostAgentflow_0-linkedInPostAgentflow_0-output-linkedInPostAgentflow-directReplyAgentflow_0-directReplyAgentflow_0",
+            "source": "linkedInPostAgentflow_0",
+            "sourceHandle": "linkedInPostAgentflow_0-output-linkedInPostAgentflow",
+            "target": "directReplyAgentflow_0",
+            "targetHandle": "directReplyAgentflow_0",
+            "type": "agentFlow",
+            "data": {
+                "sourceColor": "#0A66C2",
+                "targetColor": "#4DDBBB",
+                "isHumanInput": false
+            }
+        }
+    ],
+    "type": "AGENTFLOW"
+}

@@ -17,6 +17,9 @@ WORKDIR /usr/src/flowise
 # Copy workspace and root configurations
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json .npmrc ./
 
+# Copy patches needed for pnpm patchedDependencies (e.g. sqlite3 for Node 22 compatibility)
+COPY patches ./patches
+
 # Copy backend and component packages
 COPY packages/server ./packages/server
 COPY packages/components ./packages/components

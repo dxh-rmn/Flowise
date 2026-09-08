@@ -33,6 +33,9 @@ WORKDIR /usr/src/flowise
 # Copy workspace configuration and root metadata
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json .npmrc ./
 
+# Copy patches needed for pnpm patchedDependencies
+COPY patches ./patches
+
 # Copy local packages (server and components)
 COPY packages/server ./packages/server
 COPY packages/components ./packages/components
